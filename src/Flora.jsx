@@ -1,7 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { callFlora } from './lib/floraApi.js';
 import { listRecentDiaryEntries } from './Diary.jsx';
-import { MONTHS } from './data/plants.js';
+import { MONTHS, PLANTS } from './data/plants.js';
+import { compressImage, addEvent } from './lib/plantStorage.js';
+
+const CUSTOM_PLANTS_KEY = 'garden-custom-plants';
+
+// Combined list of built-in + custom plants for the "Add to journal" picker.
+// Read on-demand because customPlants live in App's state — we sync via localStorage.
+function loadAllPlants() {
+  const builtin = PLANTS.map((p) => ({ id: p.key, name: p.name }));
+  let custom = [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_PLANTS_KEY);
+    if (raw) {
+      custom = JSON.parse(raw).map((p) => ({
+        id: p.id,
+        name: p.variety ? `${p.name} · ${p.variety}` : p.name,
+      }));
+    }
+  } catch { /* ignore */ }
+  return [...builtin, ...custom];
+}
 
 const INITIAL_MESSAGE = 'Cześć! Jestem FLORA 🌿 Twój ogrodnik AI. Co dziś sadzimy, pryskamy lub przycinamy?';
 
@@ -54,8 +74,16 @@ export default function Flora({ notes = [], weather, currentMonth }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Foto-diagnostyka: zdjęcie dołączone do następnej wiadomości.
+  const [imagePreview, setImagePreview] = useState(null); // pełny data URL
+  const [imageData, setImageData] = useState(null);       // base64 bez prefiksu
+  // Po odpowiedzi na zdjęcie: indeks ostatniej diagnozy + flow "Dodaj do dziennika".
+  const [diagnosisAtIdx, setDiagnosisAtIdx] = useState(null);
+  const [showPlantPicker, setShowPlantPicker] = useState(false);
+  const [logToast, setLogToast] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const cameraRef = useRef(null);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -65,23 +93,58 @@ export default function Flora({ notes = [], weather, currentMonth }) {
     if (open && inputRef.current) setTimeout(() => inputRef.current?.focus(), 350);
   }, [open]);
 
+  const handlePhotoPick = async (file) => {
+    if (!file || !file.type?.startsWith('image/')) {
+      setError('To nie jest zdjęcie');
+      return;
+    }
+    try {
+      // Kompresja do 1024px JPEG q=0.78 — bezpieczne ~150-400 KB po base64.
+      const dataUrl = await compressImage(file, 1024, 0.78);
+      const commaIdx = dataUrl.indexOf(',');
+      setImagePreview(dataUrl);
+      setImageData(commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl);
+      setError(null);
+    } catch {
+      setError('Nie udało się przygotować zdjęcia');
+    }
+  };
+
+  const clearImage = () => {
+    setImagePreview(null);
+    setImageData(null);
+  };
+
   const send = async () => {
     const text = input.trim();
-    if (!text || loading) return;
-    const next = [...messages, { role: 'user', content: text }];
+    if (loading) return;
+    if (!text && !imageData) return;
+
+    // Default question when user sends image alone — gives FLORA prompt for diagnosis.
+    const userText = text || 'Co widzisz na tym zdjęciu? Jaka choroba lub szkodnik? Polski preparat z dawkowaniem.';
+    const next = [...messages, { role: 'user', content: userText }];
     setMessages(next);
     setInput('');
+    const sentImage = imageData;
+    const sentMediaType = 'image/jpeg';
+    const wasImageRequest = !!sentImage;
+    clearImage();
     setLoading(true);
     setError(null);
     try {
       const data = await callFlora({
         messages: trimHistoryForApi(next).map((m) => ({ role: m.role, content: m.content })),
         context: buildContext({ notes, weather, currentMonth }),
+        ...(sentImage && { image_base64: sentImage, image_media_type: sentMediaType }),
       });
       if (data?.error) {
         setError(`FLORA: ${data.error}`);
       } else if (data?.response) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.response }]);
+        setMessages((prev) => {
+          const updated = [...prev, { role: 'assistant', content: data.response, isDiagnosis: wasImageRequest }];
+          if (wasImageRequest) setDiagnosisAtIdx(updated.length - 1);
+          return updated;
+        });
       } else {
         setError('FLORA milczy. Spróbuj jeszcze raz.');
       }
@@ -90,6 +153,18 @@ export default function Flora({ notes = [], weather, currentMonth }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogToDiary = (plantId, plantName) => {
+    if (diagnosisAtIdx == null) return;
+    const text = messages[diagnosisAtIdx]?.content || '';
+    // Skróć dla event note — pełna diagnoza może być długa.
+    const short = text.length > 280 ? text.slice(0, 277) + '…' : text;
+    addEvent(plantId, 'oprysknieto', `Diagnoza FLORA: ${short}`);
+    setLogToast(`Zapisano: ${plantName}`);
+    setShowPlantPicker(false);
+    setDiagnosisAtIdx(null);
+    setTimeout(() => setLogToast(null), 2500);
   };
 
   return (
@@ -201,33 +276,100 @@ export default function Flora({ notes = [], weather, currentMonth }) {
           className="flex-1 overflow-y-auto px-5 py-4"
           style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
         >
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className="font-serif italic px-4 py-2.5 rounded-2xl"
-              style={m.role === 'assistant'
-                ? {
-                    alignSelf: 'flex-start',
-                    maxWidth: '85%',
-                    backgroundColor: 'rgba(123, 201, 123, 0.08)',
-                    border: '0.5px solid rgba(123, 201, 123, 0.22)',
-                    color: 'rgba(232, 221, 208, 0.92)',
-                    fontSize: '14px',
-                    lineHeight: 1.55,
+          {messages.map((m, i) => {
+            const isLastDiagnosis = m.role === 'assistant' && m.isDiagnosis && i === diagnosisAtIdx;
+            return (
+              <div
+                key={i}
+                style={{
+                  alignSelf: m.role === 'assistant' ? 'flex-start' : 'flex-end',
+                  maxWidth: '85%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <div
+                  className="font-serif italic px-4 py-2.5 rounded-2xl"
+                  style={m.role === 'assistant'
+                    ? {
+                        backgroundColor: 'rgba(123, 201, 123, 0.08)',
+                        border: '0.5px solid rgba(123, 201, 123, 0.22)',
+                        color: 'rgba(232, 221, 208, 0.92)',
+                        fontSize: '14px',
+                        lineHeight: 1.55,
+                      }
+                    : {
+                        background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.22), rgba(201, 169, 110, 0.18))',
+                        color: '#F0E8D8',
+                        fontSize: '14px',
+                        lineHeight: 1.55,
+                      }
                   }
-                : {
-                    alignSelf: 'flex-end',
-                    maxWidth: '85%',
-                    background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.22), rgba(201, 169, 110, 0.18))',
-                    color: '#F0E8D8',
-                    fontSize: '14px',
-                    lineHeight: 1.55,
-                  }
-              }
-            >
-              {m.content}
-            </div>
-          ))}
+                >
+                  {m.content}
+                </div>
+
+                {isLastDiagnosis && !showPlantPicker && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPlantPicker(true)}
+                    className="self-start cursor-pointer px-3 py-1.5 rounded-full text-[11px] tracking-wide"
+                    style={{
+                      background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
+                      color: '#0a0f0a',
+                      border: 'none',
+                      fontWeight: 500,
+                    }}
+                  >
+                    + Dodaj do dziennika
+                  </button>
+                )}
+
+                {isLastDiagnosis && showPlantPicker && (
+                  <div
+                    className="self-start rounded-xl p-3"
+                    style={{
+                      background: 'rgba(76, 175, 80, 0.08)',
+                      border: '0.5px solid rgba(76, 175, 80, 0.35)',
+                      maxWidth: '100%',
+                    }}
+                  >
+                    <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
+                      Do której rośliny?
+                    </p>
+                    <div
+                      className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto"
+                    >
+                      {loadAllPlants().map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleLogToDiary(p.id, p.name)}
+                          className="px-2.5 py-1 rounded-full text-[11px] cursor-pointer"
+                          style={{
+                            background: 'rgba(0,0,0,0.4)',
+                            border: '0.5px solid rgba(134, 239, 172, 0.3)',
+                            color: '#86efac',
+                          }}
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPlantPicker(false)}
+                      className="mt-2 text-[10px] cursor-pointer"
+                      style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.5)', padding: 0 }}
+                    >
+                      anuluj
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {loading && (
             <div
               className="font-serif italic px-4 py-2.5 rounded-2xl"
@@ -265,8 +407,43 @@ export default function Flora({ notes = [], weather, currentMonth }) {
             paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
           }}
         >
+          {/* Attached image preview — over the input row */}
+          {imagePreview && (
+            <div
+              className="flex items-center gap-2 mb-2 pl-2 pr-1 py-1 rounded-xl"
+              style={{ background: 'rgba(123, 201, 123, 0.08)', border: '0.5px solid rgba(123, 201, 123, 0.25)' }}
+            >
+              <img
+                src={imagePreview}
+                alt=""
+                style={{ width: 38, height: 38, objectFit: 'cover', borderRadius: 6 }}
+              />
+              <span className="flex-1 text-[11px] font-serif italic" style={{ color: 'rgba(232, 221, 208, 0.75)' }}>
+                Zdjęcie do diagnozy — naciśnij wyślij
+              </span>
+              <button
+                type="button"
+                onClick={clearImage}
+                aria-label="Usuń zdjęcie"
+                className="cursor-pointer"
+                style={{ background: 'none', border: 'none', color: 'rgba(232, 221, 208, 0.55)', fontSize: '18px', lineHeight: 1, padding: '4px 8px' }}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => { handlePhotoPick(e.target.files?.[0]); e.target.value = ''; }}
+            style={{ display: 'none' }}
+          />
+
           <div
-            className="flex items-center gap-2 rounded-full px-4 py-2"
+            className="flex items-center gap-2 rounded-full px-3 py-2"
             style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(123, 201, 123, 0.25)' }}
           >
             <input
@@ -275,15 +452,43 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Zapytaj FLORA..."
+              placeholder={imageData ? 'Dodaj pytanie albo wyślij samo zdjęcie...' : 'Zapytaj FLORA...'}
               disabled={loading}
-              className="flex-1 bg-transparent font-serif italic outline-none"
-              style={{ color: '#F0E8D8', fontSize: '14px', padding: '6px 0' }}
+              className="flex-1 bg-transparent font-serif italic outline-none pl-2"
+              style={{ color: '#F0E8D8', fontSize: '14px', padding: '6px 0 6px 8px' }}
             />
+
+            {/* Camera button — opens file picker / camera */}
+            <button
+              type="button"
+              onClick={() => cameraRef.current?.click()}
+              disabled={loading || !!imageData}
+              aria-label="Dodaj zdjęcie"
+              style={{
+                background: 'rgba(123, 201, 123, 0.12)',
+                border: '0.5px solid rgba(123, 201, 123, 0.35)',
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                color: '#7bc97b',
+                opacity: loading || imageData ? 0.4 : 1,
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </button>
+
             <button
               type="button"
               onClick={send}
-              disabled={!input.trim() || loading}
+              disabled={(!input.trim() && !imageData) || loading}
               aria-label="Wyślij"
               style={{
                 background: 'linear-gradient(135deg, #7bc97b, #C9A96E)',
@@ -294,7 +499,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
                 display: 'grid',
                 placeItems: 'center',
                 cursor: 'pointer',
-                opacity: input.trim() && !loading ? 1 : 0.35,
+                opacity: ((input.trim() || imageData) && !loading) ? 1 : 0.35,
                 transition: 'opacity 0.2s ease',
               }}
             >
@@ -305,6 +510,22 @@ export default function Flora({ notes = [], weather, currentMonth }) {
           </div>
         </div>
       </div>
+
+      {logToast && (
+        <div
+          className="fixed left-1/2 px-4 py-2 rounded-full text-xs"
+          style={{
+            transform: 'translateX(-50%)',
+            bottom: 'calc(20px + env(safe-area-inset-bottom))',
+            backgroundColor: '#0a0f0a',
+            border: '1px solid rgba(76, 175, 80, 0.5)',
+            color: '#86efac',
+            zIndex: 1200,
+          }}
+        >
+          {logToast}
+        </div>
+      )}
     </>
   );
 }

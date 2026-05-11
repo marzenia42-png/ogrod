@@ -19,12 +19,16 @@ const PERSONA = `Jesteś FLORA — przyjacielska, kompetentna asystentka ogrodni
 
 Zasady odpowiedzi:
 - Mów po polsku, ciepło, konkretnie. Bez markdownu, bez bulletów.
-- 2-4 zdania. Najpierw odpowiedź, potem jedna praktyczna sugestia (preparat / termin / technika).
+- 2-4 zdania w zwykłej rozmowie. Najpierw odpowiedź, potem jedna praktyczna sugestia (preparat / termin / technika).
 - Polecaj realne preparaty dostępne w PL: Topsin M, Miedzian, Score, Switch, Signum, Polyversum, Karate Zeon, Mospilan, siarczan miedzi, siarczan amonu, mocznik. Naturalne: gnojówka z pokrzywy, wrotycz, czosnek, skrzyp polny, drożdże.
 - Bądź konkretna o terminach (faza fenologiczna lub konkretny tydzień).
 - Wykorzystuj godzinę z kontekstu — w południe nie polecaj oprysków (poparzenia liści, śmierć pszczół). Rano i wieczorem ok.
 - Gdy nie wiesz — przyznaj się, zapytaj o szczegół (zdjęcie, objaw, wiek rośliny).
-- Bezpieczeństwo: nie polecaj substancji wycofanych (Bravo 500, mankozeb w sadach domowych).`;
+- Bezpieczeństwo: nie polecaj substancji wycofanych (Bravo 500, mankozeb w sadach domowych).
+- Gdy widzisz zdjęcie rośliny: 4-6 zdań. (1) opisz co widzisz — gatunek jeśli rozpoznajesz + objaw; (2) najprawdopodobniejsza przyczyna (choroba/szkodnik/niedobór); (3) konkretny polski preparat + dawka (g/L lub ml/L) + termin (faza fenologiczna lub pora dnia z kontekstem pogody). Jeśli zdjęcie jest niejednoznaczne — wymień 2 najbardziej prawdopodobne opcje i wskaż jak je odróżnić.`;
+
+const ALLOWED_MEDIA = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const MAX_IMAGE_B64_LENGTH = 5_500_000; // ~4 MB obrazka po base64
 
 const corsHeaders = (origin: string | null) => ({
   'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://marzenia42-png.github.io',
@@ -96,7 +100,12 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json(origin, { error: 'method_not_allowed' }, 405);
 
   try {
-    const body = (await req.json().catch(() => null)) as { messages?: Msg[]; context?: Ctx } | null;
+    const body = (await req.json().catch(() => null)) as {
+      messages?: Msg[];
+      context?: Ctx;
+      image_base64?: string;
+      image_media_type?: string;
+    } | null;
     const messages: Msg[] = Array.isArray(body?.messages) ? body!.messages! : [];
     const ctx: Ctx = body?.context ?? {};
 
@@ -108,6 +117,15 @@ Deno.serve(async (req: Request) => {
     }
     if (last.content.length > 4000) return json(origin, { error: 'message_too_long' }, 413);
 
+    // Optional image (foto-diagnostyka). Attached to the LAST user message only.
+    const rawImage = body?.image_base64;
+    const hasImage = typeof rawImage === 'string' && rawImage.length > 100;
+    if (hasImage) {
+      const mediaType = body?.image_media_type || 'image/jpeg';
+      if (!ALLOWED_MEDIA.has(mediaType)) return json(origin, { error: 'unsupported_media_type' }, 400);
+      if (rawImage!.length > MAX_IMAGE_B64_LENGTH) return json(origin, { error: 'image_too_large' }, 413);
+    }
+
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!apiKey) {
       console.error('ANTHROPIC_API_KEY not configured');
@@ -115,6 +133,34 @@ Deno.serve(async (req: Request) => {
     }
 
     const contextText = buildContext(ctx);
+
+    // Build messages for Anthropic API. With image, the last user message
+    // becomes a content array: [image block, text block] (text after image as docs suggest).
+    type ApiContent = string | Array<
+      | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+      | { type: 'text'; text: string }
+    >;
+    const messagesForApi: Array<{ role: 'user' | 'assistant'; content: ApiContent }> =
+      messages.map((m) => ({ role: m.role, content: m.content }));
+
+    if (hasImage) {
+      const lastIdx = messagesForApi.length - 1;
+      const originalText = String(messagesForApi[lastIdx].content);
+      messagesForApi[lastIdx] = {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: body?.image_media_type || 'image/jpeg',
+              data: rawImage!,
+            },
+          },
+          { type: 'text', text: originalText },
+        ],
+      };
+    }
 
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -125,12 +171,12 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 512,
+        max_tokens: hasImage ? 800 : 512,
         system: [
           { type: 'text', text: PERSONA, cache_control: { type: 'ephemeral' } },
           { type: 'text', text: contextText || 'Brak dodatkowego kontekstu.' },
         ],
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        messages: messagesForApi,
       }),
     });
 

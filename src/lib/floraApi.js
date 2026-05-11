@@ -6,7 +6,9 @@ const SUPABASE_URL = 'https://txqjjwanyfcpezgqbwou.supabase.co';
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cWpqd2FueWZjcGV6Z3Fid291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTc2NTksImV4cCI6MjA5MTM3MzY1OX0.Dy1N3rHMUZCAnTSKayRa7GNzSlWOe4PSi6_1BVOUHyU';
 
-export async function callFlora({ messages, context }) {
+// Payload: { messages, context, image_base64?, image_media_type? }
+// — wszystkie pola przekazywane bez modyfikacji do edge function.
+export async function callFlora(payload) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/garden-flora`, {
     method: 'POST',
     headers: {
@@ -14,7 +16,7 @@ export async function callFlora({ messages, context }) {
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ messages, context }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
