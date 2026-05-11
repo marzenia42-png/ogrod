@@ -135,6 +135,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
       <div
         role="dialog"
         aria-label="FLORA chat"
+        aria-hidden={!open}
         style={{
           position: 'fixed',
           left: 0,
@@ -146,6 +147,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
           maxHeight: '720px',
           transform: open ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
+          pointerEvents: open ? 'auto' : 'none',
           backgroundColor: '#0a0f0a',
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',

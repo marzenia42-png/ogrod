@@ -673,7 +673,9 @@ export default function App() {
         {tab === 'dziennik' && <Diary />}
       </div>
 
-      {/* FAB "+" — always visible quick add. Sits opposite FLORA (left vs right). */}
+      {/* FAB "+" — always visible quick add. Sits opposite FLORA (left vs right).
+          z-index 1000 — above FLORA panel/button (999) and Flora chat backdrop (998),
+          so it never gets shadowed by the slide-up panel's bounding box on mobile Safari. */}
       <button
         type="button"
         onClick={() => setShowQuickAdd(true)}
@@ -689,13 +691,15 @@ export default function App() {
           background: 'linear-gradient(135deg, #C9A96E 0%, #b89556 100%)',
           color: '#1A1208',
           cursor: 'pointer',
-          zIndex: 999,
+          zIndex: 1000,
           display: 'grid',
           placeItems: 'center',
           fontSize: '28px',
           fontWeight: 300,
           lineHeight: 1,
           boxShadow: '0 6px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(201, 169, 110, 0.3)',
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
         +
