@@ -178,7 +178,7 @@ export default function Diary() {
 
       <div
         className="grid grid-cols-7 gap-1 p-2 rounded-[14px]"
-        style={{ backgroundColor: 'rgba(13, 12, 10, 0.5)', border: '0.5px solid rgba(201, 169, 110, 0.2)', backdropFilter: 'blur(8px)' }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)', border: '0.5px solid rgba(201, 169, 110, 0.2)', backdropFilter: 'blur(8px)' }}
       >
         {cells.map((d, i) => {
           if (d == null) return <div key={i} />;
@@ -195,7 +195,7 @@ export default function Diary() {
                   ? 'linear-gradient(135deg, rgba(201, 169, 110, 0.18), rgba(123, 201, 123, 0.12))'
                   : has
                   ? 'rgba(201, 169, 110, 0.08)'
-                  : 'rgba(255, 255, 255, 0.02)',
+                  : 'rgba(0, 0, 0, 0.35)',
                 border: today
                   ? '1px solid #C9A96E'
                   : has

@@ -21,7 +21,7 @@ export default function Recipes() {
               key={r.id}
               className="rounded-[14px] overflow-hidden"
               style={{
-                backgroundColor: 'rgba(26, 46, 26, 0.7)',
+                backgroundColor: 'rgba(26, 46, 26, 0.85)',
                 border: '1px solid #22c55e',
                 backdropFilter: 'blur(8px)',
               }}
@@ -88,7 +88,7 @@ export default function Recipes() {
 
       <div
         className="mt-8 rounded-[14px] p-4"
-        style={{ backgroundColor: 'rgba(26, 46, 26, 0.7)', border: '0.5px solid rgba(134, 239, 172, 0.35)', backdropFilter: 'blur(8px)' }}
+        style={{ backgroundColor: 'rgba(26, 46, 26, 0.85)', border: '0.5px solid rgba(134, 239, 172, 0.35)', backdropFilter: 'blur(8px)' }}
       >
         <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
           Zasady oprysków naturalnych

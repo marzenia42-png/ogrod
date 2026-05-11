@@ -279,7 +279,14 @@ export default function App() {
           backgroundRepeat: 'no-repeat',
         }}
       />
-      <div className="fixed inset-0 z-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.78)' }} />
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.45)',
+          backdropFilter: 'blur(1px)',
+          WebkitBackdropFilter: 'blur(1px)',
+        }}
+      />
 
       <div className="relative z-10 flex flex-col flex-1 max-w-lg mx-auto w-full pb-24">
         <header className="px-6 pt-10 pb-3">
@@ -297,7 +304,7 @@ export default function App() {
                 type="button"
                 onClick={() => setShowPlantsModal(true)}
                 className="px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer whitespace-nowrap"
-                style={{ background: 'rgba(13,12,10,0.55)', border: '0.5px solid rgba(201,169,110,0.35)', color: gold, backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.35)', color: gold, backdropFilter: 'blur(8px)' }}
               >
                 🌱 Rośliny
               </button>
@@ -306,7 +313,7 @@ export default function App() {
                 onClick={() => setShowSettings(true)}
                 aria-label="Ustawienia"
                 className="cursor-pointer self-end"
-                style={{ background: 'rgba(13,12,10,0.55)', border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(201,169,110,0.7)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(201,169,110,0.7)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="3" />
@@ -321,7 +328,7 @@ export default function App() {
         <div className="px-6 pb-4">
           <div
             className="flex gap-1 p-1 rounded-full"
-            style={{ background: 'rgba(13,12,10,0.55)', border: '0.5px solid rgba(201,169,110,0.2)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.2)', backdropFilter: 'blur(8px)' }}
           >
             {TABS.map((t) => {
               const active = tab === t.key;
@@ -352,7 +359,7 @@ export default function App() {
             <section className="px-6 pb-5">
               <div
                 className="rounded-[16px] p-4"
-                style={{ backgroundColor: 'rgba(13,12,10,0.62)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
+                style={{ backgroundColor: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
               >
                 {!weather && !weatherError && (
                   <p className="text-sm font-serif italic" style={{ color: 'rgba(232,221,208,0.45)' }}>Sprawdzam pogodę...</p>
@@ -409,7 +416,7 @@ export default function App() {
                       style={{
                         minWidth: 56,
                         border: isSelected ? `1px solid ${gold}` : '0.5px solid rgba(201,169,110,0.2)',
-                        background: isSelected ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(123,201,123,0.12))' : 'rgba(13,12,10,0.5)',
+                        background: isSelected ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(123,201,123,0.12))' : 'rgba(0,0,0,0.55)',
                         color: isSelected ? gold : isCurrent ? 'rgba(201,169,110,0.75)' : 'rgba(232,221,208,0.55)',
                         fontWeight: isSelected ? 500 : 400,
                         backdropFilter: 'blur(6px)',
@@ -485,7 +492,7 @@ export default function App() {
             <section className="px-6 pb-6">
               <div
                 className="rounded-[16px] p-4 flex items-center justify-between gap-3"
-                style={{ backgroundColor: 'rgba(13,12,10,0.62)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
+                style={{ backgroundColor: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
               >
                 <div className="flex-1">
                   <p className="text-[11px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(201,169,110,0.55)' }}>
@@ -531,14 +538,14 @@ export default function App() {
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
                   placeholder="Co dziś zauważyłeś..."
                   className="flex-1 bg-transparent text-[13px] font-serif italic px-4 py-2.5 rounded-full outline-none"
-                  style={{ border: '1px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.85)', background: 'rgba(13,12,10,0.5)', backdropFilter: 'blur(6px)' }}
+                  style={{ border: '1px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.85)', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
                 />
                 <button
                   type="button"
                   onClick={handleAddNote}
                   disabled={!noteDraft.trim()}
                   className="px-4 rounded-full text-[12px] tracking-wide cursor-pointer"
-                  style={{ border: `1px solid ${gold}`, color: gold, background: 'rgba(13,12,10,0.5)', opacity: noteDraft.trim() ? 1 : 0.4, backdropFilter: 'blur(6px)' }}
+                  style={{ border: `1px solid ${gold}`, color: gold, background: 'rgba(0,0,0,0.55)', opacity: noteDraft.trim() ? 1 : 0.4, backdropFilter: 'blur(6px)' }}
                 >
                   Dodaj
                 </button>
@@ -548,7 +555,7 @@ export default function App() {
                   Brak notatek.
                 </p>
               ) : (
-                <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'rgba(13,12,10,0.62)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}>
+                <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}>
                   {notes.map((n, idx) => (
                     <div
                       key={n.id}
@@ -794,6 +801,24 @@ export default function App() {
             <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.55)' }}>
               Tło aplikacji
             </p>
+
+            <div className="relative mb-3 rounded-[14px] overflow-hidden" style={{ border: '0.5px solid rgba(201,169,110,0.25)' }}>
+              <img
+                src={bg}
+                alt="Aktualne tło"
+                style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }}
+              />
+              <div
+                className="absolute bottom-0 left-0 right-0 px-3 py-1.5 text-[10px] tracking-[2px] uppercase"
+                style={{
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+                  color: 'rgba(232,221,208,0.85)',
+                }}
+              >
+                {bg === DEFAULT_BG ? 'Domyślne — Pergola' : 'Twoje zdjęcie'}
+              </div>
+            </div>
+
             <p className="text-[12px] font-serif italic mb-3" style={{ color: 'rgba(232,221,208,0.6)' }}>
               Wgraj własne zdjęcie — zapisze się lokalnie. Zalecane: krajobraz, max 1920px.
             </p>
@@ -816,10 +841,16 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleBgReset}
+                disabled={bg === DEFAULT_BG}
                 className="px-4 py-2 rounded-full text-[12px] cursor-pointer"
-                style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.75)' }}
+                style={{
+                  background: 'none',
+                  border: '0.5px solid rgba(201,169,110,0.3)',
+                  color: 'rgba(232,221,208,0.75)',
+                  opacity: bg === DEFAULT_BG ? 0.4 : 1,
+                }}
               >
-                Reset
+                Przywróć
               </button>
             </div>
           </div>
