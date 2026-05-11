@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 512,
         system: [
           { type: 'text', text: PERSONA, cache_control: { type: 'ephemeral' } },
@@ -137,7 +137,7 @@ Deno.serve(async (req: Request) => {
     if (!claudeRes.ok) {
       const detail = await claudeRes.text().catch(() => '');
       console.error('Claude API error', claudeRes.status, detail);
-      return json(origin, { error: 'llm_error', status: claudeRes.status }, 502);
+      return json(origin, { error: 'llm_error', status: claudeRes.status, detail: detail.slice(0, 300) }, 502);
     }
 
     const data = await claudeRes.json();
