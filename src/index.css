@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0d0c0a;
+  --color-gold: #c9a96e;
+  --color-cream: #f0e8d8;
+  --color-text: #e8ddd0;
+}
+
+:root {
+  --overlay: rgba(13, 12, 10, 0.82);
+  --surface: rgba(255, 255, 255, 0.03);
+  --card-fill: rgba(201, 169, 110, 0.06);
+  --card-border: rgba(201, 169, 110, 0.2);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+html,
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif {
+  font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+select option {
+  background-color: #1a1208;
+  color: #e8ddd0;
+}
