@@ -6,16 +6,25 @@ PWA — kalendarz ogrodniczy dla Myślenic (49.83°N 19.94°E) z asystentką **F
 
 **3 zakładki:**
 - 📅 **Kalendarz** — 14 domyślnych roślin × 12 miesięcy × 5 kolorowych kategorii (🧪 Chemia, 🌿 Naturalny, 🪴 Nawożenie, ✂️ Cięcie, 🛡️ Ochrona). Pogoda live + alerty mróz/wilgotność. Notatki ogrodnika. Notification API.
-- 🌿 **Naturalne** — 10 receptur (gnojówka z pokrzywy, wrotycz, czosnek, tymianek, drożdże, skrzyp, soda+olej, bez czarny, gnojówka z obornika, odwar ze skrzypu) + zasady oprysków naturalnych.
+- 🌿 **Naturalne** — 10 receptur domyślnych (gnojówka z pokrzywy, wrotycz, czosnek, tymianek, drożdże, skrzyp, soda+olej, bez czarny, gnojówka z obornika, odwar ze skrzypu) + dodaj własną recepturę. Zasady oprysków naturalnych.
 - 📔 **Dziennik** — kalendarz miesięczny, kliknij dzień → notatka co zrobiłeś. Złota kropka na dniach z wpisem.
 
+**Detale roślin** (klik w nazwę dowolnej rośliny):
+- Galeria zdjęć z datą (upload z kamery, fullscreen, delete)
+- Notatki per roślina (osobne od ogólnych notatek ogrodnika)
+- Odmiany (np. Róża → New Dawn / Knock Out) — każda z własną galerią i notatkami
+- Kalendarz akcji parent (read-only)
+
+**FAB "+"** (lewy dolny róg) — szybkie dodanie rośliny: nazwa + zdjęcie + miesiące. Szczegóły można dodać później w detalu.
+
 **FLORA** (pływający przycisk prawy dolny):
-- Asystentka AI, model `claude-sonnet-4-20250514` przez Supabase Edge Function `garden-flora`.
+- Asystentka AI, model `claude-sonnet-4-6` przez Supabase Edge Function `garden-flora`.
 - Kontekst: data + **godzina**, miesiąc, pogoda live, ostatnie 5 notatek, **ostatnie 7 wpisów z dziennika**.
 - Klucz Anthropic w secrecie Supabase (`ANTHROPIC_API_KEY`) — userzy nic nie konfigurują.
 
 **Personalizacja:**
-- Tło — domyślne `public/garden-bg.jpg` lub własne zdjęcie (kompresowane do 1920px JPEG, zapis w localStorage).
+- Tło — domyślne `public/garden-bg.jpg` (pergola) lub własne zdjęcie (kompresowane do 1920px JPEG, zapis w localStorage). Podgląd miniaturki w ustawieniach.
+- Pogoda — **geolokalizacja przeglądarki** → Twoja pogoda; jeśli brak zgody, fallback Myślenice.
 - Lista roślin — checkboxy do ukrycia + dodawanie własnych akcji (multiselect miesięcy).
 
 ## localStorage keys
@@ -26,6 +35,11 @@ PWA — kalendarz ogrodniczy dla Myślenic (49.83°N 19.94°E) z asystentką **F
 - `garden-reminders-shown` — debounce dzienny powiadomień
 - `garden-bg` — własne tło (base64 data URL, ~500KB)
 - `garden-diary-YYYY-MM-DD` — wpis z konkretnego dnia (jeden klucz na dzień)
+- `garden-location` — `{lat, lon, label, source}` z geolokalizacji
+- `garden-plant-photos-<plantId>` — galeria zdjęć per roślina/odmiana (1024px JPEG, max ~250KB każde)
+- `garden-plant-notes-<plantId>` — notatki per roślina/odmiana
+- `garden-varieties` — `[{id, parent, name, addedAt}]`
+- `garden-custom-recipes` — własne receptury
 
 ## Praca lokalna
 

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import Flora from './Flora.jsx';
 import Recipes from './Recipes.jsx';
 import Diary from './Diary.jsx';
+import PlantDetail from './PlantDetail.jsx';
+import { compressImage, addPhoto } from './lib/plantStorage.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
 
 const NOTES_KEY = 'garden-notes';
@@ -9,7 +11,9 @@ const CUSTOM_PLANTS_KEY = 'garden-custom-plants';
 const REMOVED_PLANTS_KEY = 'garden-removed-plants';
 const REMINDER_KEY = 'garden-reminders-shown';
 const BG_KEY = 'garden-bg';
+const LOCATION_KEY = 'garden-location';
 const DEFAULT_BG = `${import.meta.env.BASE_URL}garden-bg.jpg`;
+const FALLBACK_LOCATION = { lat: 49.83, lon: 19.94, label: 'Myślenice', source: 'fallback' };
 
 const TABS = [
   { key: 'kalendarz', label: 'Kalendarz', icon: '📅' },
@@ -42,26 +46,6 @@ function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function compressImage(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const maxDim = 1920;
-      const ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
-      const w = Math.round(img.width * ratio);
-      const h = Math.round(img.height * ratio);
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.78));
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
 export default function App() {
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
@@ -77,8 +61,21 @@ export default function App() {
   const [bg, setBg] = useState(() => {
     try { return localStorage.getItem(BG_KEY) || DEFAULT_BG; } catch { return DEFAULT_BG; }
   });
+  const [location, setLocation] = useState(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(LOCATION_KEY) || 'null');
+      if (cached && typeof cached.lat === 'number' && typeof cached.lon === 'number') return cached;
+    } catch { /* ignore */ }
+    return FALLBACK_LOCATION;
+  });
   const [showPlantsModal, setShowPlantsModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // Open plant detail by id (string). For variety, also store { isVariety, parentId, parentName, name }.
+  const [openPlant, setOpenPlant] = useState(null);
+  // "Easy add" bottom sheet — minimal flow: name + photo + months.
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddDraft, setQuickAddDraft] = useState({ name: '', photoData: null, months: [] });
+  const quickAddPhotoRef = useRef(null);
   const [newPlantDraft, setNewPlantDraft] = useState({
     name: '',
     months: [currentMonth],
@@ -92,13 +89,32 @@ export default function App() {
   const bgFileRef = useRef(null);
   const monthStripRef = useRef(null);
 
-  // Open-Meteo Myślenice — fetch on mount + refresh every 30 min so all-day sessions stay current.
+  // Try to get user's geolocation once on mount; fall back silently to Myślenice.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const next = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          label: 'Twoja lokalizacja',
+          source: 'geo',
+        };
+        setLocation(next);
+        try { localStorage.setItem(LOCATION_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      },
+      () => { /* user denied or geo failed — keep cached or fallback */ },
+      { timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+  }, []);
+
+  // Open-Meteo — fetches for current `location` + refreshes every 30 min.
   useEffect(() => {
     const url =
-      'https://api.open-meteo.com/v1/forecast?latitude=49.83&longitude=19.94' +
+      `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}` +
       '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m' +
       '&daily=temperature_2m_min,temperature_2m_max,precipitation_sum' +
-      '&timezone=Europe%2FWarsaw&forecast_days=2';
+      '&timezone=auto&forecast_days=2';
     const fetchWeather = () => {
       fetch(url)
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
@@ -108,7 +124,7 @@ export default function App() {
     fetchWeather();
     const id = setInterval(fetchWeather, 30 * 60 * 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [location.lat, location.lon]);
 
   // Keep the active month visible in the horizontal strip.
   useEffect(() => {
@@ -205,6 +221,69 @@ export default function App() {
     lsSave(CUSTOM_PLANTS_KEY, next);
   };
 
+  // Plant detail / variety helpers.
+  const getPlantName = (id) => {
+    const builtin = PLANTS.find((p) => p.key === id);
+    if (builtin) return builtin.name;
+    const custom = customPlants.find((p) => p.id === id);
+    return custom?.name || id;
+  };
+
+  const openPlantById = (id, name) => {
+    setOpenPlant({ plantId: id, plantName: name || getPlantName(id), isVariety: false });
+  };
+
+  const openVariety = (variety) => {
+    setOpenPlant({
+      plantId: variety.id,
+      plantName: variety.name,
+      isVariety: true,
+      parentId: variety.parent,
+      parentName: getPlantName(variety.parent),
+    });
+  };
+
+  // Quick-add: only name + optional photo + months. Defaults: category 'naturalny', text = name.
+  const handleQuickAddPhoto = async (file) => {
+    if (!file || !file.type?.startsWith('image/')) return;
+    try {
+      const dataUrl = await compressImage(file, 1024, 0.72);
+      setQuickAddDraft((d) => ({ ...d, photoData: dataUrl }));
+    } catch {
+      setToast('Nie udało się załadować zdjęcia');
+    }
+  };
+
+  const toggleQuickAddMonth = (m) => {
+    setQuickAddDraft((d) => {
+      const has = d.months.includes(m);
+      const months = has ? d.months.filter((x) => x !== m) : [...d.months, m].sort((a, b) => a - b);
+      return { ...d, months };
+    });
+  };
+
+  const handleQuickAddSave = () => {
+    const name = quickAddDraft.name.trim();
+    if (!name || quickAddDraft.months.length === 0) return;
+    const id = uid();
+    const entry = {
+      id,
+      name,
+      months: [...quickAddDraft.months],
+      type: 'naturalny',
+      text: name,
+    };
+    const next = [...customPlants, entry];
+    setCustomPlants(next);
+    lsSave(CUSTOM_PLANTS_KEY, next);
+    if (quickAddDraft.photoData) {
+      addPhoto(id, quickAddDraft.photoData);
+    }
+    setQuickAddDraft({ name: '', photoData: null, months: [] });
+    setShowQuickAdd(false);
+    setToast(`Dodano: ${name}`);
+  };
+
   const toggleBuiltin = (key) => {
     const next = removedSet.has(key)
       ? removedPlants.filter((k) => k !== key)
@@ -250,7 +329,7 @@ export default function App() {
       return;
     }
     try {
-      const dataUrl = await compressImage(file);
+      const dataUrl = await compressImage(file, 1920, 0.78);
       localStorage.setItem(BG_KEY, dataUrl);
       setBg(dataUrl);
       setToast('Tło zaktualizowane');
@@ -282,7 +361,7 @@ export default function App() {
       <div
         className="fixed inset-0 z-0"
         style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.45)',
+          backgroundColor: 'rgba(0, 0, 0, 0.30)',
           backdropFilter: 'blur(1px)',
           WebkitBackdropFilter: 'blur(1px)',
         }}
@@ -293,7 +372,7 @@ export default function App() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-[11px] tracking-[3px] uppercase" style={{ color: 'rgba(201,169,110,0.5)' }}>
-                Myślenice · 49.83°N
+                {location.label} · {location.lat.toFixed(2)}°N
               </p>
               <h1 className="mt-1 font-serif italic tracking-wide leading-tight" style={{ fontSize: '34px', color: gold }}>
                 Ogród Marzeń
@@ -304,7 +383,7 @@ export default function App() {
                 type="button"
                 onClick={() => setShowPlantsModal(true)}
                 className="px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer whitespace-nowrap"
-                style={{ background: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.35)', color: gold, backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.35)', color: gold, backdropFilter: 'blur(8px)' }}
               >
                 🌱 Rośliny
               </button>
@@ -313,7 +392,7 @@ export default function App() {
                 onClick={() => setShowSettings(true)}
                 aria-label="Ustawienia"
                 className="cursor-pointer self-end"
-                style={{ background: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(201,169,110,0.7)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(201,169,110,0.7)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="3" />
@@ -328,7 +407,7 @@ export default function App() {
         <div className="px-6 pb-4">
           <div
             className="flex gap-1 p-1 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.2)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.2)', backdropFilter: 'blur(8px)' }}
           >
             {TABS.map((t) => {
               const active = tab === t.key;
@@ -359,7 +438,7 @@ export default function App() {
             <section className="px-6 pb-5">
               <div
                 className="rounded-[16px] p-4"
-                style={{ backgroundColor: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
+                style={{ backgroundColor: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
               >
                 {!weather && !weatherError && (
                   <p className="text-sm font-serif italic" style={{ color: 'rgba(232,221,208,0.45)' }}>Sprawdzam pogodę...</p>
@@ -453,10 +532,15 @@ export default function App() {
                           style={{ backgroundColor: cat.bg, border: `0.5px solid ${cat.border}`, backdropFilter: 'blur(4px)' }}
                         >
                           <div className="flex-1 min-w-0">
-                            <p style={{ color: cat.text, fontWeight: 500, fontSize: '13px', letterSpacing: '0.3px' }}>
+                            <button
+                              type="button"
+                              onClick={() => openPlantById(a.plant, a.plantName)}
+                              className="cursor-pointer text-left"
+                              style={{ background: 'none', border: 'none', padding: 0, color: cat.text, fontWeight: 500, fontSize: '13px', letterSpacing: '0.3px', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
+                            >
                               {a.plantName}
                               {a.custom && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.6, fontWeight: 400 }}>własna</span>}
-                            </p>
+                            </button>
                             <p
                               className="mt-1 font-serif italic leading-relaxed"
                               style={{ color: 'rgba(232,221,208,0.85)', fontSize: '13.5px' }}
@@ -492,7 +576,7 @@ export default function App() {
             <section className="px-6 pb-6">
               <div
                 className="rounded-[16px] p-4 flex items-center justify-between gap-3"
-                style={{ backgroundColor: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
+                style={{ backgroundColor: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
               >
                 <div className="flex-1">
                   <p className="text-[11px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(201,169,110,0.55)' }}>
@@ -555,7 +639,7 @@ export default function App() {
                   Brak notatek.
                 </p>
               ) : (
-                <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'rgba(0,0,0,0.65)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}>
+                <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}>
                   {notes.map((n, idx) => (
                     <div
                       key={n.id}
@@ -589,7 +673,191 @@ export default function App() {
         {tab === 'dziennik' && <Diary />}
       </div>
 
+      {/* FAB "+" — always visible quick add. Sits opposite FLORA (left vs right). */}
+      <button
+        type="button"
+        onClick={() => setShowQuickAdd(true)}
+        aria-label="Dodaj roślinę"
+        style={{
+          position: 'fixed',
+          left: '20px',
+          bottom: 'calc(20px + env(safe-area-inset-bottom))',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          border: 'none',
+          background: 'linear-gradient(135deg, #C9A96E 0%, #b89556 100%)',
+          color: '#1A1208',
+          cursor: 'pointer',
+          zIndex: 999,
+          display: 'grid',
+          placeItems: 'center',
+          fontSize: '28px',
+          fontWeight: 300,
+          lineHeight: 1,
+          boxShadow: '0 6px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(201, 169, 110, 0.3)',
+        }}
+      >
+        +
+      </button>
+
       <Flora notes={notes} weather={weather} currentMonth={currentMonth} />
+
+      {/* Quick add bottom sheet — name + photo + months. Defaults to category 'naturalny'. */}
+      {showQuickAdd && (
+        <div
+          className="fixed inset-0 flex items-end sm:items-center justify-center"
+          style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
+          onClick={() => setShowQuickAdd(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex flex-col"
+            style={{
+              maxWidth: '480px',
+              maxHeight: '90vh',
+              backgroundColor: '#0d0c0a',
+              border: '1px solid rgba(201,169,110,0.3)',
+              borderTopLeftRadius: '20px',
+              borderTopRightRadius: '20px',
+              borderBottomLeftRadius: '20px',
+              borderBottomRightRadius: '20px',
+            }}
+          >
+            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: '0.5px solid rgba(201,169,110,0.2)' }}>
+              <h3 className="font-serif italic" style={{ fontSize: '20px', color: gold }}>Dodaj roślinę</h3>
+              <button
+                type="button"
+                onClick={() => setShowQuickAdd(false)}
+                aria-label="Zamknij"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M6 6l12 12M6 18L18 6" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto px-5 py-4 flex flex-col gap-4 flex-1">
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>Nazwa</p>
+                <input
+                  type="text"
+                  value={quickAddDraft.name}
+                  onChange={(e) => setQuickAddDraft({ ...quickAddDraft, name: e.target.value })}
+                  placeholder="np. Winorośl, Pomidor Malinowy"
+                  autoFocus
+                  className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
+                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
+                />
+              </div>
+
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>Zdjęcie (opcjonalnie)</p>
+                <input
+                  ref={quickAddPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => { handleQuickAddPhoto(e.target.files?.[0]); e.target.value = ''; }}
+                  className="hidden"
+                />
+                {quickAddDraft.photoData ? (
+                  <div className="relative rounded-lg overflow-hidden" style={{ border: '0.5px solid rgba(201,169,110,0.25)' }}>
+                    <img src={quickAddDraft.photoData} alt="" style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
+                    <button
+                      type="button"
+                      onClick={() => setQuickAddDraft({ ...quickAddDraft, photoData: null })}
+                      className="absolute top-2 right-2 cursor-pointer"
+                      style={{ background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, color: '#F0E8D8', lineHeight: 1 }}
+                      aria-label="Usuń zdjęcie"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => quickAddPhotoRef.current?.click()}
+                    className="w-full py-3 rounded-lg text-[13px] cursor-pointer"
+                    style={{ background: 'none', border: '0.5px dashed rgba(201,169,110,0.4)', color: 'rgba(201,169,110,0.85)' }}
+                  >
+                    📷 Wybierz / zrób zdjęcie
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>
+                  Aktywne miesiące
+                </p>
+                <div className="grid grid-cols-6 gap-1">
+                  {MONTHS_SHORT.map((m, i) => {
+                    const month = i + 1;
+                    const selected = quickAddDraft.months.includes(month);
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => toggleQuickAddMonth(month)}
+                        className="py-2 rounded-md text-[11px] cursor-pointer"
+                        style={{
+                          border: selected ? `0.5px solid ${gold}` : '0.5px solid rgba(201,169,110,0.2)',
+                          background: selected ? 'rgba(201,169,110,0.18)' : 'transparent',
+                          color: selected ? gold : 'rgba(232,221,208,0.55)',
+                          fontWeight: selected ? 500 : 400,
+                        }}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowQuickAdd(false); setQuickAddDraft({ name: '', photoData: null, months: [] }); }}
+                  className="flex-1 py-2.5 rounded-full text-[13px] cursor-pointer"
+                  style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.75)' }}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuickAddSave}
+                  disabled={!quickAddDraft.name.trim() || quickAddDraft.months.length === 0}
+                  className="flex-1 py-2.5 rounded-full text-[13px] cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, #C9A96E, #b89556)',
+                    color: '#1A1208',
+                    border: 'none',
+                    fontWeight: 500,
+                    opacity: quickAddDraft.name.trim() && quickAddDraft.months.length > 0 ? 1 : 0.4,
+                  }}
+                >
+                  Zapisz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plant detail modal — opened by clicking a plant name. */}
+      {openPlant && (
+        <PlantDetail
+          key={openPlant.plantId}
+          plantId={openPlant.plantId}
+          plantName={openPlant.plantName}
+          isVariety={openPlant.isVariety}
+          parentId={openPlant.parentId}
+          parentName={openPlant.parentName}
+          onClose={() => setOpenPlant(null)}
+          onOpenVariety={(v) => openVariety(v)}
+        />
+      )}
 
       {/* Plants management modal */}
       {showPlantsModal && (
@@ -631,9 +899,9 @@ export default function App() {
                 {PLANTS.map((p) => {
                   const active = !removedSet.has(p.key);
                   return (
-                    <label
+                    <div
                       key={p.key}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer"
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg"
                       style={{ background: active ? 'rgba(201,169,110,0.06)' : 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(201,169,110,0.15)' }}
                     >
                       <input
@@ -642,13 +910,23 @@ export default function App() {
                         onChange={() => toggleBuiltin(p.key)}
                         style={{ accentColor: gold, width: 16, height: 16, cursor: 'pointer' }}
                       />
-                      <span
-                        className="font-serif italic"
-                        style={{ fontSize: '14px', color: active ? '#F0E8D8' : 'rgba(232,221,208,0.4)', textDecoration: active ? 'none' : 'line-through' }}
+                      <button
+                        type="button"
+                        onClick={() => { setShowPlantsModal(false); openPlantById(p.key, p.name); }}
+                        className="font-serif italic flex-1 text-left cursor-pointer"
+                        style={{
+                          fontSize: '14px',
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          color: active ? '#F0E8D8' : 'rgba(232,221,208,0.4)',
+                          textDecoration: active ? 'none' : 'line-through',
+                        }}
                       >
                         {p.name}
-                      </span>
-                    </label>
+                      </button>
+                      <span style={{ color: 'rgba(201,169,110,0.4)', fontSize: '11px' }}>›</span>
+                    </div>
                   );
                 })}
               </div>
@@ -667,13 +945,18 @@ export default function App() {
                           className="px-3 py-2 rounded-lg flex items-start gap-2"
                           style={{ background: 'rgba(201,169,110,0.05)', border: '0.5px solid rgba(201,169,110,0.15)' }}
                         >
-                          <div className="flex-1 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => { setShowPlantsModal(false); openPlantById(p.id, p.name); }}
+                            className="flex-1 min-w-0 text-left cursor-pointer"
+                            style={{ background: 'none', border: 'none', padding: 0 }}
+                          >
                             <p className="font-serif italic" style={{ fontSize: '14px', color: '#F0E8D8' }}>{p.name}</p>
                             <p className="text-[11px] mt-0.5" style={{ color: cat?.text || 'rgba(232,221,208,0.5)' }}>
                               {cat?.label || p.type} · {p.months.map((m) => MONTHS_SHORT[m - 1]).join(', ')}
                             </p>
                             <p className="text-[12px] font-serif italic mt-0.5" style={{ color: 'rgba(232,221,208,0.65)' }}>{p.text}</p>
-                          </div>
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteCustom(p.id)}

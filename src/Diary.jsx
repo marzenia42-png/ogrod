@@ -178,7 +178,7 @@ export default function Diary() {
 
       <div
         className="grid grid-cols-7 gap-1 p-2 rounded-[14px]"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)', border: '0.5px solid rgba(201, 169, 110, 0.2)', backdropFilter: 'blur(8px)' }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.70)', border: '0.5px solid rgba(201, 169, 110, 0.2)', backdropFilter: 'blur(8px)' }}
       >
         {cells.map((d, i) => {
           if (d == null) return <div key={i} />;
