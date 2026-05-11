@@ -443,9 +443,39 @@ export default function Flora({ notes = [], weather, currentMonth }) {
           />
 
           <div
-            className="flex items-center gap-2 rounded-full px-3 py-2"
+            className="flex items-center gap-2 rounded-full pl-1.5 pr-1.5 py-1"
             style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(123, 201, 123, 0.25)' }}
           >
+            {/* Camera button — visibly first (left of input), emoji for guaranteed mobile rendering. */}
+            <button
+              type="button"
+              onClick={() => cameraRef.current?.click()}
+              disabled={loading}
+              aria-label="Dodaj zdjęcie do diagnozy"
+              title="Dodaj zdjęcie do diagnozy"
+              style={{
+                background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.30), rgba(123, 201, 123, 0.18))',
+                border: '0.5px solid rgba(123, 201, 123, 0.55)',
+                width: 40,
+                height: 40,
+                minWidth: 40,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: 22,
+                lineHeight: 1,
+                padding: 0,
+                opacity: loading ? 0.4 : 1,
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                flexShrink: 0,
+              }}
+            >
+              <span aria-hidden="true" style={{ filter: imageData ? 'none' : 'none' }}>📷</span>
+            </button>
+
             <input
               ref={inputRef}
               type="text"
@@ -454,36 +484,9 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder={imageData ? 'Dodaj pytanie albo wyślij samo zdjęcie...' : 'Zapytaj FLORA...'}
               disabled={loading}
-              className="flex-1 bg-transparent font-serif italic outline-none pl-2"
-              style={{ color: '#F0E8D8', fontSize: '14px', padding: '6px 0 6px 8px' }}
+              className="flex-1 bg-transparent font-serif italic outline-none min-w-0"
+              style={{ color: '#F0E8D8', fontSize: '14px', padding: '6px 4px' }}
             />
-
-            {/* Camera button — opens file picker / camera */}
-            <button
-              type="button"
-              onClick={() => cameraRef.current?.click()}
-              disabled={loading || !!imageData}
-              aria-label="Dodaj zdjęcie"
-              style={{
-                background: 'rgba(123, 201, 123, 0.12)',
-                border: '0.5px solid rgba(123, 201, 123, 0.35)',
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                cursor: 'pointer',
-                color: '#7bc97b',
-                opacity: loading || imageData ? 0.4 : 1,
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </button>
 
             <button
               type="button"
@@ -493,17 +496,22 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               style={{
                 background: 'linear-gradient(135deg, #7bc97b, #C9A96E)',
                 border: 'none',
-                width: 34,
-                height: 34,
+                width: 40,
+                height: 40,
+                minWidth: 40,
                 borderRadius: '50%',
                 display: 'grid',
                 placeItems: 'center',
                 cursor: 'pointer',
+                padding: 0,
                 opacity: ((input.trim() || imageData) && !loading) ? 1 : 0.35,
                 transition: 'opacity 0.2s ease',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                flexShrink: 0,
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0a0f0a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0f0a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </button>
