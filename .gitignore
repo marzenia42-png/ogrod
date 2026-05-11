@@ -9,3 +9,5 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 _source_Ogrod.jsx
+supabase/.temp/
+supabase/.branches/
