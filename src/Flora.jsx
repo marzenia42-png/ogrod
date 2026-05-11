@@ -1,23 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-
-const KEY_STORAGE = 'garden-claude-key';
-
-const MONTHS = [
-  'styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec',
-  'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień',
-];
+import { callFlora } from './lib/floraApi.js';
+import { listRecentDiaryEntries } from './Diary.jsx';
+import { MONTHS } from './data/plants.js';
 
 const INITIAL_MESSAGE = 'Cześć! Jestem FLORA 🌿 Twój ogrodnik AI. Co dziś sadzimy, pryskamy lub przycinamy?';
-
-const PERSONA = `Jesteś FLORA — przyjacielska, kompetentna asystentka ogrodnicza dla domowego ogrodu w Myślenicach (południowa Polska, region górski, strefa 6a/6b).
-
-Zasady odpowiedzi:
-- Mów po polsku, ciepło, konkretnie. Bez markdownu, bez bulletów.
-- 2-4 zdania. Najpierw odpowiedź, potem jedna praktyczna sugestia (preparat / termin / technika).
-- Polecaj realne preparaty dostępne w PL: Topsin M, Miedzian, Score, Switch, Signum, Ridomil, Polyversum, Karate Zeon, Mospilan, siarczan miedzi, siarczan amonu, mocznik.
-- Bądź konkretna o terminach (faza fenologiczna lub konkretny tydzień).
-- Gdy nie wiesz — przyznaj się, zapytaj o szczegół (zdjęcie, objaw, wiek rośliny).
-- Bezpieczeństwo: nie polecaj substancji wycofanych (np. Bravo 500, Dithane M-45 z mankozebem w sadach domowych).`;
 
 const LeafIcon = ({ size = 24, stroke = '#0a0f0a', strokeWidth = 1.5 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -28,13 +14,42 @@ const LeafIcon = ({ size = 24, stroke = '#0a0f0a', strokeWidth = 1.5 }) => (
   </svg>
 );
 
+function buildContext({ notes, weather, currentMonth }) {
+  const now = new Date();
+  const monthName = MONTHS[(currentMonth ?? now.getMonth() + 1) - 1] || '';
+  const dateStr = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+
+  const weatherCtx = weather?.current
+    ? {
+        temperature: weather.current.temperature_2m,
+        humidity: weather.current.relative_humidity_2m,
+        wind: weather.current.wind_speed_10m,
+        minToday: weather.daily?.temperature_2m_min?.[0],
+        maxToday: weather.daily?.temperature_2m_max?.[0],
+        precipitation: weather.daily?.precipitation_sum?.[0],
+      }
+    : null;
+
+  return {
+    monthName,
+    dateStr,
+    timeStr,
+    weather: weatherCtx,
+    notes: (notes || []).slice(0, 5).map((n) => ({ date: n.date, text: n.text })),
+    diary: listRecentDiaryEntries(7),
+  };
+}
+
+// Claude API requires conversation to start with a user message and stay under reasonable size.
+function trimHistoryForApi(messages, limit = 12) {
+  let trimmed = messages.slice(-limit);
+  while (trimmed.length > 0 && trimmed[0].role !== 'user') trimmed = trimmed.slice(1);
+  return trimmed;
+}
+
 export default function Flora({ notes = [], weather, currentMonth }) {
   const [open, setOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [apiKey, setApiKey] = useState(() => {
-    try { return localStorage.getItem(KEY_STORAGE) || ''; } catch { return ''; }
-  });
-  const [keyDraft, setKeyDraft] = useState('');
   const [messages, setMessages] = useState([{ role: 'assistant', content: INITIAL_MESSAGE }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,95 +58,30 @@ export default function Flora({ notes = [], weather, currentMonth }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading]);
 
   useEffect(() => {
-    if (open && apiKey && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 350);
-    }
-  }, [open, apiKey]);
-
-  const saveKey = () => {
-    const trimmed = keyDraft.trim();
-    if (!trimmed) return;
-    try { localStorage.setItem(KEY_STORAGE, trimmed); } catch { /* storage full or blocked */ }
-    setApiKey(trimmed);
-    setKeyDraft('');
-    setShowSettings(false);
-  };
-
-  const removeKey = () => {
-    try { localStorage.removeItem(KEY_STORAGE); } catch { /* ignore */ }
-    setApiKey('');
-  };
-
-  const buildSystem = () => {
-    const monthName = MONTHS[((currentMonth ?? new Date().getMonth() + 1) - 1)] || '';
-    const dateStr = new Date().toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
-    let ctx = `Dziś: ${dateStr}. Bieżący miesiąc: ${monthName}.`;
-    if (weather?.current) {
-      ctx += `\nPogoda Myślenice (live z Open-Meteo, 49.83°N 19.94°E): ${Math.round(weather.current.temperature_2m)}°C, wilgotność ${weather.current.relative_humidity_2m}%, wiatr ${Math.round(weather.current.wind_speed_10m)} km/h.`;
-      if (weather.daily?.temperature_2m_min?.[0] != null) {
-        ctx += ` Prognoza dziś: min ${Math.round(weather.daily.temperature_2m_min[0])}°C, max ${Math.round(weather.daily.temperature_2m_max[0])}°C`;
-        if (weather.daily.precipitation_sum?.[0] > 0) {
-          ctx += `, opady ${weather.daily.precipitation_sum[0]} mm`;
-        }
-        ctx += '.';
-      }
-    }
-    const recent = notes.slice(0, 5);
-    if (recent.length > 0) {
-      ctx += `\n\nOstatnie notatki ogrodnika (kontekst — odwołuj się gdy ważne):\n` +
-        recent.map((n) => `- (${n.date}) ${n.text}`).join('\n');
-    }
-    return [
-      { type: 'text', text: PERSONA, cache_control: { type: 'ephemeral' } },
-      { type: 'text', text: ctx },
-    ];
-  };
+    if (open && inputRef.current) setTimeout(() => inputRef.current?.focus(), 350);
+  }, [open]);
 
   const send = async () => {
     const text = input.trim();
-    if (!text || loading || !apiKey) return;
+    if (!text || loading) return;
     const next = [...messages, { role: 'user', content: text }];
     setMessages(next);
     setInput('');
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 512,
-          system: buildSystem(),
-          messages: next.map((m) => ({ role: m.role, content: m.content })),
-        }),
+      const data = await callFlora({
+        messages: trimHistoryForApi(next).map((m) => ({ role: m.role, content: m.content })),
+        context: buildContext({ notes, weather, currentMonth }),
       });
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        let hint = '';
-        if (res.status === 401) hint = ' Klucz nieprawidłowy lub wygasł.';
-        else if (res.status === 429) hint = ' Limit zapytań — poczekaj chwilę.';
-        else if (res.status >= 500) hint = ' Problem po stronie Anthropic.';
-        setError(`Błąd API (${res.status}).${hint}`);
-        if (detail) console.warn('FLORA API error:', detail);
-        setLoading(false);
-        return;
-      }
-      const data = await res.json();
-      const reply = typeof data?.content?.[0]?.text === 'string' ? data.content[0].text.trim() : '';
-      if (reply) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      if (data?.error) {
+        setError(`FLORA: ${data.error}`);
+      } else if (data?.response) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.response }]);
       } else {
         setError('FLORA milczy. Spróbuj jeszcze raz.');
       }
@@ -232,86 +182,17 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowSettings((s) => !s)}
-              aria-label="Ustawienia"
-              style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: showSettings ? '#7bc97b' : 'rgba(123, 201, 123, 0.55)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Zamknij"
-              style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: 'rgba(123, 201, 123, 0.55)' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M6 6l12 12M6 18L18 6" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {showSettings && (
-          <div
-            className="px-6 py-4"
-            style={{ backgroundColor: 'rgba(123, 201, 123, 0.05)', borderBottom: '1px solid rgba(123, 201, 123, 0.15)' }}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Zamknij"
+            style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: 'rgba(123, 201, 123, 0.55)' }}
           >
-            <p style={{ fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(123, 201, 123, 0.6)', marginBottom: '8px' }}>
-              Klucz Anthropic API
-            </p>
-            <p className="font-serif italic" style={{ fontSize: '12px', color: 'rgba(232, 221, 208, 0.55)', marginBottom: '12px', lineHeight: 1.5 }}>
-              Pobierz na console.anthropic.com → Settings → API Keys. Klucz zostaje na tym urządzeniu (localStorage), nie wysyłamy go nigdzie poza Anthropic.
-            </p>
-            {apiKey ? (
-              <div className="flex items-center gap-3">
-                <span style={{ fontSize: '12px', fontFamily: 'ui-monospace, monospace', color: '#7bc97b' }}>
-                  {apiKey.slice(0, 12)}…{apiKey.slice(-4)}
-                </span>
-                <button
-                  type="button"
-                  onClick={removeKey}
-                  style={{ fontSize: '11px', color: 'rgba(232, 120, 120, 0.85)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                >
-                  Usuń
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  value={keyDraft}
-                  onChange={(e) => setKeyDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') saveKey(); }}
-                  placeholder="sk-ant-api03-..."
-                  className="flex-1 bg-transparent px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(123, 201, 123, 0.3)', color: '#7bc97b', fontSize: '12px', fontFamily: 'ui-monospace, monospace' }}
-                />
-                <button
-                  type="button"
-                  onClick={saveKey}
-                  disabled={!keyDraft.trim()}
-                  className="px-4 rounded-lg cursor-pointer"
-                  style={{
-                    background: 'linear-gradient(135deg, #7bc97b, #C9A96E)',
-                    color: '#0a0f0a',
-                    border: 'none',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    opacity: keyDraft.trim() ? 1 : 0.4,
-                  }}
-                >
-                  Zapisz
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 6l12 12M6 18L18 6" />
+            </svg>
+          </button>
+        </div>
 
         <div
           ref={scrollRef}
@@ -373,14 +254,6 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               {error}
             </div>
           )}
-          {!apiKey && (
-            <div
-              className="font-serif italic text-center"
-              style={{ alignSelf: 'center', maxWidth: '85%', fontSize: '12px', color: 'rgba(123, 201, 123, 0.55)', marginTop: '8px' }}
-            >
-              Dodaj klucz Anthropic w ustawieniach (ikona koła zębatego), żeby zacząć rozmowę.
-            </div>
-          )}
         </div>
 
         <div
@@ -400,15 +273,15 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder={apiKey ? 'Zapytaj FLORA...' : 'Najpierw dodaj klucz API'}
-              disabled={!apiKey || loading}
+              placeholder="Zapytaj FLORA..."
+              disabled={loading}
               className="flex-1 bg-transparent font-serif italic outline-none"
               style={{ color: '#F0E8D8', fontSize: '14px', padding: '6px 0' }}
             />
             <button
               type="button"
               onClick={send}
-              disabled={!input.trim() || loading || !apiKey}
+              disabled={!input.trim() || loading}
               aria-label="Wyślij"
               style={{
                 background: 'linear-gradient(135deg, #7bc97b, #C9A96E)',
@@ -419,7 +292,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
                 display: 'grid',
                 placeItems: 'center',
                 cursor: 'pointer',
-                opacity: input.trim() && apiKey && !loading ? 1 : 0.35,
+                opacity: input.trim() && !loading ? 1 : 0.35,
                 transition: 'opacity 0.2s ease',
               }}
             >

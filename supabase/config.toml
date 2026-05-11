@@ -1,0 +1,10 @@
+# Supabase config for Ogród Marzeń.
+# Project: txqjjwanyfcpezgqbwou (shared with SOLA — reuses ANTHROPIC_API_KEY secret).
+# Deploy: `npx supabase functions deploy garden-flora --project-ref txqjjwanyfcpezgqbwou`.
+
+project_id = "ogrod"
+
+[functions.garden-flora]
+# No user auth in Ogród Marzeń — anyone calling the function gets a Claude response.
+# Abuse mitigation: CORS allowlist (set inside index.ts) + short max_tokens.
+verify_jwt = false
