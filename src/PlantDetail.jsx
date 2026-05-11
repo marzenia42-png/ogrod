@@ -7,6 +7,7 @@ import {
   compressImage,
 } from './lib/plantStorage.js';
 import { MONTHS, ACTIONS, CATEGORIES, CATEGORY_BY_KEY, PLANTS } from './data/plants.js';
+import { SPECIES_BY_ID } from './data/plantSpecies.js';
 
 export default function PlantDetail({
   plantId,
@@ -14,9 +15,13 @@ export default function PlantDetail({
   isVariety = false,
   parentId = null,
   parentName = null,
+  speciesId = null,
   onClose,
   onOpenVariety,
 }) {
+  // Profil gatunku — pełne dane botaniczne gdy plantId / parent matches species.
+  const species = speciesId ? SPECIES_BY_ID[speciesId] : null;
+  const [openDiseaseId, setOpenDiseaseId] = useState(null);
   const [photos, setPhotos] = useState(() => loadPhotos(plantId));
   const [notes, setNotes] = useState(() => loadPlantNotes(plantId));
   const [events, setEvents] = useState(() => loadEvents(plantId));
@@ -199,6 +204,171 @@ export default function PlantDetail({
               </div>
             )}
           </section>
+
+          {/* Profil gatunku — guide/pruning/fertilizing/diseases/companions z plantSpecies. */}
+          {species && (
+            <section>
+              <p
+                className="text-[11px] tracking-[2px] uppercase mb-3"
+                style={{ color: 'rgba(201,169,110,0.55)' }}
+              >
+                🌱 Profil gatunku
+              </p>
+
+              {/* Pielęgnacja */}
+              <div
+                className="rounded-xl p-3 mb-2"
+                style={{ background: 'rgba(201,169,110,0.06)', border: '0.5px solid rgba(201,169,110,0.2)' }}
+              >
+                <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.65)' }}>
+                  Pielęgnacja
+                </p>
+                <div className="flex flex-col gap-1.5 text-[13px]" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                  <p><span style={{ color: gold }}>☀️ Światło: </span>{species.guide.light}</p>
+                  <p><span style={{ color: gold }}>💧 Podlewanie: </span>{species.guide.water}</p>
+                  <p><span style={{ color: gold }}>🌍 Gleba: </span>{species.guide.soil}</p>
+                  <p>
+                    <span style={{ color: gold }}>❄️ Mróz: </span>
+                    {species.guide.frostHardy ? 'mrozoodporna' : 'wrażliwa na mróz'}
+                    {species.guide.winterProtection && (
+                      <span style={{ color: 'rgba(232,221,208,0.7)' }}> · {species.guide.winterProtection}</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sąsiedztwo */}
+              {(species.guide.companions?.length || species.guide.avoid?.length) && (
+                <div
+                  className="rounded-xl p-3 mb-2"
+                  style={{ background: 'rgba(76, 175, 80, 0.06)', border: '0.5px solid rgba(76, 175, 80, 0.25)' }}
+                >
+                  <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
+                    Sąsiedztwo
+                  </p>
+                  {species.guide.companions?.length > 0 && (
+                    <p className="text-[13px] mb-1" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                      <span style={{ color: '#86efac' }}>✓ Dobrzy sąsiedzi: </span>
+                      {species.guide.companions.join(', ')}
+                    </p>
+                  )}
+                  {species.guide.avoid?.length > 0 && (
+                    <p className="text-[13px]" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                      <span style={{ color: '#fca5a5' }}>✗ Unikaj obok: </span>
+                      {species.guide.avoid.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Cięcie */}
+              {species.pruning && (
+                <div
+                  className="rounded-xl p-3 mb-2"
+                  style={{ background: 'rgba(129, 140, 248, 0.06)', border: '0.5px solid rgba(129, 140, 248, 0.25)' }}
+                >
+                  <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(199, 210, 254, 0.75)' }}>
+                    ✂️ Cięcie
+                  </p>
+                  <div className="flex flex-col gap-1.5 text-[13px]" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                    {species.pruning.spring && (
+                      <p><span style={{ color: '#c7d2fe' }}>Wiosna: </span>{species.pruning.spring}</p>
+                    )}
+                    {species.pruning.summer && (
+                      <p><span style={{ color: '#c7d2fe' }}>Lato: </span>{species.pruning.summer}</p>
+                    )}
+                    {species.pruning.autumn && (
+                      <p><span style={{ color: '#c7d2fe' }}>Jesień: </span>{species.pruning.autumn}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Nawożenie */}
+              {species.fertilizing && (
+                <div
+                  className="rounded-xl p-3 mb-2"
+                  style={{ background: 'rgba(132, 204, 22, 0.06)', border: '0.5px solid rgba(132, 204, 22, 0.25)' }}
+                >
+                  <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(190, 242, 100, 0.75)' }}>
+                    🪴 Nawożenie
+                  </p>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                    {species.fertilizing}
+                  </p>
+                </div>
+              )}
+
+              {/* Choroby — collapsible cards */}
+              {species.diseases?.length > 0 && (
+                <div
+                  className="rounded-xl p-3"
+                  style={{ background: 'rgba(239, 68, 68, 0.06)', border: '0.5px solid rgba(239, 68, 68, 0.25)' }}
+                >
+                  <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(252, 165, 165, 0.8)' }}>
+                    🦠 Choroby i szkodniki
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {species.diseases.map((d, idx) => {
+                      const open = openDiseaseId === idx;
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-lg overflow-hidden"
+                          style={{ background: 'rgba(0,0,0,0.35)', border: '0.5px solid rgba(239, 68, 68, 0.2)' }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setOpenDiseaseId(open ? null : idx)}
+                            className="w-full text-left px-3 py-2 flex items-center justify-between cursor-pointer"
+                            style={{ background: 'none', border: 'none' }}
+                          >
+                            <span className="text-[13px] font-serif italic" style={{ color: '#fca5a5' }}>
+                              {d.name}
+                            </span>
+                            <span style={{
+                              color: 'rgba(252, 165, 165, 0.6)',
+                              transform: open ? 'rotate(180deg)' : 'none',
+                              transition: 'transform 0.2s',
+                            }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M6 9l6 6 6-6" />
+                              </svg>
+                            </span>
+                          </button>
+                          {open && (
+                            <div
+                              className="px-3 pb-3 pt-1 flex flex-col gap-2 text-[12.5px]"
+                              style={{ color: 'rgba(232,221,208,0.85)', borderTop: '0.5px solid rgba(239, 68, 68, 0.15)' }}
+                            >
+                              <p>
+                                <span style={{ color: 'rgba(252, 165, 165, 0.65)', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '1.5px' }}>
+                                  Objawy:{' '}
+                                </span>
+                                {d.symptoms}
+                              </p>
+                              <p>
+                                <span style={{ color: 'rgba(252, 165, 165, 0.65)', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '1.5px' }}>
+                                  Leczenie:{' '}
+                                </span>
+                                {d.treatment}
+                              </p>
+                              <p>
+                                <span style={{ color: 'rgba(252, 165, 165, 0.65)', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '1.5px' }}>
+                                  Profilaktyka:{' '}
+                                </span>
+                                {d.prevention}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Historia wydarzeń — podlano, nawieziono, oprysknieto, etc. */}
           <section>

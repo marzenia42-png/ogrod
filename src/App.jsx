@@ -7,6 +7,7 @@ import AddPlantWizard from './AddPlantWizard.jsx';
 import { compressImage, addPhoto } from './lib/plantStorage.js';
 import { migrateCustomPlantsV1 } from './lib/migration.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
+import { SPECIES_BY_ID } from './data/plantSpecies.js';
 
 // Migracja v1: doposaż istniejące custom plants w speciesId+categoryId po nazwie.
 // Idempotentna, side-effect free dla nowych userów. Bezpieczna w SSR (guard window).
@@ -170,17 +171,41 @@ export default function App() {
         return { ...a, plantName: plant ? plant.name : a.plant, custom: false };
       });
 
-    // Custom plants have a list of months — expand to per-month entries on the fly.
-    const custom = customPlants
-      .filter((p) => Array.isArray(p.months) && p.months.includes(selectedMonth))
-      .map((p) => ({
-        plant: p.id,
-        plantName: p.variety ? `${p.name} · ${p.variety}` : p.name,
-        type: p.type,
-        text: p.text,
-        custom: true,
-        id: p.id,
-      }));
+    // Custom plants — dwa tryby:
+    //   (a) z speciesId → rozwiń wszystkie species.calendarTasks dla bieżącego miesiąca
+    //   (b) bez speciesId (legacy quick-add) → jedna akcja z type+text+months
+    const custom = customPlants.flatMap((p) => {
+      const plantName = p.variety ? `${p.name} · ${p.variety}` : p.name;
+      const species = p.speciesId ? SPECIES_BY_ID[p.speciesId] : null;
+
+      if (species) {
+        return species.calendarTasks
+          .filter((t) => t.month === selectedMonth)
+          .map((t, idx) => ({
+            plant: p.id,
+            plantName,
+            type: t.type,
+            text: t.task,
+            custom: true,
+            fromSpecies: true,
+            id: `${p.id}-task-${idx}`,
+          }));
+      }
+
+      if (Array.isArray(p.months) && p.months.includes(selectedMonth)) {
+        return [{
+          plant: p.id,
+          plantName,
+          type: p.type,
+          text: p.text,
+          custom: true,
+          fromSpecies: false,
+          id: p.id,
+        }];
+      }
+
+      return [];
+    });
 
     const all = [...builtin, ...custom];
     const grouped = {};
@@ -251,8 +276,22 @@ export default function App() {
     return custom?.name || id;
   };
 
+  // Resolve speciesId for PlantDetail profile section:
+  // - builtin plant id matching species key (e.g. 'jablon') → use directly
+  // - custom plant id (uid) → lookup speciesId on custom plant
+  const resolveSpeciesId = (plantId) => {
+    if (SPECIES_BY_ID[plantId]) return plantId;
+    const custom = customPlants.find((p) => p.id === plantId);
+    return custom?.speciesId || null;
+  };
+
   const openPlantById = (id, name) => {
-    setOpenPlant({ plantId: id, plantName: name || getPlantName(id), isVariety: false });
+    setOpenPlant({
+      plantId: id,
+      plantName: name || getPlantName(id),
+      isVariety: false,
+      speciesId: resolveSpeciesId(id),
+    });
   };
 
   const openVariety = (variety) => {
@@ -262,6 +301,7 @@ export default function App() {
       isVariety: true,
       parentId: variety.parent,
       parentName: getPlantName(variety.parent),
+      speciesId: resolveSpeciesId(variety.parent),
     });
   };
 
@@ -506,7 +546,7 @@ export default function App() {
                               {a.text}
                             </p>
                           </div>
-                          {a.custom && (
+                          {a.custom && !a.fromSpecies && (
                             <button
                               type="button"
                               onClick={() => handleDeleteCustom(a.id)}
@@ -727,6 +767,7 @@ export default function App() {
           isVariety={openPlant.isVariety}
           parentId={openPlant.parentId}
           parentName={openPlant.parentName}
+          speciesId={openPlant.speciesId}
           onClose={() => setOpenPlant(null)}
           onOpenVariety={(v) => openVariety(v)}
         />
