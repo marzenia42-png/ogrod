@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { MONTHS } from './data/plants.js';
+import { getHolidays } from './lib/polishHolidays.js';
 
 const DIARY_PREFIX = 'garden-diary-';
 const DAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
@@ -79,6 +80,12 @@ export default function Diary() {
     }
     return set;
   }, [year, month, tick]);
+
+  // Polskie święta państwowe — czerwone oznaczenie w siatce + nazwa w modalu dnia.
+  const holidays = useMemo(() => getHolidays(year), [year]);
+
+  const holidayFor = (day) => holidays[`${year}-${pad(month)}-${pad(day)}`] || null;
+  const selectedHoliday = selectedDay != null ? holidayFor(selectedDay) : null;
 
   const firstDow = mondayBasedDOW(new Date(year, month - 1, 1).getDay());
   const total = daysInMonth(year, month);
@@ -184,29 +191,57 @@ export default function Diary() {
           if (d == null) return <div key={i} />;
           const has = filledDays.has(d);
           const today = isCurrentDay(d);
+          const holiday = holidayFor(d);
+          // Color precedence: today (gold) > non-today holiday (red) > has-note (gold) > plain.
+          const textColor = today
+            ? '#F0E8D8'
+            : holiday
+            ? '#fca5a5'
+            : has
+            ? '#C9A96E'
+            : 'rgba(232, 221, 208, 0.55)';
           return (
             <button
               key={i}
               type="button"
               onClick={() => openDay(d)}
+              title={holiday || undefined}
               className="aspect-square rounded-lg flex flex-col items-center justify-center cursor-pointer relative"
               style={{
                 background: today
                   ? 'linear-gradient(135deg, rgba(201, 169, 110, 0.18), rgba(123, 201, 123, 0.12))'
+                  : holiday
+                  ? 'rgba(239, 68, 68, 0.10)'
                   : has
                   ? 'rgba(201, 169, 110, 0.08)'
                   : 'rgba(0, 0, 0, 0.35)',
                 border: today
                   ? '1px solid #C9A96E'
+                  : holiday
+                  ? '0.5px solid rgba(239, 68, 68, 0.55)'
                   : has
                   ? '0.5px solid rgba(201, 169, 110, 0.35)'
                   : '0.5px solid rgba(255, 255, 255, 0.05)',
-                color: today ? '#F0E8D8' : has ? '#C9A96E' : 'rgba(232, 221, 208, 0.55)',
+                color: textColor,
                 fontSize: '13px',
-                fontWeight: today ? 500 : 400,
+                fontWeight: today || holiday ? 500 : 400,
               }}
             >
               <span>{d}</span>
+              {holiday && (
+                <span
+                  className="absolute"
+                  style={{
+                    top: 3,
+                    right: 3,
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    backgroundColor: '#ef4444',
+                    boxShadow: '0 0 5px rgba(239, 68, 68, 0.7)',
+                  }}
+                />
+              )}
               {has && (
                 <span
                   className="absolute"
@@ -247,10 +282,24 @@ export default function Diary() {
               marginBottom: 'env(safe-area-inset-bottom)',
             }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-serif italic" style={{ fontSize: '18px', color: '#C9A96E' }}>
-                {formatDateLabel(selectedDay)}
-              </h3>
+            <div className="flex items-start justify-between mb-3 gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif italic" style={{ fontSize: '18px', color: '#C9A96E' }}>
+                  {formatDateLabel(selectedDay)}
+                </h3>
+                {selectedHoliday && (
+                  <p
+                    className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] tracking-wide"
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      border: '0.5px solid rgba(239, 68, 68, 0.45)',
+                      color: '#fca5a5',
+                    }}
+                  >
+                    🇵🇱 {selectedHoliday}
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={closeDay}

@@ -1187,6 +1187,39 @@ export default function App() {
                 Przywróć
               </button>
             </div>
+
+            <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'rgba(201,169,110,0.55)' }}>
+              Synchronizacja
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                // TODO: future Google Calendar OAuth integration hook.
+                // Plan: gapi.auth2 → calendar.events.insert for each scheduled garden action.
+                // Implementation deferred — see roadmap.
+                setToast('Google Calendar — wkrótce dostępne');
+              }}
+              className="w-full py-2.5 rounded-full text-[13px] cursor-pointer flex items-center justify-center gap-2"
+              style={{
+                background: 'rgba(66, 133, 244, 0.10)',
+                border: '0.5px solid rgba(66, 133, 244, 0.45)',
+                color: '#90caf9',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+                <circle cx="8" cy="14" r="1" fill="currentColor" />
+                <circle cx="12" cy="14" r="1" fill="currentColor" />
+                <circle cx="16" cy="14" r="1" fill="currentColor" />
+              </svg>
+              Połącz z Google Calendar
+            </button>
+            <p className="text-[11px] mt-1.5 text-center" style={{ color: 'rgba(232,221,208,0.4)' }}>
+              Wkrótce dostępne — integracja w przygotowaniu
+            </p>
           </div>
         </div>
       )}
