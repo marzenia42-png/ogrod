@@ -1,6 +1,6 @@
-# Ogród
+# Ogród Marzeń
 
-PWA z kalendarzem ogrodniczym dla Myślenic (49.83°N 19.94°E). Działa na telefonie i laptopie. Wszystkie dane (notatki, własne akcje, ukryte rośliny) trzymane w `localStorage` — per urządzenie, bez backendu.
+PWA z kalendarzem ogrodniczym dla Myślenic (49.83°N 19.94°E) + asystentka **FLORA** (Claude AI). Działa na telefonie i laptopie. Wszystkie dane (notatki, własne akcje, ukryte rośliny, klucz API) trzymane w `localStorage` — per urządzenie, bez backendu.
 
 ## Funkcje
 
@@ -9,6 +9,7 @@ PWA z kalendarzem ogrodniczym dla Myślenic (49.83°N 19.94°E). Działa na tele
 - Notatki ogrodnika
 - Dodawanie własnych akcji + usuwanie / przywracanie domyślnych roślin
 - Przypomnienia przez Notification API (gdy aplikacja otwarta)
+- **FLORA** — pływający przycisk → chat z Claude AI; zna pogodę, miesiąc, ostatnie notatki. Klucz API user wpisuje w ustawieniach (sk-ant-…).
 - Offline-ready (service worker, Workbox)
 
 ## Praca lokalna
@@ -48,5 +49,6 @@ Wszystko siedzi w localStorage pod kluczami:
 - `garden-custom-plants` — własne akcje
 - `garden-removed-plants` — ukryte rośliny domyślne
 - `garden-reminders-shown` — data ostatnich powiadomień (debounce dzienny)
+- `garden-claude-key` — klucz Anthropic API dla FLORA (nigdy nie commituj)
 
 Eksport / sync między urządzeniami: brak (świadomie). Telefon i laptop mają osobne dane.

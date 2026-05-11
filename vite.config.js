@@ -15,9 +15,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Ogród — kalendarz roślinny',
-        short_name: 'Ogród',
-        description: 'Twój ogrodniczy kalendarz: opryski, cięcie, nawożenie, sadzenie, profilaktyka. Pogoda Myślenice live.',
+        name: 'Ogród Marzeń',
+        short_name: 'Ogród Marzeń',
+        description: 'Twój ogrodniczy kalendarz: opryski, cięcie, nawożenie, sadzenie, profilaktyka. Pogoda Myślenice live + asystent FLORA.',
         lang: 'pl',
         start_url: `${base}`,
         scope: base,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import Flora from './Flora.jsx';
 
 const MONTHS = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
@@ -337,7 +338,7 @@ export default function App() {
             Myślenice · 49.83°N 19.94°E
           </p>
           <h1 className="mt-1 font-serif italic tracking-wide leading-tight" style={{ fontSize: '38px', color: gold }}>
-            Ogród
+            Ogród Marzeń
           </h1>
           <p className="mt-1 text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.55)' }}>
             Twój kalendarz roślinny — miesiąc po miesiącu.
@@ -707,6 +708,8 @@ export default function App() {
           </p>
         </footer>
       </div>
+
+      <Flora notes={notes} weather={weather} currentMonth={currentMonth} />
 
       {toast && (
         <div
