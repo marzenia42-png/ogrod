@@ -3,6 +3,23 @@
 //   - Custom plant id (uid)
 //   - Variety id (uid)
 // All share the same data shape — one record per plantId.
+//
+// ── Schemat userPlants (garden-custom-plants) — Etap 1+ ──
+// Każda roślina to obiekt:
+//   {
+//     id:         string,            // uid
+//     name:       string,             // wyświetlana nazwa (z gatunku lub własna)
+//     variety?:   string,             // opcjonalna odmiana (np. "Cherry", "New Dawn")
+//     speciesId?: string | null,      // id z plantSpecies.js, lub null gdy "Inne"
+//     categoryId?: string,            // id z plantCategories.js (fruit-trees, vegetables, ...)
+//     location?:  string,             // opcjonalna lokalizacja ("Sad", "Balkon", "Działka")
+//     months:     number[],           // miesiące aktywne (1-12)
+//     type:       string,             // kategoria akcji: chemia/naturalny/nawozenie/ciecie/ochrona
+//     text:       string,             // opis akcji (lub nazwa rośliny w trybie quick-add)
+//   }
+// Stare pola (name, variety, months, type, text) zostają dla wstecznej
+// kompatybilności. Nowe pola (speciesId, categoryId, location) są opcjonalne —
+// gdy obecne, kalendarz może rysować z plantSpecies.calendarTasks zamiast text.
 
 const PHOTO_PREFIX = 'garden-plant-photos-';
 const NOTE_PREFIX = 'garden-plant-notes-';

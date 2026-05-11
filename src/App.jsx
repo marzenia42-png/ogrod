@@ -3,8 +3,16 @@ import Flora from './Flora.jsx';
 import Recipes from './Recipes.jsx';
 import Diary from './Diary.jsx';
 import PlantDetail from './PlantDetail.jsx';
+import AddPlantWizard from './AddPlantWizard.jsx';
 import { compressImage, addPhoto } from './lib/plantStorage.js';
+import { migrateCustomPlantsV1 } from './lib/migration.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
+
+// Migracja v1: doposaż istniejące custom plants w speciesId+categoryId po nazwie.
+// Idempotentna, side-effect free dla nowych userów. Bezpieczna w SSR (guard window).
+if (typeof window !== 'undefined') {
+  try { migrateCustomPlantsV1(); } catch (e) { console.warn('Migration v1 skipped:', e); }
+}
 
 const NOTES_KEY = 'garden-notes';
 const CUSTOM_PLANTS_KEY = 'garden-custom-plants';
@@ -88,10 +96,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   // Open plant detail by id (string). For variety, also store { isVariety, parentId, parentName, name }.
   const [openPlant, setOpenPlant] = useState(null);
-  // "Easy add" bottom sheet — minimal flow: name + photo + months.
+  // Wizard "Dodaj roślinę" (Etap 1.5) — 5 kroków, komponent AddPlantWizard.
   const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [quickAddDraft, setQuickAddDraft] = useState({ name: '', variety: '', photoData: null, months: [] });
-  const quickAddPhotoRef = useRef(null);
   const [newPlantDraft, setNewPlantDraft] = useState({
     name: '',
     months: [currentMonth],
@@ -259,48 +265,7 @@ export default function App() {
     });
   };
 
-  // Quick-add: only name + optional photo + months. Defaults: category 'naturalny', text = name.
-  const handleQuickAddPhoto = async (file) => {
-    if (!file || !file.type?.startsWith('image/')) return;
-    try {
-      const dataUrl = await compressImage(file, 1024, 0.72);
-      setQuickAddDraft((d) => ({ ...d, photoData: dataUrl }));
-    } catch {
-      setToast('Nie udało się załadować zdjęcia');
-    }
-  };
-
-  const toggleQuickAddMonth = (m) => {
-    setQuickAddDraft((d) => {
-      const has = d.months.includes(m);
-      const months = has ? d.months.filter((x) => x !== m) : [...d.months, m].sort((a, b) => a - b);
-      return { ...d, months };
-    });
-  };
-
-  const handleQuickAddSave = () => {
-    const name = quickAddDraft.name.trim();
-    if (!name || quickAddDraft.months.length === 0) return;
-    const variety = quickAddDraft.variety.trim();
-    const id = uid();
-    const entry = {
-      id,
-      name,
-      variety: variety || undefined,
-      months: [...quickAddDraft.months],
-      type: 'naturalny',
-      text: variety ? `${name} · ${variety}` : name,
-    };
-    const next = [...customPlants, entry];
-    setCustomPlants(next);
-    lsSave(CUSTOM_PLANTS_KEY, next);
-    if (quickAddDraft.photoData) {
-      try { addPhoto(id, quickAddDraft.photoData); } catch { /* ignore — photo limit */ }
-    }
-    setQuickAddDraft({ name: '', variety: '', photoData: null, months: [] });
-    setShowQuickAdd(false);
-    setToast(`Dodano: ${variety ? `${name} · ${variety}` : name}`);
-  };
+  // (Stare handlery quick-add usunięte w Etap 1.5 — flow w AddPlantWizard.jsx)
 
   const toggleBuiltin = (key) => {
     const next = removedSet.has(key)
@@ -739,158 +704,18 @@ export default function App() {
 
       <Flora notes={notes} weather={weather} currentMonth={currentMonth} />
 
-      {/* Quick add bottom sheet — name + photo + months. Defaults to category 'naturalny'. */}
+      {/* 5-step wizard "Dodaj roślinę" (Etap 1.5) — zastępuje stary bottom sheet */}
       {showQuickAdd && (
-        <div
-          className="fixed inset-0 flex items-end sm:items-center justify-center"
-          style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
-          onClick={() => setShowQuickAdd(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full flex flex-col"
-            style={{
-              maxWidth: '480px',
-              maxHeight: '90vh',
-              backgroundColor: '#0d0c0a',
-              border: '1px solid rgba(201,169,110,0.3)',
-              borderTopLeftRadius: '20px',
-              borderTopRightRadius: '20px',
-              borderBottomLeftRadius: '20px',
-              borderBottomRightRadius: '20px',
-            }}
-          >
-            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: '0.5px solid rgba(201,169,110,0.2)' }}>
-              <h3 className="font-serif italic" style={{ fontSize: '20px', color: gold }}>Dodaj roślinę</h3>
-              <button
-                type="button"
-                onClick={() => setShowQuickAdd(false)}
-                aria-label="Zamknij"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M6 6l12 12M6 18L18 6" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="overflow-y-auto px-5 py-4 flex flex-col gap-4 flex-1">
-              <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>Nazwa</p>
-                <input
-                  type="text"
-                  value={quickAddDraft.name}
-                  onChange={(e) => setQuickAddDraft({ ...quickAddDraft, name: e.target.value })}
-                  placeholder="np. Pomidor, Winorośl"
-                  autoFocus
-                  className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
-                />
-              </div>
-
-              <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>Odmiana (opcjonalnie)</p>
-                <input
-                  type="text"
-                  value={quickAddDraft.variety}
-                  onChange={(e) => setQuickAddDraft({ ...quickAddDraft, variety: e.target.value })}
-                  placeholder="np. Cherry, New Dawn"
-                  className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
-                />
-              </div>
-
-              <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>Zdjęcie (opcjonalnie)</p>
-                <input
-                  ref={quickAddPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => { handleQuickAddPhoto(e.target.files?.[0]); e.target.value = ''; }}
-                  className="hidden"
-                />
-                {quickAddDraft.photoData ? (
-                  <div className="relative rounded-lg overflow-hidden" style={{ border: '0.5px solid rgba(201,169,110,0.25)' }}>
-                    <img src={quickAddDraft.photoData} alt="" style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
-                    <button
-                      type="button"
-                      onClick={() => setQuickAddDraft({ ...quickAddDraft, photoData: null })}
-                      className="absolute top-2 right-2 cursor-pointer"
-                      style={{ background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, color: '#F0E8D8', lineHeight: 1 }}
-                      aria-label="Usuń zdjęcie"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => quickAddPhotoRef.current?.click()}
-                    className="w-full py-3 rounded-lg text-[13px] cursor-pointer"
-                    style={{ background: 'none', border: '0.5px dashed rgba(201,169,110,0.4)', color: 'rgba(201,169,110,0.85)' }}
-                  >
-                    📷 Wybierz / zrób zdjęcie
-                  </button>
-                )}
-              </div>
-
-              <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                  Aktywne miesiące
-                </p>
-                <div className="grid grid-cols-6 gap-1">
-                  {MONTHS_SHORT.map((m, i) => {
-                    const month = i + 1;
-                    const selected = quickAddDraft.months.includes(month);
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => toggleQuickAddMonth(month)}
-                        className="py-2 rounded-md text-[11px] cursor-pointer"
-                        style={{
-                          border: selected ? `0.5px solid ${gold}` : '0.5px solid rgba(201,169,110,0.2)',
-                          background: selected ? 'rgba(201,169,110,0.18)' : 'transparent',
-                          color: selected ? gold : 'rgba(232,221,208,0.55)',
-                          fontWeight: selected ? 500 : 400,
-                        }}
-                      >
-                        {m}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowQuickAdd(false); setQuickAddDraft({ name: '', variety: '', photoData: null, months: [] }); }}
-                  className="flex-1 py-2.5 rounded-full text-[13px] cursor-pointer"
-                  style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.75)' }}
-                >
-                  Anuluj
-                </button>
-                <button
-                  type="button"
-                  onClick={handleQuickAddSave}
-                  disabled={!quickAddDraft.name.trim() || quickAddDraft.months.length === 0}
-                  className="flex-1 py-2.5 rounded-full text-[13px] cursor-pointer"
-                  style={{
-                    background: 'linear-gradient(135deg, #C9A96E, #b89556)',
-                    color: '#1A1208',
-                    border: 'none',
-                    fontWeight: 500,
-                    opacity: quickAddDraft.name.trim() && quickAddDraft.months.length > 0 ? 1 : 0.4,
-                  }}
-                >
-                  Zapisz
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AddPlantWizard
+          onClose={() => setShowQuickAdd(false)}
+          onSave={(plant) => {
+            const next = [...customPlants, plant];
+            setCustomPlants(next);
+            lsSave(CUSTOM_PLANTS_KEY, next);
+            setShowQuickAdd(false);
+            setToast(`Dodano: ${plant.variety ? `${plant.name} · ${plant.variety}` : plant.name}`);
+          }}
+        />
       )}
 
       {/* Plant detail modal — opened by clicking a plant name. */}
