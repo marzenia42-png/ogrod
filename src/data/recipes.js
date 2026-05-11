@@ -1,7 +1,18 @@
+export const RECIPE_TYPES = [
+  { key: 'gnojowka',  label: 'Gnojówka' },
+  { key: 'oprysk',    label: 'Oprysk naturalny' },
+  { key: 'nawoz',     label: 'Nawóz' },
+  { key: 'odzywka',   label: 'Odżywka' },
+  { key: 'inny',      label: 'Inny' },
+];
+
+export const RECIPE_TYPE_BY_KEY = Object.fromEntries(RECIPE_TYPES.map((t) => [t.key, t]));
+
 export const RECIPES = [
   {
     id: 'pokrzywa',
     name: 'Gnojówka z pokrzywy',
+    type: 'gnojowka',
     target: 'Mszyce, przędziorki + nawożenie azotowe (bogata w azot, mikroelementy)',
     frequency: 'Profilaktycznie co 10–14 dni. Przy nalocie mszyc — co 5–7 dni przez 3 tygodnie.',
     steps: [
@@ -15,6 +26,7 @@ export const RECIPES = [
   {
     id: 'wrotycz',
     name: 'Wyciąg z wrotyczu',
+    type: 'oprysk',
     target: 'Owocówka jabłkóweczka, owocówka śliwkóweczka, mszyce, mrówki',
     frequency: 'W okresie wylęgu owocówek (czerwiec–lipiec) co 7 dni, 2–3 razy',
     steps: [
@@ -27,7 +39,8 @@ export const RECIPES = [
   },
   {
     id: 'czosnek',
-    name: 'Czosnek wodny',
+    name: 'Oprysk czosnkowy',
+    type: 'oprysk',
     target: 'Choroby grzybowe (mączniak, szara pleśń), mszyce, przędziorki',
     frequency: 'Co 5–7 dni profilaktycznie. Pierwsze opryski od maja.',
     steps: [
@@ -41,6 +54,7 @@ export const RECIPES = [
   {
     id: 'tymianek',
     name: 'Napar z tymianku',
+    type: 'oprysk',
     target: 'Mączniak prawdziwy róż i agrestu, mszyce',
     frequency: 'Co 7–10 dni, naprzemiennie z innymi naturalnymi opryskami',
     steps: [
@@ -53,6 +67,7 @@ export const RECIPES = [
   {
     id: 'drozdze',
     name: 'Drożdże piwowarskie',
+    type: 'odzywka',
     target: 'Biostymulacja kwitnienia, owocowania (truskawka, róża, pomidor)',
     frequency: 'Raz na 2 tygodnie, od początku kwitnienia',
     steps: [
@@ -66,6 +81,7 @@ export const RECIPES = [
   {
     id: 'skrzyp',
     name: 'Odwar ze skrzypu polnego',
+    type: 'oprysk',
     target: 'Parch jabłoni i gruszy, mączniak, kędzierzawość — krzemowe wzmocnienie liści',
     frequency: 'Co 10–14 dni profilaktycznie. Od kwitnienia do końca lipca.',
     steps: [
@@ -79,6 +95,7 @@ export const RECIPES = [
   {
     id: 'soda',
     name: 'Soda oczyszczona + olej',
+    type: 'oprysk',
     target: 'Mączniak na różach, ogórkach, dyni',
     frequency: 'Co 5–7 dni, ale nie częściej (sól szkodzi glebie)',
     steps: [
@@ -92,6 +109,7 @@ export const RECIPES = [
   {
     id: 'bez',
     name: 'Gałązki bzu czarnego',
+    type: 'oprysk',
     target: 'Krety, gryzonie, mszyce',
     frequency: 'Wkop świeże gałązki przy nasadzeniach. Wymieniaj co 4–6 tygodni.',
     steps: [
@@ -104,6 +122,7 @@ export const RECIPES = [
   {
     id: 'obornik',
     name: 'Gnojówka z obornika',
+    type: 'gnojowka',
     target: 'Uniwersalne nawożenie (warzywa, drzewa owocowe, róże)',
     frequency: 'Wczesna wiosna i lato — 2–3 razy w sezonie. Nie na owoce po lipcu.',
     steps: [
@@ -115,8 +134,23 @@ export const RECIPES = [
     ],
   },
   {
+    id: 'banan',
+    name: 'Nawóz z bananów',
+    type: 'nawoz',
+    target: 'Bogate źródło potasu — pomidory, papryka, róże, kwitnące krzewy',
+    frequency: 'Co 14 dni od pąków do końca owocowania',
+    steps: [
+      'Skórki z 2–3 bananów posiekaj drobno',
+      'Wsyp do słoika i zalej 1 L wody',
+      'Odstaw na 3–5 dni w cieniu (zakręcony)',
+      'Przecedź, rozcieńcz 1:5 z wodą do podlewania',
+      'Polej pod korzeń, nie na liście. Skórki zakop w glebie (powolne uwalnianie K)',
+    ],
+  },
+  {
     id: 'skrzyp-odwar',
     name: 'Odwar ze skrzypu (skrócona wersja)',
+    type: 'oprysk',
     target: 'Kędzierzawość brzoskwini, mączniak — wzmocnienie krzemem',
     frequency: 'Wiosną przed pąkowaniem + po opadnięciu płatków',
     steps: [

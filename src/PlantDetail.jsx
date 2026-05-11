@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  loadPhotos, addPhoto, deletePhoto,
+  loadPhotos, addPhoto, deletePhoto, PHOTO_LIMIT,
   loadPlantNotes, addPlantNote, deletePlantNote,
+  loadEvents, addEvent, deleteEvent, EVENT_TYPES,
   loadVarietiesFor, addVariety, deleteVariety,
   compressImage,
 } from './lib/plantStorage.js';
@@ -18,12 +19,16 @@ export default function PlantDetail({
 }) {
   const [photos, setPhotos] = useState(() => loadPhotos(plantId));
   const [notes, setNotes] = useState(() => loadPlantNotes(plantId));
+  const [events, setEvents] = useState(() => loadEvents(plantId));
   const [varieties, setVarieties] = useState(() =>
     isVariety ? [] : loadVarietiesFor(plantId),
   );
   const [noteDraft, setNoteDraft] = useState('');
   const [varietyDraft, setVarietyDraft] = useState('');
+  const [eventDraft, setEventDraft] = useState({ type: 'podlano', note: '' });
+  const [showEventForm, setShowEventForm] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [photoError, setPhotoError] = useState(null);
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const photoInputRef = useRef(null);
 
@@ -31,22 +36,30 @@ export default function PlantDetail({
   useEffect(() => {
     setPhotos(loadPhotos(plantId));
     setNotes(loadPlantNotes(plantId));
+    setEvents(loadEvents(plantId));
     setVarieties(isVariety ? [] : loadVarietiesFor(plantId));
+    setPhotoError(null);
   }, [plantId, isVariety]);
 
   const handlePhotoUpload = async (file) => {
     if (!file) return;
     setAdding(true);
+    setPhotoError(null);
     try {
-      // Smaller cap for plant photos so localStorage doesn't blow up.
       const dataUrl = await compressImage(file, 1024, 0.72);
       const next = addPhoto(plantId, dataUrl);
       setPhotos(next);
-    } catch {
-      alert('Nie udało się zapisać zdjęcia (pamięć przeglądarki pełna?).');
+    } catch (e) {
+      setPhotoError(e?.message || 'Nie udało się zapisać zdjęcia.');
     } finally {
       setAdding(false);
     }
+  };
+
+  const handleAddEvent = () => {
+    setEvents(addEvent(plantId, eventDraft.type, eventDraft.note));
+    setEventDraft({ type: 'podlano', note: '' });
+    setShowEventForm(false);
   };
 
   const handleAddNote = () => {
@@ -123,7 +136,7 @@ export default function PlantDetail({
           <section>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                Galeria
+                Galeria <span style={{ color: 'rgba(232,221,208,0.4)' }}>· {photos.length}/{PHOTO_LIMIT}</span>
               </p>
               <input
                 ref={photoInputRef}
@@ -136,41 +149,161 @@ export default function PlantDetail({
               <button
                 type="button"
                 onClick={() => photoInputRef.current?.click()}
-                disabled={adding}
+                disabled={adding || photos.length >= PHOTO_LIMIT}
                 className="text-[11px] tracking-wide cursor-pointer px-3 py-1 rounded-full"
                 style={{
                   background: 'linear-gradient(135deg, #C9A96E, #b89556)',
                   color: '#1A1208',
                   border: 'none',
-                  opacity: adding ? 0.5 : 1,
+                  opacity: adding || photos.length >= PHOTO_LIMIT ? 0.4 : 1,
                 }}
               >
                 {adding ? 'Zapisuję…' : '+ zdjęcie'}
               </button>
             </div>
+            {photoError && (
+              <p className="text-[12px] mb-2" style={{ color: 'rgba(232,140,140,0.85)' }}>{photoError}</p>
+            )}
             {photos.length === 0 ? (
               <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
-                Brak zdjęć. Wgraj pierwsze.
+                Brak zdjęć. Wgraj pierwsze (max {PHOTO_LIMIT}).
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div
+                className="flex gap-2 overflow-x-auto pb-1"
+                style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+              >
                 {photos.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => setFullscreenPhoto(p)}
-                    className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                    style={{ border: '0.5px solid rgba(201,169,110,0.2)', background: 'rgba(255,255,255,0.02)' }}
+                    className="relative rounded-lg overflow-hidden cursor-pointer shrink-0"
+                    style={{
+                      width: '140px',
+                      height: '140px',
+                      border: '0.5px solid rgba(201,169,110,0.2)',
+                      background: 'rgba(255,255,255,0.02)',
+                      padding: 0,
+                    }}
                   >
                     <img src={p.dataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     <span
-                      className="absolute bottom-0 left-0 right-0 px-1.5 py-0.5 text-[9px] tracking-wide"
+                      className="absolute bottom-0 left-0 right-0 px-2 py-0.5 text-[10px] tracking-wide"
                       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', color: 'rgba(232,221,208,0.85)' }}
                     >
                       {p.date}
                     </span>
                   </button>
                 ))}
+              </div>
+            )}
+          </section>
+
+          {/* Historia wydarzeń — podlano, nawieziono, oprysknieto, etc. */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(201,169,110,0.55)' }}>
+                Historia
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowEventForm((s) => !s)}
+                className="text-[11px] tracking-wide cursor-pointer px-3 py-1 rounded-full"
+                style={{ background: showEventForm ? 'rgba(201,169,110,0.2)' : 'linear-gradient(135deg, #4CAF50, #2e7d32)', color: showEventForm ? gold : '#0a0f0a', border: 'none' }}
+              >
+                {showEventForm ? 'Anuluj' : '+ wydarzenie'}
+              </button>
+            </div>
+
+            {showEventForm && (
+              <div
+                className="mb-3 p-3 rounded-lg flex flex-col gap-2"
+                style={{ background: 'rgba(76, 175, 80, 0.08)', border: '0.5px solid rgba(76, 175, 80, 0.3)' }}
+              >
+                <div className="grid grid-cols-3 gap-1.5">
+                  {EVENT_TYPES.map((t) => {
+                    const active = eventDraft.type === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setEventDraft((d) => ({ ...d, type: t.key }))}
+                        className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
+                        style={{
+                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'rgba(0,0,0,0.3)',
+                          border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(76, 175, 80, 0.2)',
+                          color: active ? '#86efac' : 'rgba(232,221,208,0.7)',
+                          fontWeight: active ? 500 : 400,
+                        }}
+                      >
+                        <span style={{ marginRight: 4 }}>{t.icon}</span>{t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={eventDraft.note}
+                  onChange={(e) => setEventDraft({ ...eventDraft, note: e.target.value })}
+                  placeholder="Krótka notatka (opcjonalnie)"
+                  className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
+                  style={{ border: '0.5px solid rgba(76, 175, 80, 0.25)', color: '#F0E8D8' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddEvent}
+                  className="py-2 rounded-full text-[12px] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #4CAF50, #2e7d32)', color: '#0a0f0a', border: 'none', fontWeight: 500 }}
+                >
+                  Zapisz wydarzenie
+                </button>
+              </div>
+            )}
+
+            {events.length === 0 ? (
+              <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+                Brak wydarzeń. Pierwsze podlanie się liczy.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {events.slice(0, 5).map((ev) => {
+                  const meta = EVENT_TYPES.find((t) => t.key === ev.type);
+                  return (
+                    <div
+                      key={ev.id}
+                      className="px-3 py-2 rounded-lg flex items-start gap-2"
+                      style={{ background: 'rgba(0,0,0,0.4)', border: '0.5px solid rgba(76, 175, 80, 0.2)' }}
+                    >
+                      <span style={{ fontSize: '18px' }}>{meta?.icon || '📝'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px]" style={{ color: '#86efac', fontWeight: 500 }}>
+                          {meta?.label || ev.type}
+                          <span style={{ marginLeft: 8, color: 'rgba(201,169,110,0.55)', fontWeight: 400 }}>{ev.date}</span>
+                        </p>
+                        {ev.note && (
+                          <p className="text-[12.5px] font-serif italic leading-relaxed mt-0.5" style={{ color: 'rgba(232,221,208,0.75)' }}>
+                            {ev.note}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEvents(deleteEvent(plantId, ev.id))}
+                        className="cursor-pointer shrink-0"
+                        style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '16px', lineHeight: 1, padding: 2 }}
+                        aria-label="Usuń"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+                {events.length > 5 && (
+                  <p className="text-[11px] text-center" style={{ color: 'rgba(232,221,208,0.35)' }}>
+                    + {events.length - 5} starszych
+                  </p>
+                )}
               </div>
             )}
           </section>

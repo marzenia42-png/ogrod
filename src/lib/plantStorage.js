@@ -6,8 +6,20 @@
 
 const PHOTO_PREFIX = 'garden-plant-photos-';
 const NOTE_PREFIX = 'garden-plant-notes-';
+const EVENT_PREFIX = 'garden-plant-events-';
 const VARIETIES_KEY = 'garden-varieties';
 const CUSTOM_RECIPES_KEY = 'garden-custom-recipes';
+
+export const PHOTO_LIMIT = 3;
+export const EVENT_TYPES = [
+  { key: 'podlano',      label: 'Podlano',      icon: '💧' },
+  { key: 'nawiezono',    label: 'Nawieziono',   icon: '🪴' },
+  { key: 'oprysknieto',  label: 'Oprysknięto',  icon: '🧴' },
+  { key: 'przyciecie',   label: 'Cięcie',       icon: '✂️' },
+  { key: 'sadzenie',     label: 'Sadzenie',     icon: '🌱' },
+  { key: 'zbior',        label: 'Zbiór',        icon: '🌾' },
+  { key: 'inne',         label: 'Inne',         icon: '📝' },
+];
 
 function safeParse(raw, fallback) {
   try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
@@ -36,6 +48,9 @@ export function loadPhotos(plantId) {
 
 export function addPhoto(plantId, dataUrl) {
   const photos = loadPhotos(plantId);
+  if (photos.length >= PHOTO_LIMIT) {
+    throw new Error(`Maksymalnie ${PHOTO_LIMIT} zdjęć na roślinę. Usuń jedno żeby dodać nowe.`);
+  }
   const photo = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     dataUrl,
@@ -71,6 +86,30 @@ export function addPlantNote(plantId, text) {
 export function deletePlantNote(plantId, noteId) {
   const next = loadPlantNotes(plantId).filter((n) => n.id !== noteId);
   writeArray(NOTE_PREFIX + plantId, next);
+  return next;
+}
+
+// Events — per-plant log of garden actions { id, type, date, note }
+export function loadEvents(plantId) {
+  return readArray(EVENT_PREFIX + plantId);
+}
+
+export function addEvent(plantId, type, note = '') {
+  const knownTypes = new Set(EVENT_TYPES.map((t) => t.key));
+  const safeType = knownTypes.has(type) ? type : 'inne';
+  const event = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    type: safeType,
+    date: new Date().toISOString().slice(0, 10),
+    note: (note || '').trim(),
+  };
+  const next = [event, ...loadEvents(plantId)];
+  return writeArray(EVENT_PREFIX + plantId, next) ? next : [];
+}
+
+export function deleteEvent(plantId, eventId) {
+  const next = loadEvents(plantId).filter((e) => e.id !== eventId);
+  writeArray(EVENT_PREFIX + plantId, next);
   return next;
 }
 
@@ -123,9 +162,12 @@ export function addCustomRecipe(recipe) {
   const entry = {
     id: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     name: recipe.name.trim(),
+    type: recipe.type || 'inny',
     target: (recipe.target || '').trim(),
+    appliesTo: (recipe.appliesTo || '').trim(),
     frequency: (recipe.frequency || '').trim(),
     steps: recipe.steps.map((s) => String(s).trim()).filter(Boolean),
+    photoData: recipe.photoData || null,
     custom: true,
   };
   const next = [...loadCustomRecipes(), entry];

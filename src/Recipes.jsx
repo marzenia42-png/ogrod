@@ -1,16 +1,30 @@
-import { useState } from 'react';
-import { RECIPES, NATURAL_RULES } from './data/recipes.js';
-import { loadCustomRecipes, addCustomRecipe, deleteCustomRecipe } from './lib/plantStorage.js';
+import { useState, useMemo, useRef } from 'react';
+import { RECIPES, RECIPE_TYPES, RECIPE_TYPE_BY_KEY, NATURAL_RULES } from './data/recipes.js';
+import { loadCustomRecipes, addCustomRecipe, deleteCustomRecipe, compressImage } from './lib/plantStorage.js';
 
-const emptyDraft = () => ({ name: '', target: '', frequency: '', steps: [''] });
+const emptyDraft = () => ({
+  name: '',
+  type: 'oprysk',
+  target: '',
+  appliesTo: '',
+  frequency: '',
+  steps: [''],
+  photoData: null,
+});
 
 export default function Recipes() {
   const [openId, setOpenId] = useState(null);
   const [customRecipes, setCustomRecipes] = useState(() => loadCustomRecipes());
   const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
+  const [filter, setFilter] = useState('all');
+  const photoRef = useRef(null);
 
-  const allRecipes = [...RECIPES, ...customRecipes];
+  const allRecipes = useMemo(() => [...RECIPES, ...customRecipes], [customRecipes]);
+
+  const filteredRecipes = filter === 'all'
+    ? allRecipes
+    : allRecipes.filter((r) => (r.type || 'inny') === filter);
 
   const handleStepChange = (i, value) => {
     setDraft((d) => {
@@ -23,15 +37,28 @@ export default function Recipes() {
   const handleAddStep = () => setDraft((d) => ({ ...d, steps: [...d.steps, ''] }));
   const handleRemoveStep = (i) => setDraft((d) => ({ ...d, steps: d.steps.filter((_, idx) => idx !== i) }));
 
+  const handlePhotoUpload = async (file) => {
+    if (!file || !file.type?.startsWith('image/')) return;
+    try {
+      const dataUrl = await compressImage(file, 1024, 0.72);
+      setDraft((d) => ({ ...d, photoData: dataUrl }));
+    } catch {
+      // ignore
+    }
+  };
+
   const canSave = draft.name.trim() && draft.steps.filter((s) => s.trim()).length > 0;
 
   const handleSave = () => {
     if (!canSave) return;
     const next = addCustomRecipe({
       name: draft.name,
+      type: draft.type,
       target: draft.target,
+      appliesTo: draft.appliesTo,
       frequency: draft.frequency,
       steps: draft.steps.filter((s) => s.trim()),
+      photoData: draft.photoData,
     });
     setCustomRecipes(next);
     setDraft(emptyDraft());
@@ -47,14 +74,14 @@ export default function Recipes() {
     <div className="px-5 pb-10">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
-          Naturalne preparaty
+          Przepisy ogrodnicze
         </p>
         <button
           type="button"
           onClick={() => setShowAdd(true)}
           className="text-[11px] tracking-wide cursor-pointer px-3 py-1 rounded-full"
           style={{
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+            background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
             color: '#0a0f0a',
             border: 'none',
             fontWeight: 500,
@@ -63,13 +90,45 @@ export default function Recipes() {
           + Twoja
         </button>
       </div>
-      <p className="text-[13px] font-serif italic mb-5" style={{ color: 'rgba(232, 221, 208, 0.6)' }}>
-        Domowe przepisy bez chemii — sprawdzone w polskich warunkach.
+      <p className="text-[13px] font-serif italic mb-3" style={{ color: 'rgba(232, 221, 208, 0.6)' }}>
+        Domowe gnojówki, opryski, nawozy i odżywki — sprawdzone w polskich warunkach.
       </p>
 
+      {/* Filter pills */}
+      <div
+        className="flex gap-1.5 overflow-x-auto pb-3 mb-3"
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+      >
+        {[{ key: 'all', label: 'Wszystkie' }, ...RECIPE_TYPES].map((t) => {
+          const active = filter === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFilter(t.key)}
+              className="shrink-0 px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer"
+              style={{
+                background: active ? 'rgba(76, 175, 80, 0.25)' : 'rgba(0,0,0,0.55)',
+                border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
+                color: active ? '#86efac' : 'rgba(232,221,208,0.65)',
+                fontWeight: active ? 500 : 400,
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col gap-3">
-        {allRecipes.map((r) => {
+        {filteredRecipes.length === 0 && (
+          <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+            Brak receptur w tej kategorii.
+          </p>
+        )}
+        {filteredRecipes.map((r) => {
           const open = openId === r.id;
+          const typeMeta = RECIPE_TYPE_BY_KEY[r.type] || { label: 'Inny' };
           return (
             <div
               key={r.id}
@@ -86,10 +145,15 @@ export default function Recipes() {
                 className="w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer"
                 style={{ background: 'none', border: 'none' }}
               >
-                <span className="font-serif italic flex-1 min-w-0 truncate" style={{ color: '#86efac', fontSize: '16px' }}>
-                  🌿 {r.name}
-                  {r.custom && <span className="ml-2 text-[10px] font-normal" style={{ color: 'rgba(134,239,172,0.5)' }}>własna</span>}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-serif italic block truncate" style={{ color: '#86efac', fontSize: '16px' }}>
+                    🌿 {r.name}
+                    {r.custom && <span className="ml-2 text-[10px] font-normal" style={{ color: 'rgba(134,239,172,0.5)' }}>własna</span>}
+                  </span>
+                  <span className="text-[10px] tracking-[2px] uppercase" style={{ color: 'rgba(134,239,172,0.6)' }}>
+                    {typeMeta.label}
+                  </span>
+                </div>
                 <span style={{ color: 'rgba(134, 239, 172, 0.6)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s ease' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 9l6 6 6-6" />
@@ -99,6 +163,13 @@ export default function Recipes() {
 
               {open && (
                 <div className="px-4 pb-4 pt-1 flex flex-col gap-3" style={{ borderTop: '0.5px solid rgba(134, 239, 172, 0.2)' }}>
+                  {r.photoData && (
+                    <img
+                      src={r.photoData}
+                      alt=""
+                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '0.5px solid rgba(134, 239, 172, 0.25)' }}
+                    />
+                  )}
                   {r.target && (
                     <div>
                       <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
@@ -106,6 +177,17 @@ export default function Recipes() {
                       </p>
                       <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
                         {r.target}
+                      </p>
+                    </div>
+                  )}
+
+                  {r.appliesTo && (
+                    <div>
+                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                        Zastosowanie
+                      </p>
+                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
+                        {r.appliesTo}
                       </p>
                     </div>
                   )}
@@ -188,7 +270,7 @@ export default function Recipes() {
             className="w-full flex flex-col"
             style={{
               maxWidth: '480px',
-              maxHeight: '85vh',
+              maxHeight: '90vh',
               backgroundColor: '#0d0c0a',
               border: '1px solid rgba(134, 239, 172, 0.35)',
               borderRadius: '20px',
@@ -214,14 +296,49 @@ export default function Recipes() {
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 placeholder="Nazwa (np. Macerat z mniszka)"
+                autoFocus
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
                 style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
               />
+
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>Typ</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {RECIPE_TYPES.map((t) => {
+                    const active = draft.type === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, type: t.key })}
+                        className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
+                        style={{
+                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'rgba(0,0,0,0.3)',
+                          border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
+                          color: active ? '#86efac' : 'rgba(232,221,208,0.7)',
+                          fontWeight: active ? 500 : 400,
+                        }}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <input
                 type="text"
                 value={draft.target}
                 onChange={(e) => setDraft({ ...draft, target: e.target.value })}
                 placeholder="Na co działa (opcjonalnie)"
+                className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
+                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
+              />
+              <input
+                type="text"
+                value={draft.appliesTo}
+                onChange={(e) => setDraft({ ...draft, appliesTo: e.target.value })}
+                placeholder="Zastosowanie — na które rośliny (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
                 style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
               />
@@ -234,7 +351,42 @@ export default function Recipes() {
                 style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
               />
 
-              <p className="text-[10px] tracking-[2px] uppercase" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>Zdjęcie (opcjonalne)</p>
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => { handlePhotoUpload(e.target.files?.[0]); e.target.value = ''; }}
+                  className="hidden"
+                />
+                {draft.photoData ? (
+                  <div className="relative rounded-lg overflow-hidden" style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)' }}>
+                    <img src={draft.photoData} alt="" style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
+                    <button
+                      type="button"
+                      onClick={() => setDraft({ ...draft, photoData: null })}
+                      className="absolute top-2 right-2 cursor-pointer"
+                      style={{ background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, color: '#F0E8D8', lineHeight: 1 }}
+                      aria-label="Usuń zdjęcie"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => photoRef.current?.click()}
+                    className="w-full py-2.5 rounded-lg text-[12px] cursor-pointer"
+                    style={{ background: 'none', border: '0.5px dashed rgba(134, 239, 172, 0.4)', color: 'rgba(134, 239, 172, 0.85)' }}
+                  >
+                    📷 Wybierz / zrób zdjęcie
+                  </button>
+                )}
+              </div>
+
+              <p className="text-[10px] tracking-[2px] uppercase mt-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
                 Kroki
               </p>
               {draft.steps.map((s, i) => (
@@ -285,7 +437,7 @@ export default function Recipes() {
                   disabled={!canSave}
                   className="flex-1 py-2 rounded-full text-[12px] cursor-pointer"
                   style={{
-                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                    background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
                     color: '#0a0f0a',
                     border: 'none',
                     fontWeight: 500,

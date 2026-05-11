@@ -13,12 +13,28 @@ const REMINDER_KEY = 'garden-reminders-shown';
 const BG_KEY = 'garden-bg';
 const LOCATION_KEY = 'garden-location';
 const DEFAULT_BG = `${import.meta.env.BASE_URL}garden-bg.jpg`;
-const FALLBACK_LOCATION = { lat: 49.83, lon: 19.94, label: 'Myślenice', source: 'fallback' };
+const FALLBACK_LOCATION = { lat: 49.8297, lon: 19.9373, label: 'Myślenice', source: 'fallback' };
+
+// WMO weather code → emoji + label. Reference: open-meteo.com/en/docs (code subset).
+function wmoIconAndLabel(code) {
+  if (code == null) return { icon: '·', label: '' };
+  if (code === 0) return { icon: '☀️', label: 'słonecznie' };
+  if (code <= 2) return { icon: '🌤️', label: 'częściowo słonecznie' };
+  if (code === 3) return { icon: '☁️', label: 'pochmurno' };
+  if (code === 45 || code === 48) return { icon: '🌫️', label: 'mgła' };
+  if (code >= 51 && code <= 57) return { icon: '🌦️', label: 'mżawka' };
+  if (code >= 61 && code <= 67) return { icon: '🌧️', label: 'deszcz' };
+  if (code >= 71 && code <= 77) return { icon: '❄️', label: 'śnieg' };
+  if (code >= 80 && code <= 82) return { icon: '🌧️', label: 'przelotny deszcz' };
+  if (code >= 85 && code <= 86) return { icon: '🌨️', label: 'przelotny śnieg' };
+  if (code >= 95) return { icon: '⛈️', label: 'burza' };
+  return { icon: '·', label: '' };
+}
 
 const TABS = [
   { key: 'kalendarz', label: 'Kalendarz', icon: '📅' },
-  { key: 'naturalne', label: 'Naturalne', icon: '🌿' },
-  { key: 'dziennik', label: 'Dziennik', icon: '📔' },
+  { key: 'naturalne', label: 'Przepisy',  icon: '🌿' },
+  { key: 'dziennik',  label: 'Dziennik',  icon: '📔' },
 ];
 
 function lsLoad(key, fallback) {
@@ -74,7 +90,7 @@ export default function App() {
   const [openPlant, setOpenPlant] = useState(null);
   // "Easy add" bottom sheet — minimal flow: name + photo + months.
   const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [quickAddDraft, setQuickAddDraft] = useState({ name: '', photoData: null, months: [] });
+  const [quickAddDraft, setQuickAddDraft] = useState({ name: '', variety: '', photoData: null, months: [] });
   const quickAddPhotoRef = useRef(null);
   const [newPlantDraft, setNewPlantDraft] = useState({
     name: '',
@@ -153,7 +169,7 @@ export default function App() {
       .filter((p) => Array.isArray(p.months) && p.months.includes(selectedMonth))
       .map((p) => ({
         plant: p.id,
-        plantName: p.name,
+        plantName: p.variety ? `${p.name} · ${p.variety}` : p.name,
         type: p.type,
         text: p.text,
         custom: true,
@@ -265,23 +281,25 @@ export default function App() {
   const handleQuickAddSave = () => {
     const name = quickAddDraft.name.trim();
     if (!name || quickAddDraft.months.length === 0) return;
+    const variety = quickAddDraft.variety.trim();
     const id = uid();
     const entry = {
       id,
       name,
+      variety: variety || undefined,
       months: [...quickAddDraft.months],
       type: 'naturalny',
-      text: name,
+      text: variety ? `${name} · ${variety}` : name,
     };
     const next = [...customPlants, entry];
     setCustomPlants(next);
     lsSave(CUSTOM_PLANTS_KEY, next);
     if (quickAddDraft.photoData) {
-      addPhoto(id, quickAddDraft.photoData);
+      try { addPhoto(id, quickAddDraft.photoData); } catch { /* ignore — photo limit */ }
     }
-    setQuickAddDraft({ name: '', photoData: null, months: [] });
+    setQuickAddDraft({ name: '', variety: '', photoData: null, months: [] });
     setShowQuickAdd(false);
-    setToast(`Dodano: ${name}`);
+    setToast(`Dodano: ${variety ? `${name} · ${variety}` : name}`);
   };
 
   const toggleBuiltin = (key) => {
@@ -403,35 +421,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* Tabs */}
-        <div className="px-6 pb-4">
-          <div
-            className="flex gap-1 p-1 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.2)', backdropFilter: 'blur(8px)' }}
-          >
-            {TABS.map((t) => {
-              const active = tab === t.key;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setTab(t.key)}
-                  className="flex-1 py-2 rounded-full text-[12px] tracking-wide cursor-pointer"
-                  style={{
-                    background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.2), rgba(123,201,123,0.1))' : 'transparent',
-                    border: active ? '0.5px solid rgba(201,169,110,0.45)' : '0.5px solid transparent',
-                    color: active ? gold : 'rgba(232,221,208,0.55)',
-                    fontWeight: active ? 500 : 400,
-                  }}
-                >
-                  <span style={{ marginRight: 4 }}>{t.icon}</span>
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {tab === 'kalendarz' && (
           <>
             {/* Weather */}
@@ -446,14 +435,17 @@ export default function App() {
                 {weatherError && (
                   <p className="text-sm font-serif italic" style={{ color: 'rgba(232,221,208,0.55)' }}>Brak pogody — sprawdź połączenie.</p>
                 )}
-                {weather && (
+                {weather && (() => {
+                  const { icon, label } = wmoIconAndLabel(weather.current.weather_code);
+                  return (
                   <>
                     <div className="flex items-baseline gap-3">
+                      <span style={{ fontSize: '36px', lineHeight: 1 }}>{icon}</span>
                       <span className="font-serif tabular-nums" style={{ fontSize: '40px', fontWeight: 300, color: gold, lineHeight: 1 }}>
                         {Math.round(weather.current.temperature_2m)}°
                       </span>
                       <span className="text-sm" style={{ color: 'rgba(232,221,208,0.6)' }}>
-                        wilgotność {weather.current.relative_humidity_2m}% · wiatr {Math.round(weather.current.wind_speed_10m)} km/h
+                        {label && `${label} · `}wilgotność {weather.current.relative_humidity_2m}%
                       </span>
                     </div>
                     <div className="mt-2 text-[12px]" style={{ color: 'rgba(232,221,208,0.5)' }}>
@@ -470,7 +462,8 @@ export default function App() {
                       </div>
                     )}
                   </>
-                )}
+                  );
+                })()}
               </div>
             </section>
 
@@ -673,8 +666,47 @@ export default function App() {
         {tab === 'dziennik' && <Diary />}
       </div>
 
+      {/* Bottom navigation bar — z-index 50, below FAB/FLORA but above content. */}
+      <nav
+        className="fixed left-0 right-0"
+        style={{
+          bottom: 0,
+          zIndex: 50,
+          background: 'rgba(13, 12, 10, 0.94)',
+          borderTop: '0.5px solid rgba(201, 169, 110, 0.2)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <div className="max-w-lg mx-auto flex">
+          {TABS.map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className="flex-1 flex flex-col items-center gap-0.5 py-2.5 cursor-pointer"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: active ? gold : 'rgba(232, 221, 208, 0.45)',
+                  fontWeight: active ? 500 : 400,
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <span style={{ fontSize: '20px', lineHeight: 1 }}>{t.icon}</span>
+                <span style={{ fontSize: '10px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       {/* FAB "+" — always visible quick add. Sits opposite FLORA (left vs right).
-          z-index 1000 — above FLORA panel/button (999) and Flora chat backdrop (998),
+          z-index 1000 — above bottom nav (50), FLORA panel/button (999), backdrop (998),
           so it never gets shadowed by the slide-up panel's bounding box on mobile Safari. */}
       <button
         type="button"
@@ -683,7 +715,7 @@ export default function App() {
         style={{
           position: 'fixed',
           left: '20px',
-          bottom: 'calc(20px + env(safe-area-inset-bottom))',
+          bottom: 'calc(80px + env(safe-area-inset-bottom))',
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -749,8 +781,20 @@ export default function App() {
                   type="text"
                   value={quickAddDraft.name}
                   onChange={(e) => setQuickAddDraft({ ...quickAddDraft, name: e.target.value })}
-                  placeholder="np. Winorośl, Pomidor Malinowy"
+                  placeholder="np. Pomidor, Winorośl"
                   autoFocus
+                  className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
+                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
+                />
+              </div>
+
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>Odmiana (opcjonalnie)</p>
+                <input
+                  type="text"
+                  value={quickAddDraft.variety}
+                  onChange={(e) => setQuickAddDraft({ ...quickAddDraft, variety: e.target.value })}
+                  placeholder="np. Cherry, New Dawn"
                   className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
                   style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
                 />
@@ -822,7 +866,7 @@ export default function App() {
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
-                  onClick={() => { setShowQuickAdd(false); setQuickAddDraft({ name: '', photoData: null, months: [] }); }}
+                  onClick={() => { setShowQuickAdd(false); setQuickAddDraft({ name: '', variety: '', photoData: null, months: [] }); }}
                   className="flex-1 py-2.5 rounded-full text-[13px] cursor-pointer"
                   style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.75)' }}
                 >
@@ -955,7 +999,10 @@ export default function App() {
                             className="flex-1 min-w-0 text-left cursor-pointer"
                             style={{ background: 'none', border: 'none', padding: 0 }}
                           >
-                            <p className="font-serif italic" style={{ fontSize: '14px', color: '#F0E8D8' }}>{p.name}</p>
+                            <p className="font-serif italic" style={{ fontSize: '14px', color: '#F0E8D8' }}>
+                              {p.name}
+                              {p.variety && <span style={{ color: 'rgba(201,169,110,0.65)', marginLeft: 8, fontSize: '12px' }}>· {p.variety}</span>}
+                            </p>
                             <p className="text-[11px] mt-0.5" style={{ color: cat?.text || 'rgba(232,221,208,0.5)' }}>
                               {cat?.label || p.type} · {p.months.map((m) => MONTHS_SHORT[m - 1]).join(', ')}
                             </p>

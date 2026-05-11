@@ -102,7 +102,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
         style={{
           position: 'fixed',
           right: '20px',
-          bottom: 'calc(20px + env(safe-area-inset-bottom))',
+          bottom: 'calc(80px + env(safe-area-inset-bottom))',
           width: '60px',
           height: '60px',
           borderRadius: '50%',
