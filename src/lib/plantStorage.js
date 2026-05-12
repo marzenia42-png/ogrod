@@ -181,6 +181,11 @@ export function loadCustomRecipes() {
   return readArray(CUSTOM_RECIPES_KEY);
 }
 
+function sanitizeMonths(months) {
+  if (!Array.isArray(months)) return [];
+  return months.filter((m) => Number.isInteger(m) && m >= 1 && m <= 12).sort((a, b) => a - b);
+}
+
 export function addCustomRecipe(recipe) {
   if (!recipe || !recipe.name || !Array.isArray(recipe.steps) || recipe.steps.length === 0) {
     return loadCustomRecipes();
@@ -194,9 +199,34 @@ export function addCustomRecipe(recipe) {
     frequency: (recipe.frequency || '').trim(),
     steps: recipe.steps.map((s) => String(s).trim()).filter(Boolean),
     photoData: recipe.photoData || null,
+    months: sanitizeMonths(recipe.months),
     custom: true,
   };
   const next = [...loadCustomRecipes(), entry];
+  writeArray(CUSTOM_RECIPES_KEY, next);
+  return next;
+}
+
+export function updateCustomRecipe(recipeId, recipe) {
+  const current = loadCustomRecipes();
+  const next = current.map((r) => {
+    if (r.id !== recipeId) return r;
+    const cleanedSteps = Array.isArray(recipe.steps)
+      ? recipe.steps.map((s) => String(s).trim()).filter(Boolean)
+      : r.steps;
+    return {
+      ...r,
+      name: (recipe.name ?? r.name).trim() || r.name,
+      type: recipe.type || r.type,
+      target: (recipe.target ?? r.target ?? '').trim(),
+      appliesTo: (recipe.appliesTo ?? r.appliesTo ?? '').trim(),
+      frequency: (recipe.frequency ?? r.frequency ?? '').trim(),
+      steps: cleanedSteps.length > 0 ? cleanedSteps : r.steps,
+      photoData: recipe.photoData !== undefined ? recipe.photoData : r.photoData,
+      months: recipe.months !== undefined ? sanitizeMonths(recipe.months) : (r.months || []),
+      custom: true,
+    };
+  });
   writeArray(CUSTOM_RECIPES_KEY, next);
   return next;
 }

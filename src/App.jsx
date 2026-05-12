@@ -4,7 +4,7 @@ import Recipes from './Recipes.jsx';
 import Diary from './Diary.jsx';
 import PlantDetail from './PlantDetail.jsx';
 import AddPlantWizard from './AddPlantWizard.jsx';
-import { compressImage, addPhoto } from './lib/plantStorage.js';
+import { compressImage, addPhoto, loadCustomRecipes } from './lib/plantStorage.js';
 import { migrateCustomPlantsV1 } from './lib/migration.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
 import { SPECIES_BY_ID } from './data/plantSpecies.js';
@@ -49,7 +49,7 @@ function wmoIconAndLabel(code) {
 
 const TABS = [
   { key: 'kalendarz', label: 'Kalendarz', icon: '📅' },
-  { key: 'naturalne', label: 'Przepisy',  icon: '🌿' },
+  { key: 'naturalne', label: 'Środki ochrony',  icon: '🌿' },
   { key: 'dziennik',  label: 'Dziennik',  icon: '📔' },
 ];
 
@@ -89,6 +89,9 @@ export default function App() {
   const [notes, setNotes] = useState(() => lsLoad(NOTES_KEY, []));
   const [noteDraft, setNoteDraft] = useState('');
   const [customPlants, setCustomPlants] = useState(() => lsLoad(CUSTOM_PLANTS_KEY, []));
+  const [customRecipes, setCustomRecipes] = useState(() => {
+    try { return loadCustomRecipes(); } catch { return []; }
+  });
   const [removedPlants, setRemovedPlants] = useState(() => lsLoad(REMOVED_PLANTS_KEY, []));
   const [bg, setBg] = useState(() => {
     try { return localStorage.getItem(BG_KEY) || DEFAULT_BG; } catch { return DEFAULT_BG; }
@@ -231,7 +234,21 @@ export default function App() {
       return [];
     });
 
-    const all = [...builtin, ...custom];
+    // Custom recipes z polem months — przypomnienia w kalendarzu (kategoria naturalna).
+    const recipes = customRecipes
+      .filter((r) => Array.isArray(r.months) && r.months.includes(selectedMonth))
+      .map((r) => ({
+        plant: r.id,
+        plantName: r.name,
+        type: 'naturalny',
+        text: r.target || r.appliesTo || (r.steps?.[0] ?? 'Receptura naturalna'),
+        custom: false,
+        fromSpecies: false,
+        isRecipe: true,
+        id: r.id,
+      }));
+
+    const all = [...builtin, ...custom, ...recipes];
     const grouped = {};
     for (const c of CATEGORIES) grouped[c.key] = [];
     for (const a of all) {
@@ -239,7 +256,7 @@ export default function App() {
       else grouped[a.type] = [a];
     }
     return grouped;
-  }, [selectedMonth, customPlants, removedSet]);
+  }, [selectedMonth, customPlants, customRecipes, removedSet]);
 
   const frostAlert = weather?.daily?.temperature_2m_min?.[0] != null && weather.daily.temperature_2m_min[0] <= 2;
   const humidityAlert = weather?.current?.relative_humidity_2m != null && weather.current.relative_humidity_2m >= 85;
@@ -602,16 +619,17 @@ export default function App() {
                         >
                           <button
                             type="button"
-                            onClick={() => openPlantById(a.plant, a.plantName)}
+                            onClick={() => a.isRecipe ? setTab('naturalne') : openPlantById(a.plant, a.plantName)}
                             className="flex-1 min-w-0 text-left cursor-pointer px-4 py-3"
                             style={{ background: 'none', border: 'none', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                           >
                             <span
                               style={{ color: cat.text, fontWeight: 500, fontSize: '13px', letterSpacing: '0.3px', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
                             >
-                              {a.plantName}
+                              {a.isRecipe ? `🌿 ${a.plantName}` : a.plantName}
                             </span>
                             {a.custom && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.6, fontWeight: 400, color: cat.text }}>własna</span>}
+                            {a.isRecipe && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.7, fontWeight: 400, color: cat.text }}>receptura →</span>}
                             <p
                               className="mt-1 font-serif italic leading-relaxed"
                               style={{ color: 'rgba(232,221,208,0.85)', fontSize: '13.5px' }}
@@ -740,7 +758,9 @@ export default function App() {
           </>
         )}
 
-        {tab === 'naturalne' && <Recipes />}
+        {tab === 'naturalne' && (
+          <Recipes customRecipes={customRecipes} onRecipesChange={setCustomRecipes} />
+        )}
         {tab === 'dziennik' && <Diary />}
       </div>
 

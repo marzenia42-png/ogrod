@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { RECIPES, RECIPE_TYPES, RECIPE_TYPE_BY_KEY, NATURAL_RULES } from './data/recipes.js';
-import { loadCustomRecipes, addCustomRecipe, deleteCustomRecipe, compressImage } from './lib/plantStorage.js';
+import { MONTHS_SHORT } from './data/plants.js';
+import { addCustomRecipe, updateCustomRecipe, deleteCustomRecipe, compressImage } from './lib/plantStorage.js';
 
 const emptyDraft = () => ({
   name: '',
@@ -10,13 +11,14 @@ const emptyDraft = () => ({
   frequency: '',
   steps: [''],
   photoData: null,
+  months: [],
 });
 
-export default function Recipes() {
-  const [openId, setOpenId] = useState(null);
-  const [customRecipes, setCustomRecipes] = useState(() => loadCustomRecipes());
+export default function Recipes({ customRecipes = [], onRecipesChange = () => {}, initialOpenId = null }) {
+  const [openId, setOpenId] = useState(initialOpenId);
   const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
+  const [editingId, setEditingId] = useState(null);
   const [filter, setFilter] = useState('all');
   const photoRef = useRef(null);
 
@@ -49,9 +51,38 @@ export default function Recipes() {
 
   const canSave = draft.name.trim() && draft.steps.filter((s) => s.trim()).length > 0;
 
+  const toggleDraftMonth = (m) => {
+    setDraft((d) => {
+      const has = d.months.includes(m);
+      const months = has ? d.months.filter((x) => x !== m) : [...d.months, m].sort((a, b) => a - b);
+      return { ...d, months };
+    });
+  };
+
+  const closeAddModal = () => {
+    setShowAdd(false);
+    setEditingId(null);
+    setDraft(emptyDraft());
+  };
+
+  const handleEdit = (r) => {
+    setDraft({
+      name: r.name || '',
+      type: r.type || 'inny',
+      target: r.target || '',
+      appliesTo: r.appliesTo || '',
+      frequency: r.frequency || '',
+      steps: r.steps?.length ? [...r.steps] : [''],
+      photoData: r.photoData || null,
+      months: Array.isArray(r.months) ? [...r.months] : [],
+    });
+    setEditingId(r.id);
+    setShowAdd(true);
+  };
+
   const handleSave = () => {
     if (!canSave) return;
-    const next = addCustomRecipe({
+    const payload = {
       name: draft.name,
       type: draft.type,
       target: draft.target,
@@ -59,22 +90,25 @@ export default function Recipes() {
       frequency: draft.frequency,
       steps: draft.steps.filter((s) => s.trim()),
       photoData: draft.photoData,
-    });
-    setCustomRecipes(next);
-    setDraft(emptyDraft());
-    setShowAdd(false);
+      months: draft.months,
+    };
+    const next = editingId
+      ? updateCustomRecipe(editingId, payload)
+      : addCustomRecipe(payload);
+    onRecipesChange(next);
+    closeAddModal();
   };
 
   const handleDelete = (id) => {
     if (!confirm('Usunąć recepturę?')) return;
-    setCustomRecipes(deleteCustomRecipe(id));
+    onRecipesChange(deleteCustomRecipe(id));
   };
 
   return (
     <div className="px-5 pb-10">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
-          Przepisy ogrodnicze
+          Środki ochrony i pielęgnacji
         </p>
         <button
           type="button"
@@ -205,7 +239,7 @@ export default function Recipes() {
 
                   <div>
                     <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
-                      Przepis
+                      Przygotowanie
                     </p>
                     <ol className="flex flex-col gap-1.5">
                       {r.steps.map((s, i) => (
@@ -221,15 +255,36 @@ export default function Recipes() {
                     </ol>
                   </div>
 
+                  {r.months?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                        Miesiące przypomnień
+                      </p>
+                      <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
+                        {r.months.map((m) => MONTHS_SHORT[m - 1]).join(', ')}
+                      </p>
+                    </div>
+                  )}
+
                   {r.custom && (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(r.id)}
-                      className="self-end text-[11px] cursor-pointer"
-                      style={{ background: 'none', border: 'none', color: 'rgba(232,100,100,0.7)', padding: 0 }}
-                    >
-                      Usuń recepturę
-                    </button>
+                    <div className="flex gap-4 self-end mt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(r)}
+                        className="text-[11px] cursor-pointer"
+                        style={{ background: 'none', border: 'none', color: '#86efac', padding: 0 }}
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(r.id)}
+                        className="text-[11px] cursor-pointer"
+                        style={{ background: 'none', border: 'none', color: 'rgba(232,100,100,0.7)', padding: 0 }}
+                      >
+                        Usuń recepturę
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -263,7 +318,7 @@ export default function Recipes() {
         <div
           className="fixed inset-0 flex items-end sm:items-center justify-center px-4"
           style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
-          onClick={() => setShowAdd(false)}
+          onClick={closeAddModal}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -277,10 +332,12 @@ export default function Recipes() {
             }}
           >
             <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: '0.5px solid rgba(134, 239, 172, 0.2)' }}>
-              <h3 className="font-serif italic" style={{ fontSize: '20px', color: '#86efac' }}>Twoja receptura</h3>
+              <h3 className="font-serif italic" style={{ fontSize: '20px', color: '#86efac' }}>
+                {editingId ? 'Edytuj recepturę' : 'Twoja receptura'}
+              </h3>
               <button
                 type="button"
-                onClick={() => setShowAdd(false)}
+                onClick={closeAddModal}
                 aria-label="Zamknij"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
               >
@@ -350,6 +407,37 @@ export default function Recipes() {
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
                 style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
               />
+
+              <div>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                  Miesiące przypomnień (opcjonalne)
+                </p>
+                <p className="text-[11px] mb-2 font-serif italic" style={{ color: 'rgba(232,221,208,0.55)' }}>
+                  Zaznaczone miesiące pojawią się w kalendarzu jako naturalna akcja.
+                </p>
+                <div className="grid grid-cols-6 gap-1">
+                  {MONTHS_SHORT.map((m, i) => {
+                    const month = i + 1;
+                    const selected = draft.months.includes(month);
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => toggleDraftMonth(month)}
+                        className="py-1.5 rounded-md text-[11px] cursor-pointer"
+                        style={{
+                          border: selected ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
+                          background: selected ? 'rgba(76, 175, 80, 0.20)' : 'transparent',
+                          color: selected ? '#86efac' : 'rgba(232,221,208,0.55)',
+                          fontWeight: selected ? 500 : 400,
+                        }}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <div>
                 <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>Zdjęcie (opcjonalne)</p>
@@ -425,7 +513,7 @@ export default function Recipes() {
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
-                  onClick={() => { setShowAdd(false); setDraft(emptyDraft()); }}
+                  onClick={closeAddModal}
                   className="flex-1 py-2 rounded-full text-[12px] cursor-pointer"
                   style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.75)' }}
                 >
