@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  loadPhotos, addPhoto, deletePhoto, PHOTO_LIMIT,
+  loadPhotos, addPhoto, deletePhoto, updatePhotoCaption, PHOTO_LIMIT,
   loadPlantNotes, addPlantNote, deletePlantNote,
   loadEvents, addEvent, deleteEvent, EVENT_TYPES,
   loadVarietiesFor, addVariety, deleteVariety,
@@ -34,8 +34,63 @@ export default function PlantDetail({
   const [showEventForm, setShowEventForm] = useState(false);
   const [adding, setAdding] = useState(false);
   const [photoError, setPhotoError] = useState(null);
-  const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
+  const [fullscreenIdx, setFullscreenIdx] = useState(null);
+  const [captionDraft, setCaptionDraft] = useState('');
   const photoInputRef = useRef(null);
+  const touchStartXRef = useRef(0);
+
+  const fullscreenPhoto = fullscreenIdx != null ? photos[fullscreenIdx] : null;
+
+  const persistCaption = (idx, draft) => {
+    const photo = photos[idx];
+    if (!photo) return photos;
+    if ((photo.caption || '') === draft.trim()) return photos;
+    const next = updatePhotoCaption(plantId, photo.id, draft);
+    setPhotos(next);
+    return next;
+  };
+
+  const openFullscreen = (idx) => {
+    setFullscreenIdx(idx);
+    setCaptionDraft(photos[idx]?.caption || '');
+  };
+
+  const closeFullscreen = () => {
+    if (fullscreenIdx != null) persistCaption(fullscreenIdx, captionDraft);
+    setFullscreenIdx(null);
+    setCaptionDraft('');
+  };
+
+  const goToPhoto = (nextIdx) => {
+    if (fullscreenIdx == null || photos.length < 2) return;
+    const saved = persistCaption(fullscreenIdx, captionDraft);
+    const wrapped = ((nextIdx % saved.length) + saved.length) % saved.length;
+    setFullscreenIdx(wrapped);
+    setCaptionDraft(saved[wrapped]?.caption || '');
+  };
+
+  const onTouchStart = (e) => { touchStartXRef.current = e.touches[0]?.clientX ?? 0; };
+  const onTouchEnd = (e) => {
+    if (fullscreenIdx == null || photos.length < 2) return;
+    const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartXRef.current;
+    if (Math.abs(dx) < 50) return;
+    goToPhoto(fullscreenIdx + (dx > 0 ? -1 : 1));
+  };
+
+  const handleDeleteCurrentPhoto = () => {
+    if (!fullscreenPhoto) return;
+    if (!confirm('Usunąć zdjęcie?')) return;
+    const nextPhotos = deletePhoto(plantId, fullscreenPhoto.id);
+    setPhotos(nextPhotos);
+    if (nextPhotos.length === 0) {
+      setFullscreenIdx(null);
+      setCaptionDraft('');
+    } else {
+      const nextIdx = Math.min(fullscreenIdx, nextPhotos.length - 1);
+      setFullscreenIdx(nextIdx);
+      setCaptionDraft(nextPhotos[nextIdx]?.caption || '');
+    }
+  };
 
   // If the user opens a different plant, refresh local state.
   useEffect(() => {
@@ -178,11 +233,11 @@ export default function PlantDetail({
                 className="flex gap-2 overflow-x-auto pb-1"
                 style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
               >
-                {photos.map((p) => (
+                {photos.map((p, idx) => (
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => setFullscreenPhoto(p)}
+                    onClick={() => openFullscreen(idx)}
                     className="relative rounded-lg overflow-hidden cursor-pointer shrink-0"
                     style={{
                       width: '140px',
@@ -192,7 +247,16 @@ export default function PlantDetail({
                       padding: 0,
                     }}
                   >
-                    <img src={p.dataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <img src={p.dataUrl} alt={p.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {p.caption && (
+                      <span
+                        className="absolute top-1 left-1 px-1.5 py-0.5 text-[9px] tracking-wide rounded"
+                        style={{ background: 'rgba(0,0,0,0.65)', color: 'rgba(232,221,208,0.9)' }}
+                        aria-label="Ma opis"
+                      >
+                        💬
+                      </span>
+                    )}
                     <span
                       className="absolute bottom-0 left-0 right-0 px-2 py-0.5 text-[10px] tracking-wide"
                       style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', color: 'rgba(232,221,208,0.85)' }}
@@ -751,30 +815,109 @@ export default function PlantDetail({
         <div
           className="fixed inset-0 flex items-center justify-center px-4"
           style={{ zIndex: 1100, backgroundColor: 'rgba(0,0,0,0.92)' }}
-          onClick={() => setFullscreenPhoto(null)}
+          onClick={closeFullscreen}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex flex-col items-center"
-            style={{ maxWidth: '600px', width: '100%' }}
+            className="flex flex-col items-center w-full"
+            style={{ maxWidth: '600px' }}
           >
-            <img
-              src={fullscreenPhoto.dataUrl}
-              alt=""
-              style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '12px', border: '0.5px solid rgba(201,169,110,0.3)' }}
+            <div className="relative w-full flex items-center justify-center">
+              <img
+                src={fullscreenPhoto.dataUrl}
+                alt={fullscreenPhoto.caption || ''}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: '12px', border: '0.5px solid rgba(201,169,110,0.3)', touchAction: 'pan-y' }}
+              />
+              {photos.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => goToPhoto(fullscreenIdx - 1)}
+                    aria-label="Poprzednie zdjęcie"
+                    className="absolute cursor-pointer"
+                    style={{
+                      left: '4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.55)',
+                      border: '0.5px solid rgba(201,169,110,0.3)',
+                      color: '#F0E8D8',
+                      fontSize: '22px',
+                      lineHeight: 1,
+                      display: 'grid',
+                      placeItems: 'center',
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goToPhoto(fullscreenIdx + 1)}
+                    aria-label="Następne zdjęcie"
+                    className="absolute cursor-pointer"
+                    style={{
+                      right: '4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.55)',
+                      border: '0.5px solid rgba(201,169,110,0.3)',
+                      color: '#F0E8D8',
+                      fontSize: '22px',
+                      lineHeight: 1,
+                      display: 'grid',
+                      placeItems: 'center',
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    ›
+                  </button>
+                  <span
+                    className="absolute"
+                    style={{
+                      top: '8px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'rgba(0,0,0,0.6)',
+                      color: 'rgba(232,221,208,0.85)',
+                      fontSize: '11px',
+                      padding: '2px 10px',
+                      borderRadius: '999px',
+                      letterSpacing: '1px',
+                    }}
+                  >
+                    {fullscreenIdx + 1} / {photos.length}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <textarea
+              value={captionDraft}
+              onChange={(e) => setCaptionDraft(e.target.value)}
+              onBlur={() => persistCaption(fullscreenIdx, captionDraft)}
+              placeholder="Krótki opis (opcjonalny)..."
+              rows={2}
+              className="w-full mt-3 bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none resize-none"
+              style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
             />
+
             <div className="flex items-center justify-between mt-3 w-full">
               <span className="text-[12px]" style={{ color: 'rgba(232,221,208,0.7)' }}>{fullscreenPhoto.date}</span>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm('Usunąć zdjęcie?')) {
-                      const next = deletePhoto(plantId, fullscreenPhoto.id);
-                      setPhotos(next);
-                      setFullscreenPhoto(null);
-                    }
-                  }}
+                  onClick={handleDeleteCurrentPhoto}
                   className="px-3 py-1.5 rounded-full text-[11px] cursor-pointer"
                   style={{ background: 'none', border: '0.5px solid rgba(232,100,100,0.4)', color: 'rgba(232,100,100,0.85)' }}
                 >
@@ -782,7 +925,7 @@ export default function PlantDetail({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFullscreenPhoto(null)}
+                  onClick={closeFullscreen}
                   className="px-3 py-1.5 rounded-full text-[11px] cursor-pointer"
                   style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.85)' }}
                 >

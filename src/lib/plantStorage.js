@@ -83,6 +83,15 @@ export function deletePhoto(plantId, photoId) {
   return next;
 }
 
+export function updatePhotoCaption(plantId, photoId, caption) {
+  const trimmed = (caption || '').trim();
+  const next = loadPhotos(plantId).map((p) =>
+    p.id === photoId ? { ...p, caption: trimmed } : p,
+  );
+  writeArray(PHOTO_PREFIX + plantId, next);
+  return next;
+}
+
 // Notes — array of { id, date, text }
 export function loadPlantNotes(plantId) {
   return readArray(NOTE_PREFIX + plantId);
