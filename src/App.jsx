@@ -484,7 +484,7 @@ export default function App() {
                   <>
                     <div className="flex items-baseline gap-3">
                       <span style={{ fontSize: '36px', lineHeight: 1 }}>{icon}</span>
-                      <span className="font-serif tabular-nums" style={{ fontSize: '40px', fontWeight: 300, color: gold, lineHeight: 1 }}>
+                      <span className="font-serif tabular-nums" style={{ fontSize: '40px', fontWeight: 300, color: gold, lineHeight: 1, fontVariantNumeric: 'lining-nums tabular-nums' }}>
                         {Math.round(weather.current.temperature_2m)}°
                       </span>
                       <span className="text-sm" style={{ color: 'rgba(232,221,208,0.6)' }}>
