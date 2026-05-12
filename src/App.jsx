@@ -24,6 +24,13 @@ const LOCATION_KEY = 'garden-location';
 const DEFAULT_BG = `${import.meta.env.BASE_URL}garden-bg.jpg`;
 const FALLBACK_LOCATION = { lat: 49.8297, lon: 19.9373, label: 'Myślenice', source: 'fallback' };
 
+// Polski skrót dnia + numer ("wt 14", "śr 15"). Bierze ISO YYYY-MM-DD.
+function shortDay(iso) {
+  const d = new Date(iso);
+  const dow = d.toLocaleDateString('pl-PL', { weekday: 'short' }).replace('.', '');
+  return `${dow} ${d.getDate()}`;
+}
+
 // WMO weather code → emoji + label. Reference: open-meteo.com/en/docs (code subset).
 function wmoIconAndLabel(code) {
   if (code == null) return { icon: '·', label: '' };
@@ -113,31 +120,48 @@ export default function App() {
   const monthStripRef = useRef(null);
 
   // Try to get user's geolocation once on mount; fall back silently to Myślenice.
+  // On success, also query Nominatim reverse geocoding for a human-readable name
+  // (Bęczarka, Myślenice, …). Nominatim rate limit: 1 req/s — well within budget.
   useEffect(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    let cancelled = false;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const next = {
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          label: 'Twoja lokalizacja',
-          source: 'geo',
-        };
-        setLocation(next);
-        try { localStorage.setItem(LOCATION_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const initial = { lat, lon, label: 'Twoja lokalizacja', source: 'geo' };
+        if (cancelled) return;
+        setLocation(initial);
+        try { localStorage.setItem(LOCATION_KEY, JSON.stringify(initial)); } catch { /* ignore */ }
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&addressdetails=1&accept-language=pl`)
+          .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+          .then((data) => {
+            if (cancelled) return;
+            const addr = data?.address || {};
+            const name = addr.village || addr.town || addr.city || addr.hamlet || addr.suburb || addr.county || (data?.display_name || '').split(',')[0]?.trim();
+            if (!name) return;
+            const next = { lat, lon, label: name, source: 'geo' };
+            setLocation(next);
+            try { localStorage.setItem(LOCATION_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+          })
+          .catch(() => { /* keep 'Twoja lokalizacja' fallback */ });
       },
       () => { /* user denied or geo failed — keep cached or fallback */ },
       { timeout: 8000, maximumAge: 5 * 60 * 1000 },
     );
+    return () => { cancelled = true; };
   }, []);
 
   // Open-Meteo — fetches for current `location` + refreshes every 30 min.
+  // 4-day forecast (today + 3) + hourly precipitation for "dry spray window" detection.
   useEffect(() => {
     const url =
       `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}` +
       '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m' +
-      '&daily=temperature_2m_min,temperature_2m_max,precipitation_sum' +
-      '&timezone=auto&forecast_days=2';
+      '&daily=temperature_2m_min,temperature_2m_max,precipitation_sum,weather_code' +
+      '&hourly=precipitation,precipitation_probability' +
+      '&timezone=auto&forecast_days=4';
     const fetchWeather = () => {
       fetch(url)
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
@@ -219,6 +243,20 @@ export default function App() {
 
   const frostAlert = weather?.daily?.temperature_2m_min?.[0] != null && weather.daily.temperature_2m_min[0] <= 2;
   const humidityAlert = weather?.current?.relative_humidity_2m != null && weather.current.relative_humidity_2m >= 85;
+
+  // "Dobry czas na oprysk" — najbliższe 6h: każda godzina <0.1mm opadów i <30%
+  // prawdopodobieństwa. Wymaga hourly.precipitation + precipitation_probability.
+  const drySprayWindow = (() => {
+    const h = weather?.hourly;
+    if (!h?.time || !h.precipitation) return false;
+    const now = Date.now();
+    const idx = h.time.findIndex((t) => new Date(t).getTime() >= now - 30 * 60 * 1000);
+    if (idx < 0) return false;
+    const mm = h.precipitation.slice(idx, idx + 6);
+    const prob = (h.precipitation_probability || []).slice(idx, idx + 6);
+    if (mm.length < 6) return false;
+    return mm.every((v) => (v ?? 0) < 0.1) && prob.every((v) => (v ?? 0) < 30);
+  })();
 
   const handleAddNote = () => {
     const text = noteDraft.trim();
@@ -457,6 +495,31 @@ export default function App() {
                       Min {Math.round(weather.daily.temperature_2m_min[0])}° / Max {Math.round(weather.daily.temperature_2m_max[0])}°
                       {weather.daily.precipitation_sum[0] > 0 && ` · opady ${weather.daily.precipitation_sum[0]} mm`}
                     </div>
+                    {weather.daily?.time?.length > 1 && (
+                      <div className="mt-3 flex gap-1.5">
+                        {weather.daily.time.slice(1, 4).map((iso, i) => {
+                          const di = i + 1;
+                          const wmo = wmoIconAndLabel(weather.daily.weather_code?.[di]);
+                          const tmin = Math.round(weather.daily.temperature_2m_min[di]);
+                          const tmax = Math.round(weather.daily.temperature_2m_max[di]);
+                          const prec = weather.daily.precipitation_sum[di];
+                          return (
+                            <div
+                              key={iso}
+                              className="flex-1 rounded-lg px-2 py-2 flex flex-col items-center gap-0.5"
+                              style={{ background: 'rgba(201,169,110,0.07)', border: '0.5px solid rgba(201,169,110,0.18)' }}
+                            >
+                              <p className="text-[10px] tracking-wide" style={{ color: 'rgba(201,169,110,0.7)' }}>{shortDay(iso)}</p>
+                              <span style={{ fontSize: '22px', lineHeight: 1 }}>{wmo.icon}</span>
+                              <p className="text-[11px] tabular-nums" style={{ color: 'rgba(232,221,208,0.85)' }}>{tmax}° / {tmin}°</p>
+                              {prec > 0 && (
+                                <p className="text-[10px] tabular-nums" style={{ color: 'rgba(135, 206, 250, 0.7)' }}>{prec.toFixed(1)} mm</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     {(frostAlert || humidityAlert) && (
                       <div
                         className="mt-3 px-3 py-2 rounded-lg text-[12px] font-serif italic"
@@ -464,6 +527,14 @@ export default function App() {
                       >
                         {frostAlert && 'Mróz nocą — chroń wrażliwe (rododendron, brzoskwinia, magnolia). '}
                         {humidityAlert && 'Wysoka wilgotność — uwaga na grzyby (mączniak, monilioza).'}
+                      </div>
+                    )}
+                    {drySprayWindow && !humidityAlert && (
+                      <div
+                        className="mt-3 px-3 py-2 rounded-lg text-[12px] font-serif italic"
+                        style={{ backgroundColor: 'rgba(76, 175, 80, 0.10)', border: '1px solid rgba(76, 175, 80, 0.35)', color: '#86efac' }}
+                      >
+                        🌿 Dobry czas na oprysk — najbliższe 6h bez deszczu.
                       </div>
                     )}
                   </>
