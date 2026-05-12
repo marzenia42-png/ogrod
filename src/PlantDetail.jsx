@@ -577,42 +577,125 @@ export default function PlantDetail({
                   Brak odmian. Dodaj pierwszą.
                 </p>
               ) : (
-                <div className="flex flex-col gap-1.5">
-                  {varieties.map((v) => (
-                    <div
-                      key={v.id}
-                      className="px-3 py-2 rounded-lg flex items-center justify-between gap-2"
-                      style={{ background: 'rgba(0,0,0,0.4)', border: '0.5px solid rgba(201,169,110,0.15)' }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => onOpenVariety?.(v)}
-                        className="text-left flex-1 cursor-pointer"
-                        style={{ background: 'none', border: 'none', padding: 0, color: 'inherit' }}
-                      >
-                        <p className="font-serif italic" style={{ fontSize: '14px', color: '#F0E8D8' }}>
-                          {v.name}
-                        </p>
-                        <p className="text-[10px] tracking-wide" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                          dodano {v.addedAt}
-                        </p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm(`Usunąć odmianę "${v.name}"? Notatki i zdjęcia odmiany też znikną.`)) {
-                            const next = deleteVariety(v.id);
-                            setVarieties(next.filter((x) => x.parent === plantId));
-                          }
+                <div
+                  className="flex gap-2 overflow-x-auto pb-1"
+                  style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+                >
+                  {varieties.map((v) => {
+                    const vPhotos = loadPhotos(v.id);
+                    const vNotes = loadPlantNotes(v.id);
+                    const firstPhoto = vPhotos[0];
+                    const lastNote = vNotes[0];
+                    return (
+                      <div
+                        key={v.id}
+                        className="relative rounded-lg overflow-hidden shrink-0 flex flex-col"
+                        style={{
+                          width: '160px',
+                          minHeight: '220px',
+                          background: 'rgba(0,0,0,0.4)',
+                          border: '0.5px solid rgba(201,169,110,0.2)',
                         }}
-                        className="cursor-pointer shrink-0"
-                        style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '16px', lineHeight: 1, padding: 2 }}
-                        aria-label="Usuń odmianę"
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                        <button
+                          type="button"
+                          onClick={() => onOpenVariety?.(v)}
+                          className="flex flex-col text-left cursor-pointer flex-1"
+                          style={{ background: 'none', border: 'none', padding: 0, color: 'inherit' }}
+                        >
+                          <div
+                            style={{
+                              width: '100%',
+                              height: '110px',
+                              background: firstPhoto
+                                ? `url(${firstPhoto.dataUrl}) center/cover`
+                                : 'linear-gradient(135deg, rgba(201,169,110,0.12), rgba(76,175,80,0.08))',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {!firstPhoto && (
+                              <span style={{ fontSize: '32px', opacity: 0.4 }}>🌱</span>
+                            )}
+                          </div>
+                          <div className="px-2.5 py-2 flex-1 flex flex-col gap-1">
+                            <p
+                              className="font-serif italic"
+                              style={{
+                                fontSize: '13px',
+                                color: '#F0E8D8',
+                                lineHeight: 1.2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 1,
+                                WebkitBoxOrient: 'vertical',
+                              }}
+                            >
+                              {v.name}
+                            </p>
+                            {lastNote ? (
+                              <p
+                                className="font-serif italic"
+                                style={{
+                                  fontSize: '11px',
+                                  color: 'rgba(232,221,208,0.65)',
+                                  lineHeight: 1.3,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  flex: 1,
+                                }}
+                              >
+                                „{lastNote.text}"
+                              </p>
+                            ) : (
+                              <p
+                                className="font-serif italic"
+                                style={{ fontSize: '11px', color: 'rgba(232,221,208,0.3)', flex: 1 }}
+                              >
+                                Brak notatek
+                              </p>
+                            )}
+                            <p
+                              className="tracking-wide"
+                              style={{ fontSize: '10px', color: 'rgba(201,169,110,0.6)' }}
+                            >
+                              📷 {vPhotos.length} · 📝 {vNotes.length}
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Usunąć odmianę "${v.name}"? Notatki i zdjęcia odmiany też znikną.`)) {
+                              const next = deleteVariety(v.id);
+                              setVarieties(next.filter((x) => x.parent === plantId));
+                            }
+                          }}
+                          className="absolute cursor-pointer"
+                          style={{
+                            top: '4px',
+                            right: '4px',
+                            background: 'rgba(0,0,0,0.6)',
+                            border: 'none',
+                            color: 'rgba(232,221,208,0.85)',
+                            fontSize: '14px',
+                            lineHeight: 1,
+                            padding: '2px 7px',
+                            borderRadius: '999px',
+                          }}
+                          aria-label="Usuń odmianę"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </section>
