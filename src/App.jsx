@@ -526,32 +526,34 @@ export default function App() {
                       {items.map((a, idx) => (
                         <div
                           key={`${a.plant}-${idx}`}
-                          className="rounded-[12px] px-4 py-3 flex items-start gap-3"
+                          className="rounded-[12px] flex items-stretch gap-1"
                           style={{ backgroundColor: cat.bg, border: `0.5px solid ${cat.border}`, backdropFilter: 'blur(4px)' }}
                         >
-                          <div className="flex-1 min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => openPlantById(a.plant, a.plantName)}
-                              className="cursor-pointer text-left"
-                              style={{ background: 'none', border: 'none', padding: 0, color: cat.text, fontWeight: 500, fontSize: '13px', letterSpacing: '0.3px', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
+                          <button
+                            type="button"
+                            onClick={() => openPlantById(a.plant, a.plantName)}
+                            className="flex-1 min-w-0 text-left cursor-pointer px-4 py-3"
+                            style={{ background: 'none', border: 'none', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                          >
+                            <span
+                              style={{ color: cat.text, fontWeight: 500, fontSize: '13px', letterSpacing: '0.3px', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
                             >
                               {a.plantName}
-                              {a.custom && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.6, fontWeight: 400 }}>własna</span>}
-                            </button>
+                            </span>
+                            {a.custom && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.6, fontWeight: 400, color: cat.text }}>własna</span>}
                             <p
                               className="mt-1 font-serif italic leading-relaxed"
                               style={{ color: 'rgba(232,221,208,0.85)', fontSize: '13.5px' }}
                             >
                               {a.text}
                             </p>
-                          </div>
+                          </button>
                           {a.custom && !a.fromSpecies && (
                             <button
                               type="button"
-                              onClick={() => handleDeleteCustom(a.id)}
-                              className="cursor-pointer"
-                              style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '18px', lineHeight: 1, padding: 0 }}
+                              onClick={(e) => { e.stopPropagation(); handleDeleteCustom(a.id); }}
+                              className="cursor-pointer shrink-0 px-3 py-3"
+                              style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '18px', lineHeight: 1 }}
                               aria-label="Usuń"
                             >
                               ×
