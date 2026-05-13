@@ -26,6 +26,8 @@ const NOTE_PREFIX = 'garden-plant-notes-';
 const EVENT_PREFIX = 'garden-plant-events-';
 const VARIETIES_KEY = 'garden-varieties';
 const CUSTOM_RECIPES_KEY = 'garden-custom-recipes';
+const USER_PROFILE_KEY = 'garden-user-profile';
+const THEME_KEY = 'garden-theme';
 
 export const PHOTO_LIMIT = 3;
 export const EVENT_TYPES = [
@@ -176,6 +178,16 @@ export function deleteVariety(varietyId) {
   return next;
 }
 
+export function updateVariety(varietyId, newName) {
+  const trimmed = (newName || '').trim();
+  if (!trimmed) return loadVarieties();
+  const next = loadVarieties().map((v) =>
+    v.id === varietyId ? { ...v, name: trimmed } : v,
+  );
+  writeArray(VARIETIES_KEY, next);
+  return next;
+}
+
 // Custom recipes
 export function loadCustomRecipes() {
   return readArray(CUSTOM_RECIPES_KEY);
@@ -237,13 +249,73 @@ export function deleteCustomRecipe(recipeId) {
   return next;
 }
 
+// User profile — preferencje doklejane do system prompt FLORA.
+export const EXPERIENCE_LEVELS = [
+  { id: 'poczatkujacy', label: 'Początkujący' },
+  { id: 'srednio', label: 'Średnio doświadczony' },
+  { id: 'zaawansowany', label: 'Zaawansowany' },
+];
+export const PREFERENCE_TYPES = [
+  { id: 'naturalne', label: 'Naturalne metody' },
+  { id: 'chemia', label: 'Skuteczne preparaty' },
+  { id: 'oba', label: 'Oba (kontekstowo)' },
+];
+
+export function loadUserProfile() {
+  const store = ls();
+  if (!store) return null;
+  const raw = safeParse(store.getItem(USER_PROFILE_KEY), null);
+  if (!raw || typeof raw !== 'object') return null;
+  return {
+    experience: raw.experience || 'srednio',
+    preferences: raw.preferences || 'oba',
+    notes: typeof raw.notes === 'string' ? raw.notes : '',
+  };
+}
+
+// Theme — 'dark' (default) | 'light'. Stosowany przez data-theme na <html>.
+export function loadTheme() {
+  const store = ls();
+  if (!store) return 'dark';
+  const raw = store.getItem(THEME_KEY);
+  return raw === 'light' ? 'light' : 'dark';
+}
+
+export function saveTheme(theme) {
+  const value = theme === 'light' ? 'light' : 'dark';
+  const store = ls();
+  if (store) {
+    try { store.setItem(THEME_KEY, value); } catch { /* ignore */ }
+  }
+  return value;
+}
+
+export function saveUserProfile(profile) {
+  const cleaned = {
+    experience: EXPERIENCE_LEVELS.some((l) => l.id === profile?.experience) ? profile.experience : 'srednio',
+    preferences: PREFERENCE_TYPES.some((p) => p.id === profile?.preferences) ? profile.preferences : 'oba',
+    notes: (typeof profile?.notes === 'string' ? profile.notes : '').trim().slice(0, 1000),
+  };
+  const store = ls();
+  if (store) {
+    try { store.setItem(USER_PROFILE_KEY, JSON.stringify(cleaned)); } catch { /* ignore */ }
+  }
+  return cleaned;
+}
+
 // Image compression (canvas-based) for photo upload + bg upload reuse.
+// Zwalniamy blob URL po onload/onerror — inaczej memory leak rośnie liniowo z każdym
+// uploadem zdjęcia (browser GC zbierze dopiero przy zamknięciu karty).
 export async function compressImage(file, maxDim = 1280, quality = 0.72) {
   if (!file || !file.type || !file.type.startsWith('image/')) {
     throw new Error('Nie obraz');
   }
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    const cleanup = () => {
+      try { URL.revokeObjectURL(objectUrl); } catch { /* ignore */ }
+    };
     img.onload = () => {
       const ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
       const w = Math.round(img.width * ratio);
@@ -253,9 +325,14 @@ export async function compressImage(file, maxDim = 1280, quality = 0.72) {
       canvas.height = h;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      cleanup();
+      resolve(dataUrl);
     };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+    img.onerror = (e) => {
+      cleanup();
+      reject(e);
+    };
+    img.src = objectUrl;
   });
 }

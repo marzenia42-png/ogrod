@@ -4,7 +4,14 @@ import Recipes from './Recipes.jsx';
 import Diary from './Diary.jsx';
 import PlantDetail from './PlantDetail.jsx';
 import AddPlantWizard from './AddPlantWizard.jsx';
-import { compressImage, addPhoto, loadCustomRecipes } from './lib/plantStorage.js';
+import CategoryGrid from './CategoryGrid.jsx';
+import CategoryPage from './CategoryPage.jsx';
+import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
+import {
+  compressImage, addPhoto, loadCustomRecipes, updateVariety,
+  loadUserProfile, saveUserProfile, EXPERIENCE_LEVELS, PREFERENCE_TYPES,
+  loadEvents, loadTheme, saveTheme,
+} from './lib/plantStorage.js';
 import { migrateCustomPlantsV1 } from './lib/migration.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
 import { SPECIES_BY_ID } from './data/plantSpecies.js';
@@ -48,8 +55,9 @@ function wmoIconAndLabel(code) {
 }
 
 const TABS = [
+  { key: 'glowna',    label: 'Główna',    icon: '🏡' },
   { key: 'kalendarz', label: 'Kalendarz', icon: '📅' },
-  { key: 'naturalne', label: 'Środki ochrony',  icon: '🌿' },
+  { key: 'naturalne', label: 'Środki',    icon: '🌿' },
   { key: 'dziennik',  label: 'Dziennik',  icon: '📔' },
 ];
 
@@ -82,7 +90,9 @@ export default function App() {
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
 
-  const [tab, setTab] = useState('kalendarz');
+  const [tab, setTab] = useState('glowna');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [now, setNow] = useState(() => new Date());
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [weather, setWeather] = useState(null);
   const [weatherError, setWeatherError] = useState(null);
@@ -92,6 +102,12 @@ export default function App() {
   const [customRecipes, setCustomRecipes] = useState(() => {
     try { return loadCustomRecipes(); } catch { return []; }
   });
+  const [userProfile, setUserProfile] = useState(() => {
+    try { return loadUserProfile() || { experience: 'srednio', preferences: 'oba', notes: '' }; }
+    catch { return { experience: 'srednio', preferences: 'oba', notes: '' }; }
+  });
+  const [profileDraft, setProfileDraft] = useState(null);
+  const [theme, setTheme] = useState(() => { try { return loadTheme(); } catch { return 'dark'; } });
   const [removedPlants, setRemovedPlants] = useState(() => lsLoad(REMOVED_PLANTS_KEY, []));
   const [bg, setBg] = useState(() => {
     try { return localStorage.getItem(BG_KEY) || DEFAULT_BG; } catch { return DEFAULT_BG; }
@@ -103,18 +119,14 @@ export default function App() {
     } catch { /* ignore */ }
     return FALLBACK_LOCATION;
   });
-  const [showPlantsModal, setShowPlantsModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // Onboarding pokazywany tylko na pierwszym otwarciu — flag w localStorage.
+  // Hook init wykonywany raz, więc tryb SSR-safe (hasSeenOnboarding ma fallback).
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
   // Open plant detail by id (string). For variety, also store { isVariety, parentId, parentName, name }.
   const [openPlant, setOpenPlant] = useState(null);
   // Wizard "Dodaj roślinę" (Etap 1.5) — 5 kroków, komponent AddPlantWizard.
   const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [newPlantDraft, setNewPlantDraft] = useState({
-    name: '',
-    months: [currentMonth],
-    type: 'chemia',
-    text: '',
-  });
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
   );
@@ -188,6 +200,104 @@ export default function App() {
     return () => clearTimeout(id);
   }, [toast]);
 
+  // Tick zegara co minutę (data + godzina w headerze).
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Sync theme do <html data-theme> dla CSS overrides.
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = theme;
+    }
+  }, [theme]);
+
+  const handleToggleTheme = (next) => {
+    const value = next === 'light' ? 'light' : 'dark';
+    saveTheme(value);
+    setTheme(value);
+  };
+
+  // Proaktywne reguły FLORA — co 30 min sprawdź czy pokazać push:
+  //   1) Mróz nocą (≤2°C) + wrażliwe rośliny (species.guide.frostHardy=false)
+  //   2) Susza (max ≥28°C) + brak podlewania od 3+ dni
+  //   3) Wilgotność ≥85% + temp 12-25°C → ryzyko parcha
+  // Debounce: jeden push per typ per dzień (klucz 'garden-proactive-shown').
+  useEffect(() => {
+    if (typeof Notification === 'undefined' || notifPermission !== 'granted' || !weather) return;
+    const PROACTIVE_KEY = 'garden-proactive-shown';
+
+    const run = () => {
+      const today = todayISO();
+      let shown;
+      try { shown = JSON.parse(localStorage.getItem(PROACTIVE_KEY) || '{}'); } catch { shown = {}; }
+      const icon = `${import.meta.env.BASE_URL}icon-192.png`;
+
+      // Reguła 1: mróz
+      const minToday = weather.daily?.temperature_2m_min?.[0];
+      if (typeof minToday === 'number' && minToday <= 2 && shown.mraz !== today) {
+        const sensitive = customPlants
+          .filter((p) => {
+            const s = p.speciesId ? SPECIES_BY_ID[p.speciesId] : null;
+            return s && s.guide?.frostHardy === false;
+          })
+          .map((p) => (p.variety ? `${p.name} · ${p.variety}` : p.name));
+        if (sensitive.length > 0) {
+          new Notification('Ogród Marzeń — Mróz', {
+            body: `Mróz nocą (${Math.round(minToday)}°C). Chroń: ${sensitive.slice(0, 3).join(', ')}.`,
+            icon,
+            tag: `garden-mraz-${today}`,
+          });
+          shown.mraz = today;
+        }
+      }
+
+      // Reguła 2: susza + brak podlewania
+      const maxToday = weather.daily?.temperature_2m_max?.[0];
+      if (typeof maxToday === 'number' && maxToday >= 28 && shown.susza !== today) {
+        const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+        const dry = customPlants
+          .filter((p) => {
+            const evs = loadEvents(p.id);
+            const last = evs.find((e) => e.type === 'podlano');
+            if (!last) return true;
+            return new Date(last.date).getTime() < threeDaysAgo;
+          })
+          .slice(0, 3)
+          .map((p) => p.name);
+        if (dry.length > 0) {
+          new Notification('Ogród Marzeń — Susza', {
+            body: `${Math.round(maxToday)}°C dziś. Niepodlewane 3+ dni: ${dry.join(', ')}.`,
+            icon,
+            tag: `garden-susza-${today}`,
+          });
+          shown.susza = today;
+        }
+      }
+
+      // Reguła 3: ryzyko parcha
+      const humidity = weather.current?.relative_humidity_2m;
+      const temp = weather.current?.temperature_2m;
+      if (typeof humidity === 'number' && humidity >= 85
+          && typeof temp === 'number' && temp >= 12 && temp <= 25
+          && shown.parch !== today) {
+        new Notification('Ogród Marzeń — Parch', {
+          body: `Wilgotność ${humidity}%, ${Math.round(temp)}°C. Ryzyko parcha — skrzyp polny dolistnie.`,
+          icon,
+          tag: `garden-parch-${today}`,
+        });
+        shown.parch = today;
+      }
+
+      try { localStorage.setItem(PROACTIVE_KEY, JSON.stringify(shown)); } catch { /* ignore */ }
+    };
+
+    run();
+    const id = setInterval(run, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [weather, customPlants, notifPermission]);
+
   const removedSet = useMemo(() => new Set(removedPlants), [removedPlants]);
 
   const monthActions = useMemo(() => {
@@ -258,6 +368,26 @@ export default function App() {
     return grouped;
   }, [selectedMonth, customPlants, customRecipes, removedSet]);
 
+  // Snapshot roślin dla kontekstu FLORA (builtin nieukryte + custom).
+  // Limit 20 z 2 ostatnimi eventami per roślina (event-by-event read tani — kilkadziesiąt LS calls).
+  const plantsForFlora = useMemo(() => {
+    const builtin = PLANTS
+      .filter((p) => !removedSet.has(p.key))
+      .map((p) => ({ id: p.key, name: p.name, location: '', months: [] }));
+    const custom = customPlants.map((p) => ({
+      id: p.id,
+      name: p.variety ? `${p.name} · ${p.variety}` : p.name,
+      location: p.location || '',
+      months: p.months || [],
+    }));
+    return [...builtin, ...custom].slice(0, 20).map((p) => ({
+      ...p,
+      recentEvents: loadEvents(p.id).slice(0, 2).map((e) => ({
+        type: e.type, date: e.date, note: e.note,
+      })),
+    }));
+  }, [customPlants, removedSet]);
+
   const frostAlert = weather?.daily?.temperature_2m_min?.[0] != null && weather.daily.temperature_2m_min[0] <= 2;
   const humidityAlert = weather?.current?.relative_humidity_2m != null && weather.current.relative_humidity_2m >= 85;
 
@@ -291,32 +421,6 @@ export default function App() {
     lsSave(NOTES_KEY, next);
   };
 
-  const toggleNewPlantMonth = (m) => {
-    setNewPlantDraft((d) => {
-      const has = d.months.includes(m);
-      const months = has ? d.months.filter((x) => x !== m) : [...d.months, m].sort((a, b) => a - b);
-      return { ...d, months };
-    });
-  };
-
-  const handleAddCustomPlant = () => {
-    const name = newPlantDraft.name.trim();
-    const text = newPlantDraft.text.trim();
-    if (!name || !text || newPlantDraft.months.length === 0) return;
-    const entry = {
-      id: uid(),
-      name,
-      months: [...newPlantDraft.months],
-      type: newPlantDraft.type,
-      text,
-    };
-    const next = [...customPlants, entry];
-    setCustomPlants(next);
-    lsSave(CUSTOM_PLANTS_KEY, next);
-    setNewPlantDraft({ name: '', months: [currentMonth], type: 'chemia', text: '' });
-    setToast('Dodano roślinę');
-  };
-
   const handleDeleteCustom = (id) => {
     const next = customPlants.filter((p) => p.id !== id);
     setCustomPlants(next);
@@ -346,6 +450,7 @@ export default function App() {
       plantName: name || getPlantName(id),
       isVariety: false,
       speciesId: resolveSpeciesId(id),
+      isCustom: !PLANTS.find((p) => p.key === id),
     });
   };
 
@@ -357,18 +462,70 @@ export default function App() {
       parentId: variety.parent,
       parentName: getPlantName(variety.parent),
       speciesId: resolveSpeciesId(variety.parent),
+      isCustom: true,
     });
   };
 
-  // (Stare handlery quick-add usunięte w Etap 1.5 — flow w AddPlantWizard.jsx)
-
-  const toggleBuiltin = (key) => {
-    const next = removedSet.has(key)
-      ? removedPlants.filter((k) => k !== key)
-      : [...removedPlants, key];
-    setRemovedPlants(next);
-    lsSave(REMOVED_PLANTS_KEY, next);
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    if (newTab !== 'glowna') setSelectedCategory(null);
   };
+
+  const openSettings = () => {
+    setProfileDraft({ ...userProfile });
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
+    setProfileDraft(null);
+  };
+
+  const handleSaveProfile = () => {
+    if (!profileDraft) return;
+    const saved = saveUserProfile(profileDraft);
+    setUserProfile(saved);
+    setToast('Profil zapisany');
+  };
+
+  const handleUpdatePlantName = (plantId, newName, isVariety) => {
+    const trimmed = (newName || '').trim();
+    if (!trimmed) return;
+    if (isVariety) {
+      updateVariety(plantId, trimmed);
+    } else {
+      const nextPlants = customPlants.map((p) =>
+        p.id === plantId
+          ? { ...p, name: trimmed, text: p.variety ? `${trimmed} · ${p.variety}` : trimmed }
+          : p,
+      );
+      setCustomPlants(nextPlants);
+      lsSave(CUSTOM_PLANTS_KEY, nextPlants);
+    }
+    setOpenPlant((prev) => (prev ? { ...prev, plantName: trimmed } : prev));
+  };
+
+  // Aktualizuj pola "zakup" rośliny własnej: { purchaseDate?: 'YYYY-MM-DD', purchasePrice?: number }
+  // Wartości pustego stringa lub null kasują pole (idempotentne).
+  const handleUpdatePlantPurchase = (plantId, { purchaseDate, purchasePrice }) => {
+    const cleanDate = (typeof purchaseDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(purchaseDate))
+      ? purchaseDate
+      : null;
+    const priceNum = (typeof purchasePrice === 'number' && Number.isFinite(purchasePrice) && purchasePrice >= 0)
+      ? Math.round(purchasePrice * 100) / 100
+      : null;
+    const nextPlants = customPlants.map((p) => {
+      if (p.id !== plantId) return p;
+      const updated = { ...p };
+      if (cleanDate) updated.purchaseDate = cleanDate; else delete updated.purchaseDate;
+      if (priceNum != null) updated.purchasePrice = priceNum; else delete updated.purchasePrice;
+      return updated;
+    });
+    setCustomPlants(nextPlants);
+    lsSave(CUSTOM_PLANTS_KEY, nextPlants);
+  };
+
+  // (Stare handlery quick-add usunięte w Etap 1.5 — flow w AddPlantWizard.jsx)
 
   const handleEnableNotif = async () => {
     if (typeof Notification === 'undefined') {
@@ -439,7 +596,7 @@ export default function App() {
       <div
         className="fixed inset-0 z-0"
         style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.30)',
+          backgroundColor: 'var(--bg-image-overlay)',
           backdropFilter: 'blur(1px)',
           WebkitBackdropFilter: 'blur(1px)',
         }}
@@ -449,28 +606,25 @@ export default function App() {
         <header className="px-6 pt-10 pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] tracking-[3px] uppercase" style={{ color: 'rgba(201,169,110,0.5)' }}>
+              <p className="text-[11px] tracking-[3px] uppercase" style={{ color: 'var(--gold-label)' }}>
                 {location.label} · {location.lat.toFixed(2)}°N
               </p>
-              <h1 className="mt-1 font-serif italic tracking-wide leading-tight" style={{ fontSize: '34px', color: gold }}>
+              <h1 className="mt-1 font-serif italic tracking-wide leading-tight" style={{ fontSize: '34px', color: 'var(--gold)' }}>
                 Ogród Marzeń
               </h1>
+              <p className="mt-1 text-[14px] tracking-wide font-serif italic" style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'lining-nums tabular-nums' }}>
+                {now.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                <span style={{ color: 'var(--gold)', margin: '0 8px', fontWeight: 600 }}>·</span>
+                <span style={{ fontWeight: 500, color: 'var(--gold)' }}>{now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</span>
+              </p>
             </div>
-            <div className="flex flex-col gap-2 shrink-0 pt-2">
+            <div className="shrink-0 pt-2">
               <button
                 type="button"
-                onClick={() => setShowPlantsModal(true)}
-                className="px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer whitespace-nowrap"
-                style={{ background: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.35)', color: gold, backdropFilter: 'blur(8px)' }}
-              >
-                🌱 Rośliny
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowSettings(true)}
+                onClick={openSettings}
                 aria-label="Ustawienia"
-                className="cursor-pointer self-end"
-                style={{ background: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(201,169,110,0.7)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
+                className="cursor-pointer"
+                style={{ background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', color: 'var(--gold-label-strong)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="3" />
@@ -481,19 +635,31 @@ export default function App() {
           </div>
         </header>
 
-        {tab === 'kalendarz' && (
+        {tab === 'glowna' && selectedCategory && (
+          <CategoryPage
+            categoryId={selectedCategory}
+            customPlants={customPlants}
+            removedSet={removedSet}
+            onBack={() => setSelectedCategory(null)}
+            onSelectCategory={setSelectedCategory}
+            onOpenPlant={(id, name) => openPlantById(id, name)}
+            onAddPlant={() => setShowQuickAdd(true)}
+          />
+        )}
+
+        {((tab === 'glowna' && !selectedCategory) || tab === 'kalendarz') && (
           <>
             {/* Weather */}
             <section className="px-6 pb-5">
               <div
                 className="rounded-[16px] p-4"
-                style={{ backgroundColor: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
+                style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', backdropFilter: 'blur(10px)' }}
               >
                 {!weather && !weatherError && (
-                  <p className="text-sm font-serif italic" style={{ color: 'rgba(232,221,208,0.45)' }}>Sprawdzam pogodę...</p>
+                  <p className="text-sm font-serif italic" style={{ color: 'var(--text-faint)' }}>Sprawdzam pogodę...</p>
                 )}
                 {weatherError && (
-                  <p className="text-sm font-serif italic" style={{ color: 'rgba(232,221,208,0.55)' }}>Brak pogody — sprawdź połączenie.</p>
+                  <p className="text-sm font-serif italic" style={{ color: 'var(--text-muted)' }}>Brak pogody — sprawdź połączenie.</p>
                 )}
                 {weather && (() => {
                   const { icon, label } = wmoIconAndLabel(weather.current.weather_code);
@@ -501,18 +667,18 @@ export default function App() {
                   <>
                     <div className="flex items-baseline gap-3">
                       <span style={{ fontSize: '36px', lineHeight: 1 }}>{icon}</span>
-                      <span className="font-serif tabular-nums" style={{ fontSize: '40px', fontWeight: 300, color: gold, lineHeight: 1, fontVariantNumeric: 'lining-nums tabular-nums' }}>
+                      <span className="font-serif tabular-nums" style={{ fontSize: '40px', fontWeight: 300, color: 'var(--gold)', lineHeight: 1, fontVariantNumeric: 'lining-nums tabular-nums' }}>
                         {Math.round(weather.current.temperature_2m)}°
                       </span>
-                      <span className="text-sm" style={{ color: 'rgba(232,221,208,0.6)' }}>
+                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
                         {label && `${label} · `}wilgotność {weather.current.relative_humidity_2m}%
                       </span>
                     </div>
-                    <div className="mt-2 text-[12px]" style={{ color: 'rgba(232,221,208,0.5)' }}>
+                    <div className="mt-2 text-[12px]" style={{ color: 'var(--text-faint)' }}>
                       Min {Math.round(weather.daily.temperature_2m_min[0])}° / Max {Math.round(weather.daily.temperature_2m_max[0])}°
                       {weather.daily.precipitation_sum[0] > 0 && ` · opady ${weather.daily.precipitation_sum[0]} mm`}
                     </div>
-                    {weather.daily?.time?.length > 1 && (
+                    {tab === 'kalendarz' && weather.daily?.time?.length > 1 && (
                       <div className="mt-3 flex gap-1.5">
                         {weather.daily.time.slice(1, 4).map((iso, i) => {
                           const di = i + 1;
@@ -524,11 +690,11 @@ export default function App() {
                             <div
                               key={iso}
                               className="flex-1 rounded-lg px-2 py-2 flex flex-col items-center gap-0.5"
-                              style={{ background: 'rgba(201,169,110,0.07)', border: '0.5px solid rgba(201,169,110,0.18)' }}
+                              style={{ background: 'var(--surface-tint)', border: '0.5px solid var(--border-soft)' }}
                             >
-                              <p className="text-[10px] tracking-wide" style={{ color: 'rgba(201,169,110,0.7)' }}>{shortDay(iso)}</p>
+                              <p className="text-[10px] tracking-wide" style={{ color: 'var(--gold-label-strong)' }}>{shortDay(iso)}</p>
                               <span style={{ fontSize: '22px', lineHeight: 1 }}>{wmo.icon}</span>
-                              <p className="text-[11px] tabular-nums" style={{ color: 'rgba(232,221,208,0.85)' }}>{tmax}° / {tmin}°</p>
+                              <p className="text-[11px] tabular-nums" style={{ color: 'var(--text-secondary)' }}>{tmax}° / {tmin}°</p>
                               {prec > 0 && (
                                 <p className="text-[10px] tabular-nums" style={{ color: 'rgba(135, 206, 250, 0.7)' }}>{prec.toFixed(1)} mm</p>
                               )}
@@ -537,16 +703,16 @@ export default function App() {
                         })}
                       </div>
                     )}
-                    {(frostAlert || humidityAlert) && (
+                    {tab === 'kalendarz' && (frostAlert || humidityAlert) && (
                       <div
                         className="mt-3 px-3 py-2 rounded-lg text-[12px] font-serif italic"
-                        style={{ backgroundColor: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', color: gold }}
+                        style={{ backgroundColor: 'var(--surface-tint)', border: '1px solid var(--border-strong)', color: 'var(--gold)' }}
                       >
                         {frostAlert && 'Mróz nocą — chroń wrażliwe (rododendron, brzoskwinia, magnolia). '}
                         {humidityAlert && 'Wysoka wilgotność — uwaga na grzyby (mączniak, monilioza).'}
                       </div>
                     )}
-                    {drySprayWindow && !humidityAlert && (
+                    {tab === 'kalendarz' && drySprayWindow && !humidityAlert && (
                       <div
                         className="mt-3 px-3 py-2 rounded-lg text-[12px] font-serif italic"
                         style={{ backgroundColor: 'rgba(76, 175, 80, 0.10)', border: '1px solid rgba(76, 175, 80, 0.35)', color: '#86efac' }}
@@ -559,7 +725,19 @@ export default function App() {
                 })()}
               </div>
             </section>
+          </>
+        )}
 
+        {tab === 'glowna' && !selectedCategory && (
+          <CategoryGrid
+            customPlants={customPlants}
+            removedSet={removedSet}
+            onPickCategory={setSelectedCategory}
+          />
+        )}
+
+        {tab === 'kalendarz' && (
+          <>
             {/* Month strip — horizontally scrollable */}
             <section className="pb-5">
               <div
@@ -580,9 +758,9 @@ export default function App() {
                       className="shrink-0 px-4 py-2 rounded-full text-[12px] tracking-wide cursor-pointer"
                       style={{
                         minWidth: 56,
-                        border: isSelected ? `1px solid ${gold}` : '0.5px solid rgba(201,169,110,0.2)',
-                        background: isSelected ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(123,201,123,0.12))' : 'rgba(0,0,0,0.55)',
-                        color: isSelected ? gold : isCurrent ? 'rgba(201,169,110,0.75)' : 'rgba(232,221,208,0.55)',
+                        border: isSelected ? `1px solid var(--gold)` : '0.5px solid var(--border-soft)',
+                        background: isSelected ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(123,201,123,0.12))' : 'var(--surface-card-soft)',
+                        color: isSelected ? 'var(--gold)' : isCurrent ? 'var(--gold-label-strong)' : 'var(--text-muted)',
                         fontWeight: isSelected ? 500 : 400,
                         backdropFilter: 'blur(6px)',
                       }}
@@ -596,7 +774,7 @@ export default function App() {
 
             {/* Actions grouped by category */}
             <section className="px-6 pb-8">
-              <h2 className="font-serif italic mb-4" style={{ fontSize: '22px', color: gold }}>
+              <h2 className="font-serif italic mb-4" style={{ fontSize: '22px', color: 'var(--gold)' }}>
                 {MONTHS[selectedMonth - 1]}
               </h2>
               {CATEGORIES.map((cat) => {
@@ -632,7 +810,7 @@ export default function App() {
                             {a.isRecipe && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.7, fontWeight: 400, color: cat.text }}>receptura →</span>}
                             <p
                               className="mt-1 font-serif italic leading-relaxed"
-                              style={{ color: 'rgba(232,221,208,0.85)', fontSize: '13.5px' }}
+                              style={{ color: 'var(--text-secondary)', fontSize: '13.5px' }}
                             >
                               {a.text}
                             </p>
@@ -642,7 +820,7 @@ export default function App() {
                               type="button"
                               onClick={(e) => { e.stopPropagation(); handleDeleteCustom(a.id); }}
                               className="cursor-pointer shrink-0 px-3 py-3"
-                              style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '18px', lineHeight: 1 }}
+                              style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '18px', lineHeight: 1 }}
                               aria-label="Usuń"
                             >
                               ×
@@ -655,7 +833,7 @@ export default function App() {
                 );
               })}
               {CATEGORIES.every((c) => (monthActions[c.key] || []).length === 0) && (
-                <p className="text-sm font-serif italic" style={{ color: 'rgba(232,221,208,0.45)' }}>
+                <p className="text-sm font-serif italic" style={{ color: 'var(--text-faint)' }}>
                   Nic zaplanowanego w tym miesiącu — czas odpocząć.
                 </p>
               )}
@@ -665,13 +843,13 @@ export default function App() {
             <section className="px-6 pb-6">
               <div
                 className="rounded-[16px] p-4 flex items-center justify-between gap-3"
-                style={{ backgroundColor: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}
+                style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', backdropFilter: 'blur(10px)' }}
               >
                 <div className="flex-1">
-                  <p className="text-[11px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(201,169,110,0.55)' }}>
+                  <p className="text-[11px] tracking-[2px] uppercase mb-1" style={{ color: 'var(--gold-label)' }}>
                     Przypomnienia
                   </p>
-                  <p className="text-[12.5px] font-serif italic" style={{ color: 'rgba(232,221,208,0.7)' }}>
+                  <p className="text-[12.5px] font-serif italic" style={{ color: 'var(--text-secondary)' }}>
                     {notifPermission === 'granted'
                       ? 'Włączone. Pokażemy akcje na ten miesiąc.'
                       : notifPermission === 'denied'
@@ -687,8 +865,8 @@ export default function App() {
                   disabled={notifPermission === 'denied' || notifPermission === 'unsupported'}
                   className="px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer shrink-0"
                   style={{
-                    border: `1px solid ${gold}`,
-                    color: gold,
+                    border: `1px solid var(--gold)`,
+                    color: 'var(--gold)',
                     background: 'transparent',
                     opacity: notifPermission === 'denied' || notifPermission === 'unsupported' ? 0.4 : 1,
                   }}
@@ -697,10 +875,14 @@ export default function App() {
                 </button>
               </div>
             </section>
+          </>
+        )}
 
+        {tab === 'glowna' && !selectedCategory && (
+          <>
             {/* Notes */}
             <section className="px-6 pb-8">
-              <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(201,169,110,0.55)' }}>
+              <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'var(--gold-label)' }}>
                 Notatki ogrodnika
               </p>
               <div className="flex gap-2 mb-3">
@@ -711,33 +893,33 @@ export default function App() {
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
                   placeholder="Co dziś zauważyłeś..."
                   className="flex-1 bg-transparent text-[13px] font-serif italic px-4 py-2.5 rounded-full outline-none"
-                  style={{ border: '1px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.85)', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
+                  style={{ border: '1px solid var(--border-strong)', color: 'var(--text-secondary)', background: 'var(--surface-card-soft)', backdropFilter: 'blur(6px)' }}
                 />
                 <button
                   type="button"
                   onClick={handleAddNote}
                   disabled={!noteDraft.trim()}
                   className="px-4 rounded-full text-[12px] tracking-wide cursor-pointer"
-                  style={{ border: `1px solid ${gold}`, color: gold, background: 'rgba(0,0,0,0.55)', opacity: noteDraft.trim() ? 1 : 0.4, backdropFilter: 'blur(6px)' }}
+                  style={{ border: `1px solid var(--gold)`, color: 'var(--gold)', background: 'var(--surface-card-soft)', opacity: noteDraft.trim() ? 1 : 0.4, backdropFilter: 'blur(6px)' }}
                 >
                   Dodaj
                 </button>
               </div>
               {notes.length === 0 ? (
-                <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+                <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
                   Brak notatek.
                 </p>
               ) : (
-                <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'rgba(0,0,0,0.70)', border: '0.5px solid rgba(201,169,110,0.25)', backdropFilter: 'blur(10px)' }}>
+                <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', backdropFilter: 'blur(10px)' }}>
                   {notes.map((n, idx) => (
                     <div
                       key={n.id}
                       className="px-4 py-3 flex items-start gap-3"
-                      style={{ borderTop: idx === 0 ? 'none' : '0.5px solid rgba(201,169,110,0.12)' }}
+                      style={{ borderTop: idx === 0 ? 'none' : '0.5px solid var(--border-soft)' }}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] tracking-wide" style={{ color: 'rgba(201,169,110,0.55)' }}>{n.date}</p>
-                        <p className="mt-0.5 text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                        <p className="text-[11px] tracking-wide" style={{ color: 'var(--gold-label)' }}>{n.date}</p>
+                        <p className="mt-0.5 text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                           {n.text}
                         </p>
                       </div>
@@ -745,7 +927,7 @@ export default function App() {
                         type="button"
                         onClick={() => handleDeleteNote(n.id)}
                         className="cursor-pointer"
-                        style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.35)', fontSize: '18px', lineHeight: 1, padding: 0 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-very-faint)', fontSize: '18px', lineHeight: 1, padding: 0 }}
                         aria-label="Usuń notatkę"
                       >
                         ×
@@ -770,8 +952,8 @@ export default function App() {
         style={{
           bottom: 0,
           zIndex: 50,
-          background: 'rgba(13, 12, 10, 0.94)',
-          borderTop: '0.5px solid rgba(201, 169, 110, 0.2)',
+          background: 'var(--nav-bg)',
+          borderTop: '0.5px solid var(--nav-border)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -784,12 +966,12 @@ export default function App() {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setTab(t.key)}
+                onClick={() => handleTabChange(t.key)}
                 className="flex-1 flex flex-col items-center gap-0.5 py-2.5 cursor-pointer"
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: active ? gold : 'rgba(232, 221, 208, 0.45)',
+                  color: active ? 'var(--gold)' : 'var(--text-faint)',
                   fontWeight: active ? 500 : 400,
                   touchAction: 'manipulation',
                   WebkitTapHighlightColor: 'transparent',
@@ -835,7 +1017,13 @@ export default function App() {
         +
       </button>
 
-      <Flora notes={notes} weather={weather} currentMonth={currentMonth} />
+      <Flora
+        notes={notes}
+        weather={weather}
+        currentMonth={currentMonth}
+        plants={plantsForFlora}
+        profile={userProfile}
+      />
 
       {/* 5-step wizard "Dodaj roślinę" (Etap 1.5) — zastępuje stary bottom sheet */}
       {showQuickAdd && (
@@ -861,36 +1049,41 @@ export default function App() {
           parentId={openPlant.parentId}
           parentName={openPlant.parentName}
           speciesId={openPlant.speciesId}
+          isCustom={openPlant.isCustom}
+          customPlant={openPlant.isCustom ? customPlants.find((p) => p.id === openPlant.plantId) : null}
           onClose={() => setOpenPlant(null)}
           onOpenVariety={(v) => openVariety(v)}
+          onUpdateName={handleUpdatePlantName}
+          onUpdatePurchase={handleUpdatePlantPurchase}
         />
       )}
 
-      {/* Plants management modal */}
-      {showPlantsModal && (
+
+      {/* Settings modal */}
+      {showSettings && (
         <div
           className="fixed inset-0 flex items-center justify-center px-4"
           style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
-          onClick={() => setShowPlantsModal(false)}
+          onClick={closeSettings}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full flex flex-col"
             style={{
-              maxWidth: '480px',
-              maxHeight: '85vh',
-              backgroundColor: '#0d0c0a',
-              border: '1px solid rgba(201,169,110,0.3)',
+              maxWidth: '420px',
+              maxHeight: '90vh',
+              backgroundColor: 'var(--surface-modal)',
+              border: '1px solid var(--border-strong)',
               borderRadius: '20px',
             }}
           >
-            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: '0.5px solid rgba(201,169,110,0.2)' }}>
-              <h3 className="font-serif italic" style={{ fontSize: '20px', color: gold }}>Twoje rośliny</h3>
+            <div className="flex items-center justify-between p-5 pb-3" style={{ borderBottom: '0.5px solid var(--border-soft)' }}>
+              <h3 className="font-serif italic" style={{ fontSize: '20px', color: 'var(--gold)' }}>Ustawienia</h3>
               <button
                 type="button"
-                onClick={() => setShowPlantsModal(false)}
+                onClick={closeSettings}
                 aria-label="Zamknij"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-faint)', padding: 4 }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M6 6l12 12M6 18L18 6" />
@@ -899,203 +1092,42 @@ export default function App() {
             </div>
 
             <div className="overflow-y-auto px-5 py-4 flex-1">
-              <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                Domyślne (odznacz, żeby ukryć)
-              </p>
-              <div className="flex flex-col gap-1.5 mb-5">
-                {PLANTS.map((p) => {
-                  const active = !removedSet.has(p.key);
-                  return (
-                    <div
-                      key={p.key}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg"
-                      style={{ background: active ? 'rgba(201,169,110,0.06)' : 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(201,169,110,0.15)' }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={active}
-                        onChange={() => toggleBuiltin(p.key)}
-                        style={{ accentColor: gold, width: 16, height: 16, cursor: 'pointer' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => { setShowPlantsModal(false); openPlantById(p.key, p.name); }}
-                        className="font-serif italic flex-1 text-left cursor-pointer"
-                        style={{
-                          fontSize: '14px',
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          color: active ? '#F0E8D8' : 'rgba(232,221,208,0.4)',
-                          textDecoration: active ? 'none' : 'line-through',
-                        }}
-                      >
-                        {p.name}
-                      </button>
-                      <span style={{ color: 'rgba(201,169,110,0.4)', fontSize: '11px' }}>›</span>
-                    </div>
-                  );
-                })}
-              </div>
 
-              {customPlants.length > 0 && (
-                <>
-                  <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                    Twoje dodane
-                  </p>
-                  <div className="flex flex-col gap-1.5 mb-5">
-                    {customPlants.map((p) => {
-                      const cat = CATEGORY_BY_KEY[p.type];
-                      return (
-                        <div
-                          key={p.id}
-                          className="px-3 py-2 rounded-lg flex items-start gap-2"
-                          style={{ background: 'rgba(201,169,110,0.05)', border: '0.5px solid rgba(201,169,110,0.15)' }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => { setShowPlantsModal(false); openPlantById(p.id, p.name); }}
-                            className="flex-1 min-w-0 text-left cursor-pointer"
-                            style={{ background: 'none', border: 'none', padding: 0 }}
-                          >
-                            <p className="font-serif italic" style={{ fontSize: '14px', color: '#F0E8D8' }}>
-                              {p.name}
-                              {p.variety && <span style={{ color: 'rgba(201,169,110,0.65)', marginLeft: 8, fontSize: '12px' }}>· {p.variety}</span>}
-                            </p>
-                            <p className="text-[11px] mt-0.5" style={{ color: cat?.text || 'rgba(232,221,208,0.5)' }}>
-                              {cat?.label || p.type} · {p.months.map((m) => MONTHS_SHORT[m - 1]).join(', ')}
-                            </p>
-                            <p className="text-[12px] font-serif italic mt-0.5" style={{ color: 'rgba(232,221,208,0.65)' }}>{p.text}</p>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCustom(p.id)}
-                            className="cursor-pointer"
-                            style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '18px', lineHeight: 1, padding: 0 }}
-                            aria-label="Usuń"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-
-              <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                Dodaj swoją roślinę
-              </p>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="text"
-                  value={newPlantDraft.name}
-                  onChange={(e) => setNewPlantDraft({ ...newPlantDraft, name: e.target.value })}
-                  placeholder="Nazwa rośliny (np. Winorośl)"
-                  className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
-                />
-                <div>
-                  <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                    Miesiące
-                  </p>
-                  <div className="grid grid-cols-6 gap-1">
-                    {MONTHS_SHORT.map((m, i) => {
-                      const month = i + 1;
-                      const selected = newPlantDraft.months.includes(month);
-                      return (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => toggleNewPlantMonth(month)}
-                          className="py-1.5 rounded-md text-[11px] cursor-pointer"
-                          style={{
-                            border: selected ? `0.5px solid ${gold}` : '0.5px solid rgba(201,169,110,0.2)',
-                            background: selected ? 'rgba(201,169,110,0.18)' : 'transparent',
-                            color: selected ? gold : 'rgba(232,221,208,0.55)',
-                          }}
-                        >
-                          {m}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <select
-                  value={newPlantDraft.type}
-                  onChange={(e) => setNewPlantDraft({ ...newPlantDraft, type: e.target.value })}
-                  className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.key} value={c.key}>{c.label}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={newPlantDraft.text}
-                  onChange={(e) => setNewPlantDraft({ ...newPlantDraft, text: e.target.value })}
-                  placeholder="Co zrobić..."
-                  className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCustomPlant}
-                  disabled={!newPlantDraft.name.trim() || !newPlantDraft.text.trim() || newPlantDraft.months.length === 0}
-                  className="py-2 rounded-full text-[12px] cursor-pointer mt-1"
-                  style={{
-                    background: 'linear-gradient(135deg, #C9A96E, #b89556)',
-                    color: '#1A1208',
-                    border: 'none',
-                    opacity: newPlantDraft.name.trim() && newPlantDraft.text.trim() && newPlantDraft.months.length > 0 ? 1 : 0.4,
-                  }}
-                >
-                  Dodaj roślinę
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Settings modal */}
-      {showSettings && (
-        <div
-          className="fixed inset-0 flex items-center justify-center px-4"
-          style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
-          onClick={() => setShowSettings(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full"
-            style={{
-              maxWidth: '420px',
-              backgroundColor: '#0d0c0a',
-              border: '1px solid rgba(201,169,110,0.3)',
-              borderRadius: '20px',
-              padding: '20px',
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-serif italic" style={{ fontSize: '20px', color: gold }}>Ustawienia</h3>
-              <button
-                type="button"
-                onClick={() => setShowSettings(false)}
-                aria-label="Zamknij"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M6 6l12 12M6 18L18 6" />
-                </svg>
-              </button>
+            <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'var(--gold-label)' }}>
+              Motyw
+            </p>
+            <div className="grid grid-cols-2 gap-1.5 mb-5">
+              {[
+                { id: 'dark', label: '🌙 Ciemny' },
+                { id: 'light', label: '☀️ Jasny' },
+              ].map((opt) => {
+                const active = theme === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handleToggleTheme(opt.id)}
+                    className="py-2 rounded-lg text-[13px] cursor-pointer"
+                    style={{
+                      background: active ? 'var(--surface-tint)' : 'var(--surface-faint)',
+                      border: active ? `0.5px solid var(--gold)` : '0.5px solid var(--border-soft)',
+                      color: active ? 'var(--gold)' : 'var(--text-secondary)',
+                      fontWeight: active ? 500 : 400,
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
 
-            <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.55)' }}>
+            <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'var(--gold-label)' }}>
               Tło aplikacji
             </p>
 
-            <div className="relative mb-3 rounded-[14px] overflow-hidden" style={{ border: '0.5px solid rgba(201,169,110,0.25)' }}>
+            <div className="relative mb-3 rounded-[14px] overflow-hidden" style={{ border: '0.5px solid var(--border-medium)' }}>
               <img
                 src={bg}
                 alt="Aktualne tło"
@@ -1105,14 +1137,14 @@ export default function App() {
                 className="absolute bottom-0 left-0 right-0 px-3 py-1.5 text-[10px] tracking-[2px] uppercase"
                 style={{
                   background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
-                  color: 'rgba(232,221,208,0.85)',
+                  color: '#F0E8D8',
                 }}
               >
                 {bg === DEFAULT_BG ? 'Domyślne — Pergola' : 'Twoje zdjęcie'}
               </div>
             </div>
 
-            <p className="text-[12px] font-serif italic mb-3" style={{ color: 'rgba(232,221,208,0.6)' }}>
+            <p className="text-[12px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
               Wgraj własne zdjęcie — zapisze się lokalnie. Zalecane: krajobraz, max 1920px.
             </p>
             <input
@@ -1138,8 +1170,8 @@ export default function App() {
                 className="px-4 py-2 rounded-full text-[12px] cursor-pointer"
                 style={{
                   background: 'none',
-                  border: '0.5px solid rgba(201,169,110,0.3)',
-                  color: 'rgba(232,221,208,0.75)',
+                  border: '0.5px solid var(--border-medium)',
+                  color: 'var(--text-secondary)',
                   opacity: bg === DEFAULT_BG ? 0.4 : 1,
                 }}
               >
@@ -1147,7 +1179,102 @@ export default function App() {
               </button>
             </div>
 
-            <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'rgba(201,169,110,0.55)' }}>
+            {/* Profil FLORA — doklejany do system prompt jako kontekst preferencji */}
+            <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'var(--gold-label)' }}>
+              Profil FLORA
+            </p>
+            <p className="text-[12px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
+              FLORA dopasuje rady do Twojego doświadczenia i preferencji.
+            </p>
+
+            {profileDraft && (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'var(--gold-label)' }}>
+                    Doświadczenie
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {EXPERIENCE_LEVELS.map((lvl) => {
+                      const active = profileDraft.experience === lvl.id;
+                      return (
+                        <button
+                          key={lvl.id}
+                          type="button"
+                          onClick={() => setProfileDraft({ ...profileDraft, experience: lvl.id })}
+                          className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
+                          style={{
+                            background: active ? 'var(--surface-tint)' : 'transparent',
+                            border: active ? `0.5px solid var(--gold)` : '0.5px solid var(--border-soft)',
+                            color: active ? 'var(--gold)' : 'var(--text-secondary)',
+                            fontWeight: active ? 500 : 400,
+                          }}
+                        >
+                          {lvl.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'var(--gold-label)' }}>
+                    Preferencje preparatów
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {PREFERENCE_TYPES.map((pref) => {
+                      const active = profileDraft.preferences === pref.id;
+                      return (
+                        <button
+                          key={pref.id}
+                          type="button"
+                          onClick={() => setProfileDraft({ ...profileDraft, preferences: pref.id })}
+                          className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
+                          style={{
+                            background: active ? 'rgba(76, 175, 80, 0.20)' : 'transparent',
+                            border: active ? '0.5px solid rgba(76, 175, 80, 0.5)' : '0.5px solid var(--border-soft)',
+                            color: active ? '#2e7d32' : 'var(--text-secondary)',
+                            fontWeight: active ? 500 : 400,
+                          }}
+                        >
+                          {pref.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'var(--gold-label)' }}>
+                    O Tobie (opcjonalne)
+                  </p>
+                  <textarea
+                    value={profileDraft.notes}
+                    onChange={(e) => setProfileDraft({ ...profileDraft, notes: e.target.value })}
+                    placeholder="np. Beata, lubi zioła, alergia na sosnowe oleje, ogród 200m²..."
+                    rows={3}
+                    maxLength={1000}
+                    className="w-full bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none resize-none"
+                    style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  className="py-2 rounded-full text-[12px] cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, #C9A96E, #b89556)',
+                    color: '#1A1208',
+                    border: 'none',
+                    fontWeight: 500,
+                  }}
+                >
+                  Zapisz profil
+                </button>
+              </div>
+            )}
+
+            <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'var(--gold-label)' }}>
               Synchronizacja
             </p>
             <button
@@ -1160,9 +1287,9 @@ export default function App() {
               }}
               className="w-full py-2.5 rounded-full text-[13px] cursor-pointer flex items-center justify-center gap-2"
               style={{
-                background: 'rgba(66, 133, 244, 0.10)',
+                background: 'rgba(66, 133, 244, 0.12)',
                 border: '0.5px solid rgba(66, 133, 244, 0.45)',
-                color: '#90caf9',
+                color: '#1565c0',
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
               }}
@@ -1176,9 +1303,29 @@ export default function App() {
               </svg>
               Połącz z Google Calendar
             </button>
-            <p className="text-[11px] mt-1.5 text-center" style={{ color: 'rgba(232,221,208,0.4)' }}>
+            <p className="text-[11px] mt-1.5 text-center" style={{ color: 'var(--text-faint)' }}>
               Wkrótce dostępne — integracja w przygotowaniu
             </p>
+
+            <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'var(--gold-label)' }}>
+              Pomoc
+            </p>
+            <button
+              type="button"
+              onClick={() => { setShowSettings(false); setShowOnboarding(true); }}
+              className="w-full py-2.5 rounded-full text-[13px] cursor-pointer flex items-center justify-center gap-2"
+              style={{
+                background: 'var(--surface-tint)',
+                border: '0.5px solid var(--border-medium)',
+                color: 'var(--gold)',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              🌿 Pokaż przewodnik ponownie
+            </button>
+
+            </div>{/* /overflow-y-auto */}
           </div>
         </div>
       )}
@@ -1188,14 +1335,20 @@ export default function App() {
           className="fixed bottom-8 left-1/2 z-50 px-4 py-2 rounded-full text-xs"
           style={{
             transform: 'translateX(-50%)',
-            backgroundColor: '#1A1208',
-            border: '1px solid rgba(201,169,110,0.4)',
-            color: gold,
+            backgroundColor: 'var(--surface-modal)',
+            border: '1px solid var(--border-strong)',
+            color: 'var(--gold)',
             zIndex: 1100,
           }}
         >
           {toast}
         </div>
+      )}
+
+      {/* Onboarding — pokazywany RAZ na pierwszym otwarciu. Render na samym końcu
+          żeby z-index 2000 nakładał się nad WSZYSTKO (modale 1000, fullscreen 1100). */}
+      {showOnboarding && (
+        <Onboarding onClose={() => setShowOnboarding(false)} />
       )}
     </div>
   );

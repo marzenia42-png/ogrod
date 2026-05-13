@@ -6,7 +6,7 @@ const SUPABASE_URL = 'https://txqjjwanyfcpezgqbwou.supabase.co';
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cWpqd2FueWZjcGV6Z3Fid291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTc2NTksImV4cCI6MjA5MTM3MzY1OX0.Dy1N3rHMUZCAnTSKayRa7GNzSlWOe4PSi6_1BVOUHyU';
 
-// Payload: { messages, context, image_base64?, image_media_type? }
+// Payload: { messages, context, image_base64?, image_media_type?, mode? }
 // — wszystkie pola przekazywane bez modyfikacji do edge function.
 export async function callFlora(payload) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/garden-flora`, {
@@ -30,4 +30,14 @@ export async function callFlora(payload) {
     throw error;
   }
   return res.json();
+}
+
+// AddPlantWizard — rozpoznawanie rośliny ze zdjęcia. Edge Function mode='identify'.
+// Zwraca: { identifications: [{ name, categoryId, variety|null, confidence }] }
+export async function callFloraIdentify(imageBase64, mediaType = 'image/jpeg') {
+  return callFlora({
+    mode: 'identify',
+    image_base64: imageBase64,
+    image_media_type: mediaType,
+  });
 }

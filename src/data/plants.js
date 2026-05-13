@@ -16,20 +16,20 @@ export const CATEGORIES = [
 export const CATEGORY_BY_KEY = Object.fromEntries(CATEGORIES.map((c) => [c.key, c]));
 
 export const PLANTS = [
-  { key: 'brzoskwinia', name: 'Brzoskwinia' },
-  { key: 'sliwa', name: 'Śliwa' },
-  { key: 'jablon', name: 'Jabłoń' },
-  { key: 'grusza', name: 'Grusza' },
-  { key: 'porzeczka', name: 'Porzeczka' },
-  { key: 'agrest', name: 'Agrest' },
-  { key: 'borowka', name: 'Borówka amerykańska' },
-  { key: 'truskawka', name: 'Truskawka' },
-  { key: 'roza', name: 'Róża' },
-  { key: 'hortensja', name: 'Hortensja' },
-  { key: 'rododendron', name: 'Rododendron' },
-  { key: 'magnolia', name: 'Magnolia' },
-  { key: 'lawenda', name: 'Lawenda' },
-  { key: 'iglaki', name: 'Iglaki' },
+  { key: 'brzoskwinia', name: 'Brzoskwinia',          categoryId: 'fruit-trees' },
+  { key: 'sliwa',       name: 'Śliwa',                categoryId: 'fruit-trees' },
+  { key: 'jablon',      name: 'Jabłoń',               categoryId: 'fruit-trees' },
+  { key: 'grusza',      name: 'Grusza',               categoryId: 'fruit-trees' },
+  { key: 'porzeczka',   name: 'Porzeczka',            categoryId: 'fruit-shrubs' },
+  { key: 'agrest',      name: 'Agrest',               categoryId: 'fruit-shrubs' },
+  { key: 'borowka',     name: 'Borówka amerykańska',  categoryId: 'fruit-shrubs' },
+  { key: 'truskawka',   name: 'Truskawka',            categoryId: 'fruit-shrubs' },
+  { key: 'roza',        name: 'Róża',                 categoryId: 'ornamental' },
+  { key: 'hortensja',   name: 'Hortensja',            categoryId: 'ornamental' },
+  { key: 'rododendron', name: 'Rododendron',          categoryId: 'ornamental' },
+  { key: 'magnolia',    name: 'Magnolia',             categoryId: 'ornamental' },
+  { key: 'lawenda',     name: 'Lawenda',              categoryId: 'herbs' },
+  { key: 'iglaki',      name: 'Iglaki',               categoryId: 'garden-trees' },
 ];
 
 export const ACTIONS = [

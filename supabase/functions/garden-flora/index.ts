@@ -27,6 +27,22 @@ Zasady odpowiedzi:
 - Bezpieczeństwo: nie polecaj substancji wycofanych (Bravo 500, mankozeb w sadach domowych).
 - Gdy widzisz zdjęcie rośliny: 4-6 zdań. (1) opisz co widzisz — gatunek jeśli rozpoznajesz + objaw; (2) najprawdopodobniejsza przyczyna (choroba/szkodnik/niedobór); (3) konkretny polski preparat + dawka (g/L lub ml/L) + termin (faza fenologiczna lub pora dnia z kontekstem pogody). Jeśli zdjęcie jest niejednoznaczne — wymień 2 najbardziej prawdopodobne opcje i wskaż jak je odróżnić.`;
 
+// Identify mode — strict JSON output dla AddPlantWizard. Bez kontekstu pogody/notatek.
+const IDENTIFY_PERSONA = `Jesteś ekspertem botanikiem rozpoznającym rośliny ogrodowe na zdjęciach.
+
+Otrzymujesz zdjęcie pojedynczej rośliny. Zwracasz STRICT JSON — bez markdownu, bez komentarzy, bez tekstu poza JSON. Format:
+
+{"identifications":[{"name":"Jabłoń","categoryId":"fruit-trees","variety":"Antonówka","confidence":0.92},{"name":"Grusza","categoryId":"fruit-trees","variety":null,"confidence":0.05}]}
+
+Reguły:
+- Od 1 do 3 propozycji posortowane malejąco po confidence (0.0-1.0)
+- "name": polska nazwa gatunku (Jabłoń, Pomidor, Róża, Aronia, Klon palmowy)
+- "categoryId": dokładnie jedna z listy: "fruit-trees" (drzewa owocowe), "fruit-shrubs" (krzewy owocowe), "garden-trees" (drzewa ozdobne ogród), "vegetables" (warzywa gruntowe), "vegetables-greenhouse" (warzywa szklarniowe), "ornamental" (rośliny ozdobne zewnętrzne), "herbs" (zioła), "indoor" (rośliny domowe)
+- "variety": polska nazwa odmiany jeśli widoczna z dużą pewnością, inaczej null
+- "confidence": realistyczna wartość (0.5+ tylko gdy ewidentne; 0.3-0.5 prawdopodobne; <0.3 niepewne)
+- Jeśli zdjęcie nieczytelne / brak rośliny: zwróć {"identifications":[]}
+- ZAWSZE prawidłowy JSON, NIC POZA NIM.`;
+
 const ALLOWED_MEDIA = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const MAX_IMAGE_B64_LENGTH = 5_500_000; // ~4 MB obrazka po base64
 
@@ -59,6 +75,23 @@ type Ctx = {
   } | null;
   notes?: Array<{ date: string; text: string }>;
   diary?: Array<{ date: string; text: string }>;
+  plants?: Array<{
+    name: string;
+    location?: string;
+    recentEvents?: Array<{ type: string; date: string; note: string }>;
+  }>;
+  profile?: { experience?: string; preferences?: string; notes?: string } | null;
+};
+
+const EXPERIENCE_LABEL: Record<string, string> = {
+  poczatkujacy: 'początkujący',
+  srednio: 'średnio doświadczony',
+  zaawansowany: 'zaawansowany',
+};
+const PREFERENCE_LABEL: Record<string, string> = {
+  naturalne: 'preferuje naturalne metody (gnojówki, zioła, biologiczne)',
+  chemia: 'preferuje skuteczne preparaty chemiczne dostępne w PL',
+  oba: 'akceptuje zarówno naturalne metody, jak i preparaty chemiczne',
 };
 
 function buildContext(ctx: Ctx): string {
@@ -91,6 +124,31 @@ function buildContext(ctx: Ctx): string {
         ctx.diary.slice(0, 7).map((d) => `- ${d.date}: ${d.text}`).join('\n'),
     );
   }
+  if (ctx.profile) {
+    const exp = EXPERIENCE_LABEL[ctx.profile.experience || ''] || '';
+    const pref = PREFERENCE_LABEL[ctx.profile.preferences || ''] || '';
+    const lines: string[] = ['O użytkowniczce:'];
+    if (exp) lines.push(`- doświadczenie: ${exp}`);
+    if (pref) lines.push(`- ${pref}`);
+    if (ctx.profile.notes && ctx.profile.notes.trim()) lines.push(`- o sobie: ${ctx.profile.notes.trim()}`);
+    if (lines.length > 1) parts.push(lines.join('\n'));
+  }
+  if (ctx.plants && ctx.plants.length > 0) {
+    parts.push(
+      'Rośliny w ogrodzie:\n' +
+        ctx.plants.slice(0, 20).map((p) => {
+          let line = `- ${p.name}`;
+          if (p.location) line += ` (${p.location})`;
+          if (p.recentEvents && p.recentEvents.length > 0) {
+            const evs = p.recentEvents
+              .map((e) => `${e.type} ${e.date}${e.note ? ` "${e.note}"` : ''}`)
+              .join(', ');
+            line += `; ostatnio: ${evs}`;
+          }
+          return line;
+        }).join('\n'),
+    );
+  }
   return parts.join('\n\n');
 }
 
@@ -105,19 +163,12 @@ Deno.serve(async (req: Request) => {
       context?: Ctx;
       image_base64?: string;
       image_media_type?: string;
+      mode?: 'chat' | 'identify';
     } | null;
-    const messages: Msg[] = Array.isArray(body?.messages) ? body!.messages! : [];
+    const mode: 'chat' | 'identify' = body?.mode === 'identify' ? 'identify' : 'chat';
     const ctx: Ctx = body?.context ?? {};
 
-    if (messages.length === 0) return json(origin, { error: 'messages_required' }, 400);
-    if (messages.length > 30) return json(origin, { error: 'too_many_messages' }, 400);
-    const last = messages[messages.length - 1];
-    if (!last || last.role !== 'user' || typeof last.content !== 'string' || last.content.length === 0) {
-      return json(origin, { error: 'last_must_be_user' }, 400);
-    }
-    if (last.content.length > 4000) return json(origin, { error: 'message_too_long' }, 413);
-
-    // Optional image (foto-diagnostyka). Attached to the LAST user message only.
+    // Optional image — wymagane dla identify, opcjonalne dla chat (foto-diagnostyka).
     const rawImage = body?.image_base64;
     const hasImage = typeof rawImage === 'string' && rawImage.length > 100;
     if (hasImage) {
@@ -126,13 +177,31 @@ Deno.serve(async (req: Request) => {
       if (rawImage!.length > MAX_IMAGE_B64_LENGTH) return json(origin, { error: 'image_too_large' }, 413);
     }
 
+    // Build messages for chat mode (validate user history); identify uses synthetic message.
+    let messages: Msg[];
+    if (mode === 'identify') {
+      if (!hasImage) return json(origin, { error: 'image_required_for_identify' }, 400);
+      messages = [{ role: 'user', content: 'Rozpoznaj roślinę na zdjęciu. Zwróć STRICT JSON zgodnie z formatem.' }];
+    } else {
+      messages = Array.isArray(body?.messages) ? body!.messages! : [];
+      if (messages.length === 0) return json(origin, { error: 'messages_required' }, 400);
+      if (messages.length > 30) return json(origin, { error: 'too_many_messages' }, 400);
+      const last = messages[messages.length - 1];
+      if (!last || last.role !== 'user' || typeof last.content !== 'string' || last.content.length === 0) {
+        return json(origin, { error: 'last_must_be_user' }, 400);
+      }
+      if (last.content.length > 4000) return json(origin, { error: 'message_too_long' }, 413);
+    }
+
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!apiKey) {
       console.error('ANTHROPIC_API_KEY not configured');
       return json(origin, { error: 'config_error' }, 500);
     }
 
-    const contextText = buildContext(ctx);
+    // Identify mode pomija pełen kontekst — tylko obraz + minimalny prompt.
+    const contextText = mode === 'identify' ? '' : buildContext(ctx);
+    const systemPersona = mode === 'identify' ? IDENTIFY_PERSONA : PERSONA;
 
     // Build messages for Anthropic API. With image, the last user message
     // becomes a content array: [image block, text block] (text after image as docs suggest).
@@ -171,9 +240,9 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: hasImage ? 800 : 512,
+        max_tokens: mode === 'identify' ? 600 : (hasImage ? 800 : 512),
         system: [
-          { type: 'text', text: PERSONA, cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: systemPersona, cache_control: { type: 'ephemeral' } },
           { type: 'text', text: contextText || 'Brak dodatkowego kontekstu.' },
         ],
         messages: messagesForApi,
@@ -190,6 +259,25 @@ Deno.serve(async (req: Request) => {
     const reply: string =
       typeof data?.content?.[0]?.text === 'string' ? data.content[0].text.trim() : '';
     if (!reply) return json(origin, { error: 'empty_response' }, 502);
+
+    if (mode === 'identify') {
+      // Parse STRICT JSON. Fallback: szukaj pierwszego bloku { ... } w odpowiedzi.
+      const tryParse = (raw: string): unknown => {
+        try { return JSON.parse(raw); } catch { return null; }
+      };
+      let parsed = tryParse(reply);
+      if (!parsed) {
+        const match = reply.match(/\{[\s\S]*\}/);
+        if (match) parsed = tryParse(match[0]);
+      }
+      const arr = (parsed && typeof parsed === 'object' && 'identifications' in parsed)
+        ? (parsed as { identifications: unknown }).identifications
+        : null;
+      if (Array.isArray(arr)) {
+        return json(origin, { identifications: arr.slice(0, 3) });
+      }
+      return json(origin, { identifications: [], raw: reply.slice(0, 300) });
+    }
 
     return json(origin, { response: reply });
   } catch (err) {

@@ -7,11 +7,92 @@
   --color-text: #e8ddd0;
 }
 
+/* ──────────── DARK THEME (default) ──────────── */
 :root {
-  --overlay: rgba(13, 12, 10, 0.82);
-  --surface: rgba(255, 255, 255, 0.03);
-  --card-fill: rgba(201, 169, 110, 0.06);
-  --card-border: rgba(201, 169, 110, 0.2);
+  /* Tła powierzchni */
+  --bg-image-overlay: rgba(0, 0, 0, 0.30);
+  --surface-modal: #0d0c0a;        /* główne tło modali (AddPlantWizard, PlantDetail, Settings) */
+  --surface-flora: #0a0f0a;        /* zielonkawe tło panelu FLORA */
+  --surface-card: rgba(0, 0, 0, 0.70);     /* karty (pogoda, notatki) */
+  --surface-card-soft: rgba(0, 0, 0, 0.55); /* lżejsze karty */
+  --surface-elevated: rgba(0, 0, 0, 0.40); /* tła event/notatka items */
+  --surface-deep: rgba(0, 0, 0, 0.35);     /* deep panele */
+  --surface-faint: rgba(255, 255, 255, 0.03); /* subtelne kafelki, inputy */
+  --surface-tint: rgba(201, 169, 110, 0.06); /* podświetlone karty */
+
+  /* Bordery */
+  --border-soft: rgba(201, 169, 110, 0.18);
+  --border-medium: rgba(201, 169, 110, 0.25);
+  --border-strong: rgba(201, 169, 110, 0.35);
+
+  /* Tekst */
+  --text-primary: #F0E8D8;
+  --text-secondary: rgba(232, 221, 208, 0.85);
+  --text-muted: rgba(232, 221, 208, 0.6);
+  --text-faint: rgba(232, 221, 208, 0.45);
+  --text-very-faint: rgba(232, 221, 208, 0.3);
+
+  /* Złote akcenty */
+  --gold: #C9A96E;
+  --gold-on-button: #1A1208;       /* tekst na złotym przycisku */
+  --gold-label: rgba(201, 169, 110, 0.55);
+  --gold-label-strong: rgba(201, 169, 110, 0.7);
+
+  /* Bottom nav */
+  --nav-bg: rgba(13, 12, 10, 0.94);
+  --nav-border: rgba(201, 169, 110, 0.2);
+
+  /* Body */
+  --body-bg: #0d0c0a;
+  --body-color: #e8ddd0;
+}
+
+/* ──────────── LIGHT THEME ──────────── */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-image-overlay: rgba(247, 241, 226, 0.62);
+  --surface-modal: #fbf6ea;
+  --surface-flora: #f5f7ee;
+  --surface-card: rgba(255, 255, 255, 0.78);
+  --surface-card-soft: rgba(255, 255, 255, 0.62);
+  --surface-elevated: rgba(255, 255, 255, 0.55);
+  --surface-deep: rgba(255, 255, 255, 0.45);
+  --surface-faint: rgba(80, 60, 30, 0.05);
+  --surface-tint: rgba(201, 169, 110, 0.12);
+
+  --border-soft: rgba(139, 111, 62, 0.22);
+  --border-medium: rgba(139, 111, 62, 0.35);
+  --border-strong: rgba(139, 111, 62, 0.5);
+
+  --text-primary: #2a1f15;
+  --text-secondary: rgba(42, 31, 21, 0.88);
+  --text-muted: rgba(42, 31, 21, 0.65);
+  --text-faint: rgba(42, 31, 21, 0.45);
+  --text-very-faint: rgba(42, 31, 21, 0.3);
+
+  --gold: #8b6f3e;
+  --gold-on-button: #fbf6ea;
+  --gold-label: rgba(139, 111, 62, 0.7);
+  --gold-label-strong: rgba(139, 111, 62, 0.9);
+
+  --nav-bg: rgba(251, 246, 234, 0.94);
+  --nav-border: rgba(139, 111, 62, 0.25);
+
+  --color-bg: #f3ede0;
+  --body-bg: #f3ede0;
+  --body-color: #2a1f15;
+}
+
+html[data-theme="light"] body {
+  color: var(--body-color);
+  background-color: var(--body-bg);
+}
+
+/* Select option dla light mode — natywne dropdowny przeglądarki */
+html[data-theme="light"] select option {
+  background-color: #fbf6ea;
+  color: #2a1f15;
 }
 
 *,

@@ -3,11 +3,17 @@ import {
   loadPhotos, addPhoto, deletePhoto, updatePhotoCaption, PHOTO_LIMIT,
   loadPlantNotes, addPlantNote, deletePlantNote,
   loadEvents, addEvent, deleteEvent, EVENT_TYPES,
-  loadVarietiesFor, addVariety, deleteVariety,
+  loadVarietiesFor, loadVarieties, addVariety, deleteVariety,
   compressImage,
 } from './lib/plantStorage.js';
 import { MONTHS, ACTIONS, CATEGORIES, CATEGORY_BY_KEY, PLANTS } from './data/plants.js';
 import { SPECIES_BY_ID } from './data/plantSpecies.js';
+import Autocomplete from './Autocomplete.jsx';
+
+function formatPLN(value) {
+  if (value == null || Number.isNaN(value)) return '';
+  return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', maximumFractionDigits: 2 }).format(value);
+}
 
 export default function PlantDetail({
   plantId,
@@ -16,8 +22,12 @@ export default function PlantDetail({
   parentId = null,
   parentName = null,
   speciesId = null,
+  isCustom = false,
+  customPlant = null,
   onClose,
   onOpenVariety,
+  onUpdateName,
+  onUpdatePurchase,
 }) {
   // Profil gatunku — pełne dane botaniczne gdy plantId / parent matches species.
   const species = speciesId ? SPECIES_BY_ID[speciesId] : null;
@@ -36,8 +46,39 @@ export default function PlantDetail({
   const [photoError, setPhotoError] = useState(null);
   const [fullscreenIdx, setFullscreenIdx] = useState(null);
   const [captionDraft, setCaptionDraft] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(plantName);
+  // Edycja sekcji "Zakup" — inline drafts (data + cena).
+  const [editingPurchase, setEditingPurchase] = useState(false);
+  const [purchaseDateDraft, setPurchaseDateDraft] = useState(customPlant?.purchaseDate || '');
+  const [purchasePriceDraft, setPurchasePriceDraft] = useState(
+    customPlant?.purchasePrice != null ? String(customPlant.purchasePrice) : '',
+  );
   const photoInputRef = useRef(null);
   const touchStartXRef = useRef(0);
+
+  const canEditName = isCustom && typeof onUpdateName === 'function';
+  const canEditPurchase = isCustom && !isVariety && typeof onUpdatePurchase === 'function';
+
+  const startEditName = () => {
+    setNameDraft(plantName);
+    setEditingName(true);
+  };
+
+  const cancelEditName = () => {
+    setNameDraft(plantName);
+    setEditingName(false);
+  };
+
+  const saveEditName = () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed || trimmed === plantName) {
+      cancelEditName();
+      return;
+    }
+    onUpdateName?.(plantId, trimmed, isVariety);
+    setEditingName(false);
+  };
 
   const fullscreenPhoto = fullscreenIdx != null ? photos[fullscreenIdx] : null;
 
@@ -99,7 +140,49 @@ export default function PlantDetail({
     setEvents(loadEvents(plantId));
     setVarieties(isVariety ? [] : loadVarietiesFor(plantId));
     setPhotoError(null);
+    setEditingName(false);
+    setEditingPurchase(false);
   }, [plantId, isVariety]);
+
+  useEffect(() => { setNameDraft(plantName); }, [plantName]);
+
+  useEffect(() => {
+    setPurchaseDateDraft(customPlant?.purchaseDate || '');
+    setPurchasePriceDraft(customPlant?.purchasePrice != null ? String(customPlant.purchasePrice) : '');
+  }, [customPlant?.purchaseDate, customPlant?.purchasePrice]);
+
+  const startEditPurchase = () => {
+    setPurchaseDateDraft(customPlant?.purchaseDate || '');
+    setPurchasePriceDraft(customPlant?.purchasePrice != null ? String(customPlant.purchasePrice) : '');
+    setEditingPurchase(true);
+  };
+
+  const cancelEditPurchase = () => {
+    setPurchaseDateDraft(customPlant?.purchaseDate || '');
+    setPurchasePriceDraft(customPlant?.purchasePrice != null ? String(customPlant.purchasePrice) : '');
+    setEditingPurchase(false);
+  };
+
+  const savePurchase = () => {
+    if (!onUpdatePurchase) return;
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(purchaseDateDraft) ? purchaseDateDraft : null;
+    const price = purchasePriceDraft.trim()
+      ? Number(purchasePriceDraft.replace(',', '.'))
+      : null;
+    onUpdatePurchase(plantId, {
+      purchaseDate: date,
+      purchasePrice: Number.isFinite(price) && price != null ? price : null,
+    });
+    setEditingPurchase(false);
+  };
+
+  const clearPurchase = () => {
+    if (!onUpdatePurchase) return;
+    onUpdatePurchase(plantId, { purchaseDate: null, purchasePrice: null });
+    setPurchaseDateDraft('');
+    setPurchasePriceDraft('');
+    setEditingPurchase(false);
+  };
 
   const handlePhotoUpload = async (file) => {
     if (!file) return;
@@ -159,8 +242,8 @@ export default function PlantDetail({
         style={{
           maxWidth: '480px',
           maxHeight: '90vh',
-          backgroundColor: '#0d0c0a',
-          border: '1px solid rgba(201,169,110,0.3)',
+          backgroundColor: 'var(--surface-modal)',
+          border: '1px solid var(--border-strong)',
           borderTopLeftRadius: '20px',
           borderTopRightRadius: '20px',
           borderBottomLeftRadius: '20px',
@@ -168,22 +251,71 @@ export default function PlantDetail({
         }}
       >
         <div
-          className="flex items-center justify-between px-5 pt-5 pb-3"
-          style={{ borderBottom: '0.5px solid rgba(201,169,110,0.2)' }}
+          className="flex items-center justify-between px-5 pt-5 pb-3 gap-2"
+          style={{ borderBottom: '0.5px solid var(--border-soft)' }}
         >
           <div className="min-w-0 flex-1">
             {isVariety && parentName && (
-              <p className="text-[10px] tracking-[2px] uppercase truncate" style={{ color: 'rgba(201,169,110,0.5)' }}>
+              <p className="text-[10px] tracking-[2px] uppercase truncate" style={{ color: 'var(--gold-label)' }}>
                 odmiana · {parentName}
               </p>
             )}
-            <h3 className="font-serif italic truncate" style={{ fontSize: '22px', color: gold }}>{plantName}</h3>
+            {editingName ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveEditName();
+                    if (e.key === 'Escape') cancelEditName();
+                  }}
+                  autoFocus
+                  className="bg-transparent font-serif italic px-2 py-1 rounded outline-none flex-1 min-w-0"
+                  style={{ fontSize: '20px', color: 'var(--gold)', border: `0.5px solid var(--gold)` }}
+                />
+                <button
+                  type="button"
+                  onClick={saveEditName}
+                  aria-label="Zapisz nazwę"
+                  className="cursor-pointer shrink-0"
+                  style={{ background: 'rgba(76, 175, 80, 0.20)', border: '0.5px solid rgba(76, 175, 80, 0.5)', color: '#2e7d32', borderRadius: '50%', width: 28, height: 28, display: 'grid', placeItems: 'center', fontSize: 14 }}
+                >
+                  ✓
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditName}
+                  aria-label="Anuluj edycję"
+                  className="cursor-pointer shrink-0"
+                  style={{ background: 'none', border: '0.5px solid var(--border-medium)', color: 'var(--text-muted)', borderRadius: '50%', width: 28, height: 28, display: 'grid', placeItems: 'center', fontSize: 14 }}
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-serif italic truncate" style={{ fontSize: '22px', color: 'var(--gold)' }}>{plantName}</h3>
+                {canEditName && (
+                  <button
+                    type="button"
+                    onClick={startEditName}
+                    aria-label="Edytuj nazwę"
+                    className="cursor-pointer shrink-0"
+                    style={{ background: 'none', border: 'none', color: 'var(--gold-label-strong)', padding: 2, fontSize: 14, lineHeight: 1 }}
+                  >
+                    ✏️
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Zamknij"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
+            className="shrink-0"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-faint)', padding: 4 }}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M6 6l12 12M6 18L18 6" />
@@ -192,11 +324,118 @@ export default function PlantDetail({
         </div>
 
         <div className="overflow-y-auto px-5 py-4 flex flex-col gap-6 flex-1">
-          {/* Gallery */}
+          {/* Zakup — wyświetlanie + edycja inline (tylko dla custom plants) */}
+          {canEditPurchase && (
+            <section>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'var(--gold-label)' }}>
+                  🧾 Zakup
+                </p>
+                {!editingPurchase && (
+                  <button
+                    type="button"
+                    onClick={startEditPurchase}
+                    className="text-[11px] tracking-wide cursor-pointer px-3 py-1 rounded-full"
+                    style={{ background: 'var(--surface-faint)', border: '0.5px solid var(--border-medium)', color: 'var(--gold)' }}
+                  >
+                    {customPlant?.purchaseDate || customPlant?.purchasePrice != null ? 'Edytuj' : '+ dodaj'}
+                  </button>
+                )}
+              </div>
+              {!editingPurchase ? (
+                customPlant?.purchaseDate || customPlant?.purchasePrice != null ? (
+                  <div
+                    className="rounded-lg px-3 py-2 flex items-center gap-3"
+                    style={{ background: 'var(--surface-tint)', border: '0.5px solid var(--border-soft)' }}
+                  >
+                    <div className="flex-1 min-w-0 flex flex-wrap gap-x-3 gap-y-1 items-baseline">
+                      {customPlant?.purchaseDate && (
+                        <span className="font-serif italic" style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                          {new Date(customPlant.purchaseDate).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                      )}
+                      {customPlant?.purchasePrice != null && (
+                        <span className="font-serif tabular-nums" style={{ fontSize: '14px', color: 'var(--gold)', fontWeight: 500 }}>
+                          {formatPLN(customPlant.purchasePrice)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
+                    Brak danych zakupu. Dodaj datę i cenę.
+                  </p>
+                )
+              ) : (
+                <div className="flex flex-col gap-2 p-3 rounded-lg" style={{ background: 'var(--surface-tint)', border: '0.5px solid var(--border-soft)' }}>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="text-[10px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
+                        Data zakupu
+                      </label>
+                      <input
+                        type="date"
+                        value={purchaseDateDraft}
+                        onChange={(e) => setPurchaseDateDraft(e.target.value)}
+                        className="w-full bg-transparent text-[13px] font-serif italic px-2 py-1.5 rounded outline-none"
+                        style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                    <div style={{ width: '110px' }}>
+                      <label className="text-[10px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
+                        Cena (PLN)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={purchasePriceDraft}
+                        onChange={(e) => setPurchasePriceDraft(e.target.value)}
+                        placeholder="49.99"
+                        className="w-full bg-transparent text-[13px] font-serif italic px-2 py-1.5 rounded outline-none"
+                        style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={savePurchase}
+                      className="flex-1 py-1.5 rounded-full text-[11px] cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, #C9A96E, #b89556)', color: '#1A1208', border: 'none', fontWeight: 500 }}
+                    >
+                      Zapisz
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEditPurchase}
+                      className="px-3 py-1.5 rounded-full text-[11px] cursor-pointer"
+                      style={{ background: 'none', border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
+                    >
+                      Anuluj
+                    </button>
+                    {(customPlant?.purchaseDate || customPlant?.purchasePrice != null) && (
+                      <button
+                        type="button"
+                        onClick={clearPurchase}
+                        className="px-3 py-1.5 rounded-full text-[11px] cursor-pointer"
+                        style={{ background: 'none', border: '0.5px solid rgba(232,100,100,0.4)', color: '#c62828' }}
+                      >
+                        Wyczyść
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Gallery — zdjęcia chorób / problemów / postępu */}
           <section>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(201,169,110,0.55)' }}>
-                Galeria <span style={{ color: 'rgba(232,221,208,0.4)' }}>· {photos.length}/{PHOTO_LIMIT}</span>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'var(--gold-label)' }}>
+                📷 Zdjęcia <span style={{ color: 'var(--text-faint)' }}>· {photos.length}/{PHOTO_LIMIT}</span>
               </p>
               <input
                 ref={photoInputRef}
@@ -221,12 +460,15 @@ export default function PlantDetail({
                 {adding ? 'Zapisuję…' : '+ zdjęcie'}
               </button>
             </div>
+            <p className="text-[11px] font-serif italic mb-3" style={{ color: 'var(--text-faint)' }}>
+              Dodawaj zdjęcia chorób, szkodników, problemów lub postępu — pomoże FLORZE w diagnozie.
+            </p>
             {photoError && (
-              <p className="text-[12px] mb-2" style={{ color: 'rgba(232,140,140,0.85)' }}>{photoError}</p>
+              <p className="text-[12px] mb-2" style={{ color: '#c62828' }}>{photoError}</p>
             )}
             {photos.length === 0 ? (
-              <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
-                Brak zdjęć. Wgraj pierwsze (max {PHOTO_LIMIT}).
+              <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
+                Brak zdjęć. Dodaj gdy zauważysz problem.
               </p>
             ) : (
               <div
@@ -242,8 +484,8 @@ export default function PlantDetail({
                     style={{
                       width: '140px',
                       height: '140px',
-                      border: '0.5px solid rgba(201,169,110,0.2)',
-                      background: 'rgba(255,255,255,0.02)',
+                      border: '0.5px solid var(--border-soft)',
+                      background: 'var(--surface-faint)',
                       padding: 0,
                     }}
                   >
@@ -259,7 +501,7 @@ export default function PlantDetail({
                     )}
                     <span
                       className="absolute bottom-0 left-0 right-0 px-2 py-0.5 text-[10px] tracking-wide"
-                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', color: 'rgba(232,221,208,0.85)' }}
+                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', color: 'var(--text-secondary)' }}
                     >
                       {p.date}
                     </span>
@@ -274,7 +516,7 @@ export default function PlantDetail({
             <section>
               <p
                 className="text-[11px] tracking-[2px] uppercase mb-3"
-                style={{ color: 'rgba(201,169,110,0.55)' }}
+                style={{ color: 'var(--gold-label)' }}
               >
                 🌱 Profil gatunku
               </p>
@@ -282,12 +524,12 @@ export default function PlantDetail({
               {/* Pielęgnacja */}
               <div
                 className="rounded-xl p-3 mb-2"
-                style={{ background: 'rgba(201,169,110,0.06)', border: '0.5px solid rgba(201,169,110,0.2)' }}
+                style={{ background: 'rgba(201,169,110,0.06)', border: '0.5px solid var(--border-soft)' }}
               >
-                <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(201,169,110,0.65)' }}>
+                <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'var(--gold-label-strong)' }}>
                   Pielęgnacja
                 </p>
-                <div className="flex flex-col gap-1.5 text-[13px]" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                <div className="flex flex-col gap-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                   <p><span style={{ color: gold }}>☀️ Światło: </span>{species.guide.light}</p>
                   <p><span style={{ color: gold }}>💧 Podlewanie: </span>{species.guide.water}</p>
                   <p><span style={{ color: gold }}>🌍 Gleba: </span>{species.guide.soil}</p>
@@ -295,7 +537,7 @@ export default function PlantDetail({
                     <span style={{ color: gold }}>❄️ Mróz: </span>
                     {species.guide.frostHardy ? 'mrozoodporna' : 'wrażliwa na mróz'}
                     {species.guide.winterProtection && (
-                      <span style={{ color: 'rgba(232,221,208,0.7)' }}> · {species.guide.winterProtection}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}> · {species.guide.winterProtection}</span>
                     )}
                   </p>
                 </div>
@@ -311,13 +553,13 @@ export default function PlantDetail({
                     Sąsiedztwo
                   </p>
                   {species.guide.companions?.length > 0 && (
-                    <p className="text-[13px] mb-1" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                    <p className="text-[13px] mb-1" style={{ color: 'var(--text-secondary)' }}>
                       <span style={{ color: '#86efac' }}>✓ Dobrzy sąsiedzi: </span>
                       {species.guide.companions.join(', ')}
                     </p>
                   )}
                   {species.guide.avoid?.length > 0 && (
-                    <p className="text-[13px]" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                    <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                       <span style={{ color: '#fca5a5' }}>✗ Unikaj obok: </span>
                       {species.guide.avoid.join(', ')}
                     </p>
@@ -334,7 +576,7 @@ export default function PlantDetail({
                   <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(199, 210, 254, 0.75)' }}>
                     ✂️ Cięcie
                   </p>
-                  <div className="flex flex-col gap-1.5 text-[13px]" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                  <div className="flex flex-col gap-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                     {species.pruning.spring && (
                       <p><span style={{ color: '#c7d2fe' }}>Wiosna: </span>{species.pruning.spring}</p>
                     )}
@@ -357,7 +599,7 @@ export default function PlantDetail({
                   <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(190, 242, 100, 0.75)' }}>
                     🪴 Nawożenie
                   </p>
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                     {species.fertilizing}
                   </p>
                 </div>
@@ -379,7 +621,7 @@ export default function PlantDetail({
                         <div
                           key={idx}
                           className="rounded-lg overflow-hidden"
-                          style={{ background: 'rgba(0,0,0,0.35)', border: '0.5px solid rgba(239, 68, 68, 0.2)' }}
+                          style={{ background: 'var(--surface-deep)', border: '0.5px solid rgba(239, 68, 68, 0.2)' }}
                         >
                           <button
                             type="button"
@@ -403,7 +645,7 @@ export default function PlantDetail({
                           {open && (
                             <div
                               className="px-3 pb-3 pt-1 flex flex-col gap-2 text-[12.5px]"
-                              style={{ color: 'rgba(232,221,208,0.85)', borderTop: '0.5px solid rgba(239, 68, 68, 0.15)' }}
+                              style={{ color: 'var(--text-secondary)', borderTop: '0.5px solid rgba(239, 68, 68, 0.15)' }}
                             >
                               <p>
                                 <span style={{ color: 'rgba(252, 165, 165, 0.65)', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '1.5px' }}>
@@ -437,14 +679,14 @@ export default function PlantDetail({
           {/* Historia wydarzeń — podlano, nawieziono, oprysknieto, etc. */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(201,169,110,0.55)' }}>
+              <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'var(--gold-label)' }}>
                 Historia
               </p>
               <button
                 type="button"
                 onClick={() => setShowEventForm((s) => !s)}
                 className="text-[11px] tracking-wide cursor-pointer px-3 py-1 rounded-full"
-                style={{ background: showEventForm ? 'rgba(201,169,110,0.2)' : 'linear-gradient(135deg, #4CAF50, #2e7d32)', color: showEventForm ? gold : '#0a0f0a', border: 'none' }}
+                style={{ background: showEventForm ? 'var(--border-soft)' : 'linear-gradient(135deg, #4CAF50, #2e7d32)', color: showEventForm ? gold : '#0a0f0a', border: 'none' }}
               >
                 {showEventForm ? 'Anuluj' : '+ wydarzenie'}
               </button>
@@ -465,9 +707,9 @@ export default function PlantDetail({
                         onClick={() => setEventDraft((d) => ({ ...d, type: t.key }))}
                         className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
                         style={{
-                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'rgba(0,0,0,0.3)',
+                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'var(--surface-faint)',
                           border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(76, 175, 80, 0.2)',
-                          color: active ? '#86efac' : 'rgba(232,221,208,0.7)',
+                          color: active ? '#86efac' : 'var(--text-secondary)',
                           fontWeight: active ? 500 : 400,
                         }}
                       >
@@ -482,7 +724,7 @@ export default function PlantDetail({
                   onChange={(e) => setEventDraft({ ...eventDraft, note: e.target.value })}
                   placeholder="Krótka notatka (opcjonalnie)"
                   className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(76, 175, 80, 0.25)', color: '#F0E8D8' }}
+                  style={{ border: '0.5px solid rgba(76, 175, 80, 0.25)', color: 'var(--text-primary)' }}
                 />
                 <button
                   type="button"
@@ -496,7 +738,7 @@ export default function PlantDetail({
             )}
 
             {events.length === 0 ? (
-              <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+              <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
                 Brak wydarzeń. Pierwsze podlanie się liczy.
               </p>
             ) : (
@@ -507,16 +749,16 @@ export default function PlantDetail({
                     <div
                       key={ev.id}
                       className="px-3 py-2 rounded-lg flex items-start gap-2"
-                      style={{ background: 'rgba(0,0,0,0.4)', border: '0.5px solid rgba(76, 175, 80, 0.2)' }}
+                      style={{ background: 'var(--surface-elevated)', border: '0.5px solid rgba(76, 175, 80, 0.2)' }}
                     >
                       <span style={{ fontSize: '18px' }}>{meta?.icon || '📝'}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px]" style={{ color: '#86efac', fontWeight: 500 }}>
                           {meta?.label || ev.type}
-                          <span style={{ marginLeft: 8, color: 'rgba(201,169,110,0.55)', fontWeight: 400 }}>{ev.date}</span>
+                          <span style={{ marginLeft: 8, color: 'var(--gold-label)', fontWeight: 400 }}>{ev.date}</span>
                         </p>
                         {ev.note && (
-                          <p className="text-[12.5px] font-serif italic leading-relaxed mt-0.5" style={{ color: 'rgba(232,221,208,0.75)' }}>
+                          <p className="text-[12.5px] font-serif italic leading-relaxed mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                             {ev.note}
                           </p>
                         )}
@@ -525,7 +767,7 @@ export default function PlantDetail({
                         type="button"
                         onClick={() => setEvents(deleteEvent(plantId, ev.id))}
                         className="cursor-pointer shrink-0"
-                        style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '16px', lineHeight: 1, padding: 2 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '16px', lineHeight: 1, padding: 2 }}
                         aria-label="Usuń"
                       >
                         ×
@@ -534,7 +776,7 @@ export default function PlantDetail({
                   );
                 })}
                 {events.length > 5 && (
-                  <p className="text-[11px] text-center" style={{ color: 'rgba(232,221,208,0.35)' }}>
+                  <p className="text-[11px] text-center" style={{ color: 'var(--text-very-faint)' }}>
                     + {events.length - 5} starszych
                   </p>
                 )}
@@ -544,7 +786,7 @@ export default function PlantDetail({
 
           {/* Notes */}
           <section>
-            <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(201,169,110,0.55)' }}>
+            <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'var(--gold-label)' }}>
               Notatki
             </p>
             <div className="flex gap-2 mb-3">
@@ -555,7 +797,7 @@ export default function PlantDetail({
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
                 placeholder="Co zauważyłeś?"
                 className="flex-1 bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(232,221,208,0.85)' }}
+                style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
               />
               <button
                 type="button"
@@ -573,7 +815,7 @@ export default function PlantDetail({
               </button>
             </div>
             {notes.length === 0 ? (
-              <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+              <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
                 Brak notatek dla tej rośliny.
               </p>
             ) : (
@@ -582,11 +824,11 @@ export default function PlantDetail({
                   <div
                     key={n.id}
                     className="px-3 py-2 rounded-lg flex items-start gap-2"
-                    style={{ background: 'rgba(0,0,0,0.4)', border: '0.5px solid rgba(201,169,110,0.15)' }}
+                    style={{ background: 'var(--surface-elevated)', border: '0.5px solid var(--border-soft)' }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] tracking-wide" style={{ color: 'rgba(201,169,110,0.55)' }}>{n.date}</p>
-                      <p className="mt-0.5 text-[13px] font-serif italic leading-relaxed" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                      <p className="text-[10px] tracking-wide" style={{ color: 'var(--gold-label)' }}>{n.date}</p>
+                      <p className="mt-0.5 text-[13px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         {n.text}
                       </p>
                     </div>
@@ -594,7 +836,7 @@ export default function PlantDetail({
                       type="button"
                       onClick={() => setNotes(deletePlantNote(plantId, n.id))}
                       className="cursor-pointer shrink-0"
-                      style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '16px', lineHeight: 1, padding: 2 }}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '16px', lineHeight: 1, padding: 2 }}
                       aria-label="Usuń"
                     >
                       ×
@@ -608,24 +850,29 @@ export default function PlantDetail({
           {/* Varieties — only for non-variety plants */}
           {!isVariety && (
             <section>
-              <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(201,169,110,0.55)' }}>
+              <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'var(--gold-label)' }}>
                 Odmiany
               </p>
               <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={varietyDraft}
-                  onChange={(e) => setVarietyDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddVariety(); }}
-                  placeholder="np. New Dawn, Knock Out"
-                  className="flex-1 bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                  style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: 'rgba(232,221,208,0.85)' }}
-                />
+                <div className="flex-1 min-w-0">
+                  <Autocomplete
+                    value={varietyDraft}
+                    onChange={setVarietyDraft}
+                    onEnter={handleAddVariety}
+                    suggestions={[
+                      ...(species?.commonVarieties || []),
+                      ...loadVarieties().filter((v) => v.parent !== plantId).map((v) => v.name),
+                    ]}
+                    placeholder="np. New Dawn, Knock Out"
+                    className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
+                    style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={handleAddVariety}
                   disabled={!varietyDraft.trim()}
-                  className="px-3 py-2 rounded-lg text-[12px] tracking-wide cursor-pointer"
+                  className="px-3 py-2 rounded-lg text-[12px] tracking-wide cursor-pointer shrink-0"
                   style={{
                     background: 'linear-gradient(135deg, #C9A96E, #b89556)',
                     color: '#1A1208',
@@ -637,7 +884,7 @@ export default function PlantDetail({
                 </button>
               </div>
               {varieties.length === 0 ? (
-                <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+                <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
                   Brak odmian. Dodaj pierwszą.
                 </p>
               ) : (
@@ -657,8 +904,8 @@ export default function PlantDetail({
                         style={{
                           width: '160px',
                           minHeight: '220px',
-                          background: 'rgba(0,0,0,0.4)',
-                          border: '0.5px solid rgba(201,169,110,0.2)',
+                          background: 'var(--surface-elevated)',
+                          border: '0.5px solid var(--border-soft)',
                         }}
                       >
                         <button
@@ -688,7 +935,7 @@ export default function PlantDetail({
                               className="font-serif italic"
                               style={{
                                 fontSize: '13px',
-                                color: '#F0E8D8',
+                                color: 'var(--text-primary)',
                                 lineHeight: 1.2,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -704,7 +951,7 @@ export default function PlantDetail({
                                 className="font-serif italic"
                                 style={{
                                   fontSize: '11px',
-                                  color: 'rgba(232,221,208,0.65)',
+                                  color: 'var(--text-muted)',
                                   lineHeight: 1.3,
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
@@ -719,14 +966,14 @@ export default function PlantDetail({
                             ) : (
                               <p
                                 className="font-serif italic"
-                                style={{ fontSize: '11px', color: 'rgba(232,221,208,0.3)', flex: 1 }}
+                                style={{ fontSize: '11px', color: 'var(--text-very-faint)', flex: 1 }}
                               >
                                 Brak notatek
                               </p>
                             )}
                             <p
                               className="tracking-wide"
-                              style={{ fontSize: '10px', color: 'rgba(201,169,110,0.6)' }}
+                              style={{ fontSize: '10px', color: 'var(--gold-label-strong)' }}
                             >
                               📷 {vPhotos.length} · 📝 {vNotes.length}
                             </p>
@@ -747,7 +994,7 @@ export default function PlantDetail({
                             right: '4px',
                             background: 'rgba(0,0,0,0.6)',
                             border: 'none',
-                            color: 'rgba(232,221,208,0.85)',
+                            color: 'var(--text-secondary)',
                             fontSize: '14px',
                             lineHeight: 1,
                             padding: '2px 7px',
@@ -768,13 +1015,13 @@ export default function PlantDetail({
           {/* Calendar context */}
           {parentActionsByMonth.length > 0 && (
             <section>
-              <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(201,169,110,0.55)' }}>
+              <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'var(--gold-label)' }}>
                 {isVariety ? `Kalendarz (z parent: ${parentName})` : 'Kalendarz'}
               </p>
               <div className="flex flex-col gap-2">
                 {parentActionsByMonth.map(({ month, items }) => (
                   <div key={month}>
-                    <p className="text-[11px] uppercase mb-1" style={{ color: 'rgba(201,169,110,0.7)' }}>
+                    <p className="text-[11px] uppercase mb-1" style={{ color: 'var(--gold-label-strong)' }}>
                       {MONTHS[month - 1]}
                     </p>
                     <div className="flex flex-col gap-1">
@@ -784,12 +1031,12 @@ export default function PlantDetail({
                           <div
                             key={idx}
                             className="px-3 py-2 rounded-lg flex items-start gap-2"
-                            style={{ background: cat?.bg || 'rgba(0,0,0,0.4)', border: `0.5px solid ${cat?.border || 'rgba(201,169,110,0.2)'}` }}
+                            style={{ background: cat?.bg || 'var(--surface-elevated)', border: `0.5px solid ${cat?.border || 'var(--border-soft)'}` }}
                           >
                             <span style={{ fontSize: '10px', color: cat?.text, minWidth: '70px' }}>
                               {cat?.label}
                             </span>
-                            <p className="font-serif italic text-[13px] leading-relaxed flex-1" style={{ color: 'rgba(232,221,208,0.85)' }}>
+                            <p className="font-serif italic text-[13px] leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
                               {a.text}
                             </p>
                           </div>
@@ -804,7 +1051,7 @@ export default function PlantDetail({
 
           {/* Empty-calendar fallback for custom plants */}
           {parentActionsByMonth.length === 0 && !isVariety && !PLANTS.find((p) => p.key === plantId) && (
-            <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+            <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
               Roślina własna — kalendarz pojawi się gdy dodasz akcje w sekcji "Twoje rośliny".
             </p>
           )}
@@ -828,7 +1075,7 @@ export default function PlantDetail({
                 alt={fullscreenPhoto.caption || ''}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
-                style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: '12px', border: '0.5px solid rgba(201,169,110,0.3)', touchAction: 'pan-y' }}
+                style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: '12px', border: '0.5px solid var(--border-medium)', touchAction: 'pan-y' }}
               />
               {photos.length > 1 && (
                 <>
@@ -845,8 +1092,8 @@ export default function PlantDetail({
                       height: '44px',
                       borderRadius: '50%',
                       background: 'rgba(0,0,0,0.55)',
-                      border: '0.5px solid rgba(201,169,110,0.3)',
-                      color: '#F0E8D8',
+                      border: '0.5px solid var(--border-medium)',
+                      color: 'var(--text-primary)',
                       fontSize: '22px',
                       lineHeight: 1,
                       display: 'grid',
@@ -870,8 +1117,8 @@ export default function PlantDetail({
                       height: '44px',
                       borderRadius: '50%',
                       background: 'rgba(0,0,0,0.55)',
-                      border: '0.5px solid rgba(201,169,110,0.3)',
-                      color: '#F0E8D8',
+                      border: '0.5px solid var(--border-medium)',
+                      color: 'var(--text-primary)',
                       fontSize: '22px',
                       lineHeight: 1,
                       display: 'grid',
@@ -889,7 +1136,7 @@ export default function PlantDetail({
                       left: '50%',
                       transform: 'translateX(-50%)',
                       background: 'rgba(0,0,0,0.6)',
-                      color: 'rgba(232,221,208,0.85)',
+                      color: 'var(--text-secondary)',
                       fontSize: '11px',
                       padding: '2px 10px',
                       borderRadius: '999px',
@@ -909,11 +1156,11 @@ export default function PlantDetail({
               placeholder="Krótki opis (opcjonalny)..."
               rows={2}
               className="w-full mt-3 bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none resize-none"
-              style={{ border: '0.5px solid rgba(201,169,110,0.25)', color: '#F0E8D8' }}
+              style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
             />
 
             <div className="flex items-center justify-between mt-3 w-full">
-              <span className="text-[12px]" style={{ color: 'rgba(232,221,208,0.7)' }}>{fullscreenPhoto.date}</span>
+              <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{fullscreenPhoto.date}</span>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -927,7 +1174,7 @@ export default function PlantDetail({
                   type="button"
                   onClick={closeFullscreen}
                   className="px-3 py-1.5 rounded-full text-[11px] cursor-pointer"
-                  style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.85)' }}
+                  style={{ background: 'none', border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
                 >
                   Zamknij
                 </button>

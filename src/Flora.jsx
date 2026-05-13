@@ -34,7 +34,7 @@ const LeafIcon = ({ size = 24, stroke = '#0a0f0a', strokeWidth = 1.5 }) => (
   </svg>
 );
 
-function buildContext({ notes, weather, currentMonth }) {
+function buildContext({ notes, weather, currentMonth, plants, profile }) {
   const now = new Date();
   const monthName = MONTHS[(currentMonth ?? now.getMonth() + 1) - 1] || '';
   const dateStr = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -58,6 +58,14 @@ function buildContext({ notes, weather, currentMonth }) {
     weather: weatherCtx,
     notes: (notes || []).slice(0, 5).map((n) => ({ date: n.date, text: n.text })),
     diary: listRecentDiaryEntries(7),
+    plants: (plants || []).map((p) => ({
+      name: p.name,
+      location: p.location || '',
+      recentEvents: (p.recentEvents || []).map((e) => ({ type: e.type, date: e.date, note: e.note || '' })),
+    })),
+    profile: profile && (profile.experience || profile.preferences || profile.notes)
+      ? { experience: profile.experience, preferences: profile.preferences, notes: profile.notes || '' }
+      : null,
   };
 }
 
@@ -68,7 +76,7 @@ function trimHistoryForApi(messages, limit = 12) {
   return trimmed;
 }
 
-export default function Flora({ notes = [], weather, currentMonth }) {
+export default function Flora({ notes = [], weather, currentMonth, plants = [], profile = null }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([{ role: 'assistant', content: INITIAL_MESSAGE }]);
   const [input, setInput] = useState('');
@@ -77,6 +85,9 @@ export default function Flora({ notes = [], weather, currentMonth }) {
   // Foto-diagnostyka: zdjęcie dołączone do następnej wiadomości.
   const [imagePreview, setImagePreview] = useState(null); // pełny data URL
   const [imageData, setImageData] = useState(null);       // base64 bez prefiksu
+  // Tryb dla wysłanego zdjęcia: 'identify' (co to za roślina) lub 'diagnose' (choroba/problem).
+  // Default = 'identify' — najczęstszy case na spacerze.
+  const [photoMode, setPhotoMode] = useState('identify');
   // Po odpowiedzi na zdjęcie: indeks ostatniej diagnozy + flow "Dodaj do dziennika".
   const [diagnosisAtIdx, setDiagnosisAtIdx] = useState(null);
   const [showPlantPicker, setShowPlantPicker] = useState(false);
@@ -104,6 +115,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
       const commaIdx = dataUrl.indexOf(',');
       setImagePreview(dataUrl);
       setImageData(commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl);
+      setPhotoMode('identify');
       setError(null);
     } catch {
       setError('Nie udało się przygotować zdjęcia');
@@ -115,38 +127,80 @@ export default function Flora({ notes = [], weather, currentMonth }) {
     setImageData(null);
   };
 
+  // Format wyniku identyfikacji jako czytelny tekst dla bubble asystenta.
+  // Bubble renderuje plain text z whiteSpace: pre-wrap — używamy linii break i emoji
+  // zamiast markdown bold, żeby wynik wyglądał czytelnie bez parsera.
+  const formatIdentifications = (list) => {
+    if (!Array.isArray(list) || list.length === 0) {
+      return '🌿 Nie rozpoznałam tej rośliny. Spróbuj zrobić zdjęcie liścia z bliska, w lepszym świetle.';
+    }
+    const top = list[0];
+    const topConf = Math.round((Number(top.confidence) || 0) * 100);
+    const topName = `${top.name}${top.variety ? ` · ${top.variety}` : ''}`;
+    let txt = `🌿 To wygląda na:\n→ ${topName} (${topConf}% pewności)`;
+    if (list.length > 1) {
+      const others = list.slice(1, 3).map((it) => {
+        const conf = Math.round((Number(it.confidence) || 0) * 100);
+        return `   • ${it.name}${it.variety ? ` · ${it.variety}` : ''} (${conf}%)`;
+      });
+      txt += `\n\nMożliwe alternatywy:\n${others.join('\n')}`;
+    }
+    txt += '\n\nMożesz dodać tę roślinę do swoich przez przycisk „+" na liście.';
+    return txt;
+  };
+
   const send = async () => {
     const text = input.trim();
     if (loading) return;
     if (!text && !imageData) return;
 
-    // Default question when user sends image alone — gives FLORA prompt for diagnosis.
-    const userText = text || 'Co widzisz na tym zdjęciu? Jaka choroba lub szkodnik? Polski preparat z dawkowaniem.';
-    const next = [...messages, { role: 'user', content: userText }];
-    setMessages(next);
-    setInput('');
     const sentImage = imageData;
     const sentMediaType = 'image/jpeg';
     const wasImageRequest = !!sentImage;
+    const isIdentifyMode = wasImageRequest && photoMode === 'identify';
+
+    // Default question when user sends image alone w trybie diagnozy.
+    const userText = text || (isIdentifyMode
+      ? '🌿 Co to za roślina?'
+      : '🦠 Co widzisz na tym zdjęciu? Jaka choroba lub szkodnik? Polski preparat z dawkowaniem.');
+    const next = [...messages, { role: 'user', content: userText }];
+    setMessages(next);
+    setInput('');
     clearImage();
     setLoading(true);
     setError(null);
     try {
-      const data = await callFlora({
-        messages: trimHistoryForApi(next).map((m) => ({ role: m.role, content: m.content })),
-        context: buildContext({ notes, weather, currentMonth }),
-        ...(sentImage && { image_base64: sentImage, image_media_type: sentMediaType }),
-      });
-      if (data?.error) {
-        setError(`FLORA: ${data.error}`);
-      } else if (data?.response) {
-        setMessages((prev) => {
-          const updated = [...prev, { role: 'assistant', content: data.response, isDiagnosis: wasImageRequest }];
-          if (wasImageRequest) setDiagnosisAtIdx(updated.length - 1);
-          return updated;
+      if (isIdentifyMode) {
+        // Tryb identyfikacji — używamy strict-JSON endpoint.
+        const data = await callFlora({
+          mode: 'identify',
+          image_base64: sentImage,
+          image_media_type: sentMediaType,
         });
+        if (data?.error) {
+          setError(`FLORA: ${data.error}`);
+        } else {
+          const list = Array.isArray(data?.identifications) ? data.identifications : [];
+          const replyText = formatIdentifications(list);
+          setMessages((prev) => [...prev, { role: 'assistant', content: replyText, isIdentification: true }]);
+        }
       } else {
-        setError('FLORA milczy. Spróbuj jeszcze raz.');
+        const data = await callFlora({
+          messages: trimHistoryForApi(next).map((m) => ({ role: m.role, content: m.content })),
+          context: buildContext({ notes, weather, currentMonth, plants, profile }),
+          ...(sentImage && { image_base64: sentImage, image_media_type: sentMediaType }),
+        });
+        if (data?.error) {
+          setError(`FLORA: ${data.error}`);
+        } else if (data?.response) {
+          setMessages((prev) => {
+            const updated = [...prev, { role: 'assistant', content: data.response, isDiagnosis: wasImageRequest }];
+            if (wasImageRequest) setDiagnosisAtIdx(updated.length - 1);
+            return updated;
+          });
+        } else {
+          setError('FLORA milczy. Spróbuj jeszcze raz.');
+        }
       }
     } catch (e) {
       setError(e?.message || 'Błąd sieci');
@@ -223,7 +277,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
           transform: open ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
           pointerEvents: open ? 'auto' : 'none',
-          backgroundColor: '#0a0f0a',
+          backgroundColor: 'var(--surface-flora)',
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',
           border: '1px solid rgba(123, 201, 123, 0.25)',
@@ -293,17 +347,19 @@ export default function Flora({ notes = [], weather, currentMonth }) {
                   className="font-serif italic px-4 py-2.5 rounded-2xl"
                   style={m.role === 'assistant'
                     ? {
-                        backgroundColor: 'rgba(123, 201, 123, 0.08)',
-                        border: '0.5px solid rgba(123, 201, 123, 0.22)',
-                        color: 'rgba(232, 221, 208, 0.92)',
+                        backgroundColor: 'rgba(123, 201, 123, 0.10)',
+                        border: '0.5px solid rgba(123, 201, 123, 0.30)',
+                        color: 'var(--text-primary)',
                         fontSize: '14px',
                         lineHeight: 1.55,
+                        whiteSpace: 'pre-wrap',
                       }
                     : {
-                        background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.22), rgba(201, 169, 110, 0.18))',
-                        color: '#F0E8D8',
+                        background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.22), rgba(201, 169, 110, 0.22))',
+                        color: 'var(--text-primary)',
                         fontSize: '14px',
                         lineHeight: 1.55,
+                        whiteSpace: 'pre-wrap',
                       }
                   }
                 >
@@ -407,29 +463,69 @@ export default function Flora({ notes = [], weather, currentMonth }) {
             paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
           }}
         >
-          {/* Attached image preview — over the input row */}
+          {/* Attached image preview + mode toggle */}
           {imagePreview && (
             <div
-              className="flex items-center gap-2 mb-2 pl-2 pr-1 py-1 rounded-xl"
+              className="flex flex-col gap-1.5 mb-2 p-2 rounded-xl"
               style={{ background: 'rgba(123, 201, 123, 0.08)', border: '0.5px solid rgba(123, 201, 123, 0.25)' }}
             >
-              <img
-                src={imagePreview}
-                alt=""
-                style={{ width: 38, height: 38, objectFit: 'cover', borderRadius: 6 }}
-              />
-              <span className="flex-1 text-[11px] font-serif italic" style={{ color: 'rgba(232, 221, 208, 0.75)' }}>
-                Zdjęcie do diagnozy — naciśnij wyślij
-              </span>
-              <button
-                type="button"
-                onClick={clearImage}
-                aria-label="Usuń zdjęcie"
-                className="cursor-pointer"
-                style={{ background: 'none', border: 'none', color: 'rgba(232, 221, 208, 0.55)', fontSize: '18px', lineHeight: 1, padding: '4px 8px' }}
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2">
+                <img
+                  src={imagePreview}
+                  alt=""
+                  style={{ width: 38, height: 38, objectFit: 'cover', borderRadius: 6 }}
+                />
+                <span className="flex-1 text-[11px] font-serif italic" style={{ color: 'var(--text-secondary)' }}>
+                  Wybierz tryb i wyślij
+                </span>
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  aria-label="Usuń zdjęcie"
+                  className="cursor-pointer"
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '18px', lineHeight: 1, padding: '4px 8px' }}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPhotoMode('identify')}
+                  className="flex-1 py-1.5 rounded-full text-[11px] cursor-pointer"
+                  style={{
+                    background: photoMode === 'identify'
+                      ? 'linear-gradient(135deg, rgba(123,201,123,0.35), rgba(76,175,80,0.20))'
+                      : 'transparent',
+                    border: photoMode === 'identify'
+                      ? '0.5px solid rgba(76, 175, 80, 0.6)'
+                      : '0.5px solid rgba(123, 201, 123, 0.25)',
+                    color: photoMode === 'identify' ? '#2e7d32' : 'var(--text-secondary)',
+                    fontWeight: photoMode === 'identify' ? 600 : 400,
+                    touchAction: 'manipulation',
+                  }}
+                >
+                  🌿 Co to za roślina?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoMode('diagnose')}
+                  className="flex-1 py-1.5 rounded-full text-[11px] cursor-pointer"
+                  style={{
+                    background: photoMode === 'diagnose'
+                      ? 'linear-gradient(135deg, rgba(239,68,68,0.30), rgba(220,38,38,0.18))'
+                      : 'transparent',
+                    border: photoMode === 'diagnose'
+                      ? '0.5px solid rgba(239, 68, 68, 0.5)'
+                      : '0.5px solid rgba(123, 201, 123, 0.25)',
+                    color: photoMode === 'diagnose' ? '#c62828' : 'var(--text-secondary)',
+                    fontWeight: photoMode === 'diagnose' ? 600 : 400,
+                    touchAction: 'manipulation',
+                  }}
+                >
+                  🦠 Choroba / problem
+                </button>
+              </div>
             </div>
           )}
 
@@ -444,7 +540,7 @@ export default function Flora({ notes = [], weather, currentMonth }) {
 
           <div
             className="flex items-center gap-2 rounded-full pl-1.5 pr-1.5 py-1"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(123, 201, 123, 0.25)' }}
+            style={{ backgroundColor: 'var(--surface-faint)', border: '1px solid rgba(123, 201, 123, 0.30)' }}
           >
             {/* Camera button — visibly first (left of input), emoji for guaranteed mobile rendering. */}
             <button
@@ -482,10 +578,12 @@ export default function Flora({ notes = [], weather, currentMonth }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder={imageData ? 'Dodaj pytanie albo wyślij samo zdjęcie...' : 'Zapytaj FLORA...'}
+              placeholder={imageData
+                ? (photoMode === 'identify' ? 'Wyślij — rozpoznam roślinę' : 'Wyślij — zdiagnozuję problem')
+                : 'Zapytaj FLORA...'}
               disabled={loading}
               className="flex-1 bg-transparent font-serif italic outline-none min-w-0"
-              style={{ color: '#F0E8D8', fontSize: '14px', padding: '6px 4px' }}
+              style={{ color: 'var(--text-primary)', fontSize: '14px', padding: '6px 4px' }}
             />
 
             <button

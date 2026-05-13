@@ -1,5 +1,6 @@
 // Baza gatunków roślin — Etap 1: 10 najpopularniejszych w polskich ogrodach.
-// Każdy wpis ma: id, categoryId, name, guide, pruning, fertilizing, diseases, calendarTasks.
+// Każdy wpis ma: id, categoryId, name, guide, pruning, fertilizing, commonVarieties,
+// diseases, calendarTasks.
 //
 // type w calendarTasks używa tych samych kategorii co istniejący kalendarz w plants.js:
 //   'chemia' | 'naturalny' | 'nawozenie' | 'ciecie' | 'ochrona'
@@ -25,6 +26,7 @@ export const PLANT_SPECIES = [
       autumn: 'po opadnięciu liści (listopad): tylko sanitarne — usuń suche, chore, połamane.',
     },
     fertilizing: 'Marzec NPK wieloskładnikowy (1 kopiec łopaty pod koronę). Kwiecień: mocznik 5% dolistnie. Listopad: oprysk mocznikiem 5% na opadłe liście (likwiduje zarodniki parcha).',
+    commonVarieties: ['Antonówka', 'Cortland', 'Idared', 'Champion', 'Jonagold', 'Lobo', 'Reneta Złota', 'Szampion', 'Papierówka'],
     diseases: [
       {
         name: 'Parch jabłoni',
@@ -77,6 +79,7 @@ export const PLANT_SPECIES = [
       autumn: 'po opadnięciu liści: oprysk miedziowy + wycięcie suchych pędów.',
     },
     fertilizing: 'Kwiecień: NPK wieloskładnikowy. Czerwiec: dokarmianie potasem podczas wzrostu owoców.',
+    commonVarieties: ['Stanley', 'Węgierka Zwykła', 'Renkloda Ulena', 'Cacanska Lepotica', 'Top', 'President'],
     diseases: [
       {
         name: 'Owocówka śliwkóweczka',
@@ -120,6 +123,7 @@ export const PLANT_SPECIES = [
       autumn: 'minimalne — tylko sanitarne wycięcie chorych gałęzi.',
     },
     fertilizing: 'Marzec NPK pod koronę. Po zbiorze (lipiec): kompost lub obornik granulowany.',
+    commonVarieties: ['Łutówka', 'Kelleris', 'North Star', 'Pandy', 'Wanda'],
     diseases: [
       {
         name: 'Drobna plamistość liści wiśni',
@@ -163,6 +167,7 @@ export const PLANT_SPECIES = [
       autumn: 'opcjonalnie — cięcie sanitarne.',
     },
     fertilizing: 'Marzec: NPK + obornik granulowany. Po zbiorze: kompost.',
+    commonVarieties: ['Triton (czarna)', 'Tisel (czarna)', 'Tines (czarna)', 'Jonkheer van Tets (czerwona)', 'Junifer (czerwona)', 'White Versailles (biała)'],
     diseases: [
       {
         name: 'Wielkopąkowiec porzeczkowy',
@@ -206,6 +211,7 @@ export const PLANT_SPECIES = [
       autumn: 'opcjonalnie sanitarne.',
     },
     fertilizing: 'Maj: nawożenie potasowo-fosforowe.',
+    commonVarieties: ['Hinnonmaki Red', 'Hinnonmaki Green', 'Hinnonmaki Yellow', 'Invicta', 'Captivator'],
     diseases: [
       {
         name: 'Amerykański mącznik agrestu',
@@ -242,6 +248,7 @@ export const PLANT_SPECIES = [
       autumn: 'opcjonalnie sanitarne.',
     },
     fertilizing: 'Marzec i wrzesień: siarczan amonu (zakwaszacz + azot) 30 g/m². NIE używaj wapnia ani obornika.',
+    commonVarieties: ['Bluecrop', 'Bluetta', 'Patriot', 'Chandler', 'Sunrise', 'Toro', 'Duke'],
     diseases: [
       {
         name: 'Szara pleśń (Botrytis)',
@@ -278,6 +285,7 @@ export const PLANT_SPECIES = [
       autumn: 'wrzesień: sanitarne usunięcie żółtych liści.',
     },
     fertilizing: 'Marzec NPK. Wrzesień: nawożenie potasowe (lepsze przezimowanie).',
+    commonVarieties: ['Senga Sengana', 'Honeoye', 'Marmolada', 'Polka', 'Selva (powtarzająca)', 'Albion (powtarzająca)'],
     diseases: [
       {
         name: 'Szara pleśń truskawki',
@@ -324,6 +332,7 @@ export const PLANT_SPECIES = [
       autumn: 'usunięcie roślin po zbiorze (nie kompostuj — choroby).',
     },
     fertilizing: 'Po wysadzeniu: kompost. Co 14 dni gnojówka z pokrzywy 1:10 lub specjalistyczny nawóz do pomidorów. Od kwitnienia: dokarmianie potasowe (skórki bananów, popiół drzewny).',
+    commonVarieties: ['Cherry', 'Malinowy Ożarowski', 'San Marzano', 'Bawole Serce', 'Sweet Million', 'Czarny Krym', 'Koneser', 'Lima'],
     diseases: [
       {
         name: 'Zaraza ziemniaczana (Phytophthora)',
@@ -376,6 +385,7 @@ export const PLANT_SPECIES = [
       autumn: 'usunięcie roślin po zbiorze.',
     },
     fertilizing: 'Co 10 dni gnojówka z obornika 1:10 lub z pokrzywy. W lipcu dokarmianie potasowe.',
+    commonVarieties: ['Polan F1', 'Octopus F1', 'Mirabelle F1', 'Cezar F1', 'Sonja F1', 'Borus F1', 'Aladyn F1'],
     diseases: [
       {
         name: 'Mączniak rzekomy ogórka',
@@ -421,6 +431,7 @@ export const PLANT_SPECIES = [
       autumn: 'październik: skróć długie pędy o 1/3 (zabezpieczenie przed wyłamywaniem przez śnieg). Cięcie sanitarne.',
     },
     fertilizing: 'Marzec: nawóz wieloskładnikowy. Czerwiec po pierwszym kwitnieniu: dokarmianie potasowe. Wrzesień: STOP nawożeniu azotowemu (utrudnia zimowanie).',
+    commonVarieties: ['New Dawn', 'Pierre de Ronsard', 'Knock Out', 'Iceberg', 'Westerland', 'Mister Lincoln', 'Eden Rose', 'Rosarium Uetersen'],
     diseases: [
       {
         name: 'Czarna plamistość liści róż',

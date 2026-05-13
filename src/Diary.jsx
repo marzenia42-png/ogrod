@@ -149,13 +149,13 @@ export default function Diary() {
           onClick={prevMonth}
           aria-label="Poprzedni miesiąc"
           className="cursor-pointer"
-          style={{ background: 'none', border: 'none', padding: 8, color: 'rgba(201, 169, 110, 0.7)' }}
+          style={{ background: 'none', border: 'none', padding: 8, color: 'var(--gold-label-strong)' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <h2 className="font-serif italic" style={{ fontSize: '22px', color: '#C9A96E' }}>
+        <h2 className="font-serif italic" style={{ fontSize: '22px', color: 'var(--gold)' }}>
           {MONTHS[month - 1]} {year}
         </h2>
         <button
@@ -163,7 +163,7 @@ export default function Diary() {
           onClick={nextMonth}
           aria-label="Następny miesiąc"
           className="cursor-pointer"
-          style={{ background: 'none', border: 'none', padding: 8, color: 'rgba(201, 169, 110, 0.7)' }}
+          style={{ background: 'none', border: 'none', padding: 8, color: 'var(--gold-label-strong)' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M9 18l6-6-6-6" />
@@ -176,7 +176,7 @@ export default function Diary() {
           <div
             key={d}
             className="text-center text-[10px] tracking-[2px] uppercase py-1"
-            style={{ color: 'rgba(232, 221, 208, 0.4)' }}
+            style={{ color: 'var(--text-faint)' }}
           >
             {d}
           </div>
@@ -185,7 +185,7 @@ export default function Diary() {
 
       <div
         className="grid grid-cols-7 gap-1 p-2 rounded-[14px]"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.70)', border: '0.5px solid rgba(201, 169, 110, 0.2)', backdropFilter: 'blur(8px)' }}
+        style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid var(--border-soft)', backdropFilter: 'blur(8px)' }}
       >
         {cells.map((d, i) => {
           if (d == null) return <div key={i} />;
@@ -194,12 +194,12 @@ export default function Diary() {
           const holiday = holidayFor(d);
           // Color precedence: today (gold) > non-today holiday (red) > has-note (gold) > plain.
           const textColor = today
-            ? '#F0E8D8'
+            ? 'var(--text-primary)'
             : holiday
             ? '#fca5a5'
             : has
-            ? '#C9A96E'
-            : 'rgba(232, 221, 208, 0.55)';
+            ? 'var(--gold)'
+            : 'var(--text-muted)';
           return (
             <button
               key={i}
@@ -214,14 +214,14 @@ export default function Diary() {
                   ? 'rgba(239, 68, 68, 0.10)'
                   : has
                   ? 'rgba(201, 169, 110, 0.08)'
-                  : 'rgba(0, 0, 0, 0.35)',
+                  : 'var(--surface-deep)',
                 border: today
                   ? '1px solid #C9A96E'
                   : holiday
                   ? '0.5px solid rgba(239, 68, 68, 0.55)'
                   : has
                   ? '0.5px solid rgba(201, 169, 110, 0.35)'
-                  : '0.5px solid rgba(255, 255, 255, 0.05)',
+                  : '0.5px solid var(--border-soft)',
                 color: textColor,
                 fontSize: '13px',
                 fontWeight: today || holiday ? 500 : 400,
@@ -250,7 +250,7 @@ export default function Diary() {
                     width: 4,
                     height: 4,
                     borderRadius: '50%',
-                    backgroundColor: '#C9A96E',
+                    backgroundColor: 'var(--gold)',
                     boxShadow: '0 0 6px rgba(201, 169, 110, 0.6)',
                   }}
                 />
@@ -260,7 +260,7 @@ export default function Diary() {
         })}
       </div>
 
-      <p className="text-center text-[11px] mt-3 font-serif italic" style={{ color: 'rgba(232, 221, 208, 0.4)' }}>
+      <p className="text-center text-[11px] mt-3 font-serif italic" style={{ color: 'var(--text-faint)' }}>
         Kliknij dzień, żeby zapisać co dziś zrobiłeś w ogrodzie.
       </p>
 
@@ -275,8 +275,8 @@ export default function Diary() {
             className="w-full"
             style={{
               maxWidth: '460px',
-              backgroundColor: '#0d0c0a',
-              border: '1px solid rgba(201, 169, 110, 0.3)',
+              backgroundColor: 'var(--surface-modal)',
+              border: '1px solid var(--border-medium)',
               borderRadius: '20px',
               padding: '20px',
               marginBottom: 'env(safe-area-inset-bottom)',
@@ -284,7 +284,7 @@ export default function Diary() {
           >
             <div className="flex items-start justify-between mb-3 gap-3">
               <div className="min-w-0 flex-1">
-                <h3 className="font-serif italic" style={{ fontSize: '18px', color: '#C9A96E' }}>
+                <h3 className="font-serif italic" style={{ fontSize: '18px', color: 'var(--gold)' }}>
                   {formatDateLabel(selectedDay)}
                 </h3>
                 {selectedHoliday && (
@@ -304,7 +304,7 @@ export default function Diary() {
                 type="button"
                 onClick={closeDay}
                 aria-label="Zamknij"
-                style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'rgba(232, 221, 208, 0.5)' }}
+                style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--text-faint)' }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M6 6l12 12M6 18L18 6" />
@@ -318,7 +318,7 @@ export default function Diary() {
               autoFocus
               rows={6}
               className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none resize-none"
-              style={{ border: '0.5px solid rgba(201, 169, 110, 0.3)', color: 'rgba(232, 221, 208, 0.85)' }}
+              style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
             />
             <div className="flex gap-2 mt-4">
               {filledDays.has(selectedDay) && (
@@ -335,7 +335,7 @@ export default function Diary() {
                 type="button"
                 onClick={closeDay}
                 className="ml-auto px-4 py-2 rounded-full text-[12px] cursor-pointer"
-                style={{ background: 'none', border: '0.5px solid var(--card-border)', color: 'rgba(232, 221, 208, 0.7)' }}
+                style={{ background: 'none', border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
               >
                 Anuluj
               </button>

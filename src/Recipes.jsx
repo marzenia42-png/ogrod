@@ -124,7 +124,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
           + Twoja
         </button>
       </div>
-      <p className="text-[13px] font-serif italic mb-3" style={{ color: 'rgba(232, 221, 208, 0.6)' }}>
+      <p className="text-[13px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
         Domowe gnojówki, opryski, nawozy i odżywki — sprawdzone w polskich warunkach.
       </p>
 
@@ -142,9 +142,9 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               onClick={() => setFilter(t.key)}
               className="shrink-0 px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer"
               style={{
-                background: active ? 'rgba(76, 175, 80, 0.25)' : 'rgba(0,0,0,0.55)',
+                background: active ? 'rgba(76, 175, 80, 0.25)' : 'var(--surface-card-soft)',
                 border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
-                color: active ? '#86efac' : 'rgba(232,221,208,0.65)',
+                color: active ? '#86efac' : 'var(--text-muted)',
                 fontWeight: active ? 500 : 400,
               }}
             >
@@ -156,7 +156,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
       <div className="flex flex-col gap-3">
         {filteredRecipes.length === 0 && (
-          <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232,221,208,0.4)' }}>
+          <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-faint)' }}>
             Brak receptur w tej kategorii.
           </p>
         )}
@@ -168,7 +168,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               key={r.id}
               className="rounded-[14px] overflow-hidden"
               style={{
-                backgroundColor: 'rgba(26, 46, 26, 0.85)',
+                backgroundColor: 'var(--surface-card)',
                 border: '1px solid #22c55e',
                 backdropFilter: 'blur(8px)',
               }}
@@ -209,7 +209,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                       <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
                         Na co działa
                       </p>
-                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
+                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         {r.target}
                       </p>
                     </div>
@@ -220,7 +220,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                       <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
                         Zastosowanie
                       </p>
-                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
+                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         {r.appliesTo}
                       </p>
                     </div>
@@ -231,7 +231,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                       <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
                         Częstotliwość
                       </p>
-                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
+                      <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         {r.frequency}
                       </p>
                     </div>
@@ -246,7 +246,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                         <li
                           key={i}
                           className="text-[13.5px] font-serif italic leading-relaxed flex gap-2"
-                          style={{ color: 'rgba(232, 221, 208, 0.85)' }}
+                          style={{ color: 'var(--text-secondary)' }}
                         >
                           <span style={{ color: '#86efac', fontWeight: 500, minWidth: '20px' }}>{i + 1}.</span>
                           <span>{s}</span>
@@ -260,7 +260,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                       <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
                         Miesiące przypomnień
                       </p>
-                      <p className="text-[13px] font-serif italic" style={{ color: 'rgba(232, 221, 208, 0.85)' }}>
+                      <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-secondary)' }}>
                         {r.months.map((m) => MONTHS_SHORT[m - 1]).join(', ')}
                       </p>
                     </div>
@@ -295,7 +295,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
       <div
         className="mt-8 rounded-[14px] p-4"
-        style={{ backgroundColor: 'rgba(26, 46, 26, 0.85)', border: '0.5px solid rgba(134, 239, 172, 0.35)', backdropFilter: 'blur(8px)' }}
+        style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid rgba(134, 239, 172, 0.35)', backdropFilter: 'blur(8px)' }}
       >
         <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
           Zasady oprysków naturalnych
@@ -305,7 +305,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
             <li
               key={i}
               className="text-[13px] font-serif italic leading-relaxed flex gap-2"
-              style={{ color: 'rgba(232, 221, 208, 0.75)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               <span style={{ color: '#86efac', marginTop: '6px' }}>•</span>
               <span>{rule}</span>
@@ -326,7 +326,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
             style={{
               maxWidth: '480px',
               maxHeight: '90vh',
-              backgroundColor: '#0d0c0a',
+              backgroundColor: 'var(--surface-modal)',
               border: '1px solid rgba(134, 239, 172, 0.35)',
               borderRadius: '20px',
             }}
@@ -339,7 +339,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 type="button"
                 onClick={closeAddModal}
                 aria-label="Zamknij"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(232,221,208,0.5)', padding: 4 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-faint)', padding: 4 }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M6 6l12 12M6 18L18 6" />
@@ -355,7 +355,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 placeholder="Nazwa (np. Macerat z mniszka)"
                 autoFocus
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
+                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
               />
 
               <div>
@@ -370,9 +370,9 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                         onClick={() => setDraft({ ...draft, type: t.key })}
                         className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
                         style={{
-                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'rgba(0,0,0,0.3)',
+                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'var(--surface-faint)',
                           border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
-                          color: active ? '#86efac' : 'rgba(232,221,208,0.7)',
+                          color: active ? '#86efac' : 'var(--text-secondary)',
                           fontWeight: active ? 500 : 400,
                         }}
                       >
@@ -389,7 +389,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 onChange={(e) => setDraft({ ...draft, target: e.target.value })}
                 placeholder="Na co działa (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
+                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
               />
               <input
                 type="text"
@@ -397,7 +397,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 onChange={(e) => setDraft({ ...draft, appliesTo: e.target.value })}
                 placeholder="Zastosowanie — na które rośliny (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
+                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
               />
               <input
                 type="text"
@@ -405,14 +405,14 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 onChange={(e) => setDraft({ ...draft, frequency: e.target.value })}
                 placeholder="Częstotliwość (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
+                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
               />
 
               <div>
                 <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
                   Miesiące przypomnień (opcjonalne)
                 </p>
-                <p className="text-[11px] mb-2 font-serif italic" style={{ color: 'rgba(232,221,208,0.55)' }}>
+                <p className="text-[11px] mb-2 font-serif italic" style={{ color: 'var(--text-muted)' }}>
                   Zaznaczone miesiące pojawią się w kalendarzu jako naturalna akcja.
                 </p>
                 <div className="grid grid-cols-6 gap-1">
@@ -428,7 +428,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                         style={{
                           border: selected ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
                           background: selected ? 'rgba(76, 175, 80, 0.20)' : 'transparent',
-                          color: selected ? '#86efac' : 'rgba(232,221,208,0.55)',
+                          color: selected ? '#86efac' : 'var(--text-muted)',
                           fontWeight: selected ? 500 : 400,
                         }}
                       >
@@ -456,7 +456,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                       type="button"
                       onClick={() => setDraft({ ...draft, photoData: null })}
                       className="absolute top-2 right-2 cursor-pointer"
-                      style={{ background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, color: '#F0E8D8', lineHeight: 1 }}
+                      style={{ background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, color: 'var(--text-primary)', lineHeight: 1 }}
                       aria-label="Usuń zdjęcie"
                     >
                       ×
@@ -486,14 +486,14 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                     onChange={(e) => handleStepChange(i, e.target.value)}
                     placeholder="Krok..."
                     className="flex-1 bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                    style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: '#F0E8D8' }}
+                    style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
                   />
                   {draft.steps.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveStep(i)}
                       className="cursor-pointer"
-                      style={{ background: 'none', border: 'none', color: 'rgba(232,221,208,0.4)', fontSize: '18px', lineHeight: 1, padding: '0 6px' }}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '18px', lineHeight: 1, padding: '0 6px' }}
                       aria-label="Usuń krok"
                     >
                       ×
@@ -515,7 +515,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                   type="button"
                   onClick={closeAddModal}
                   className="flex-1 py-2 rounded-full text-[12px] cursor-pointer"
-                  style={{ background: 'none', border: '0.5px solid rgba(201,169,110,0.3)', color: 'rgba(232,221,208,0.75)' }}
+                  style={{ background: 'none', border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}
                 >
                   Anuluj
                 </button>
