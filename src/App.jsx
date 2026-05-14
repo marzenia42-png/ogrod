@@ -6,6 +6,7 @@ import PlantDetail from './PlantDetail.jsx';
 import AddPlantWizard from './AddPlantWizard.jsx';
 import CategoryGrid from './CategoryGrid.jsx';
 import CategoryPage from './CategoryPage.jsx';
+import AllPlantsScreen from './AllPlantsScreen.jsx';
 import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
 import ProactiveBanner from './ProactiveBanner.jsx';
 import Spacer from './Spacer.jsx';
@@ -802,7 +803,16 @@ export default function App() {
           </div>
         </nav>
 
-        {tab === 'glowna' && selectedCategory && (
+        {tab === 'glowna' && selectedCategory === 'all' && (
+          <AllPlantsScreen
+            customPlants={customPlants}
+            removedSet={removedSet}
+            onBack={() => setSelectedCategory(null)}
+            onOpenPlant={(id, name) => openPlantById(id, name)}
+          />
+        )}
+
+        {tab === 'glowna' && selectedCategory && selectedCategory !== 'all' && (
           <CategoryPage
             categoryId={selectedCategory}
             customPlants={customPlants}
