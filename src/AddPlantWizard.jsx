@@ -53,6 +53,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
   const [location, setLocation] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
+  const [purchaseShop, setPurchaseShop] = useState('');
   // Rozpoznawanie zdjęciem — tryb opcjonalny w kroku 1.
   const [identifyMode, setIdentifyMode] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -177,6 +178,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
       location: location.trim() || undefined,
       purchaseDate: validDate,
       purchasePrice: validPrice,
+      purchaseShop: purchaseShop.trim() || undefined,
       months,
       type: 'naturalny',
       text: variety.trim() ? `${finalName} · ${variety.trim()}` : finalName,
@@ -633,7 +635,20 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     />
                   </div>
                 </div>
-                <p className="text-[11px] mt-2" style={{ color: 'var(--text-faint)' }}>
+                <div className="mt-3">
+                  <label className="text-[11px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
+                    Sklep / Źródło
+                  </label>
+                  <input
+                    type="text"
+                    value={purchaseShop}
+                    onChange={(e) => setPurchaseShop(e.target.value)}
+                    placeholder="Np. Ogrodnik Bęczarka, od sąsiadki, targi..."
+                    className="w-full text-[15px] font-serif italic px-3 py-2.5 rounded-lg outline-none"
+                    style={{ border: '2px solid var(--border-medium)', color: 'var(--text-primary)', background: 'var(--wizard-input-bg)' }}
+                  />
+                </div>
+                <p className="text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>
                   Przyda się do historii ogrodu i wartości kolekcji.
                 </p>
               </div>

@@ -555,18 +555,20 @@ export default function App() {
 
   // Aktualizuj pola "zakup" rośliny własnej: { purchaseDate?: 'YYYY-MM-DD', purchasePrice?: number }
   // Wartości pustego stringa lub null kasują pole (idempotentne).
-  const handleUpdatePlantPurchase = (plantId, { purchaseDate, purchasePrice }) => {
+  const handleUpdatePlantPurchase = (plantId, { purchaseDate, purchasePrice, purchaseShop }) => {
     const cleanDate = (typeof purchaseDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(purchaseDate))
       ? purchaseDate
       : null;
     const priceNum = (typeof purchasePrice === 'number' && Number.isFinite(purchasePrice) && purchasePrice >= 0)
       ? Math.round(purchasePrice * 100) / 100
       : null;
+    const cleanShop = (typeof purchaseShop === 'string' && purchaseShop.trim()) ? purchaseShop.trim() : null;
     const nextPlants = customPlants.map((p) => {
       if (p.id !== plantId) return p;
       const updated = { ...p };
       if (cleanDate) updated.purchaseDate = cleanDate; else delete updated.purchaseDate;
       if (priceNum != null) updated.purchasePrice = priceNum; else delete updated.purchasePrice;
+      if (cleanShop) updated.purchaseShop = cleanShop; else delete updated.purchaseShop;
       return updated;
     });
     setCustomPlants(nextPlants);
@@ -1259,13 +1261,18 @@ export default function App() {
         <AddPlantWizard
           onClose={() => { setShowQuickAdd(false); setAddPlantPreseed(null); }}
           preseed={addPlantPreseed}
-          onSave={(plant) => {
+          onSave={async (plant) => {
             const next = [...customPlants, plant];
             setCustomPlants(next);
             lsSave(CUSTOM_PLANTS_KEY, next);
             setShowQuickAdd(false);
             setAddPlantPreseed(null);
             setToast(`Dodano: ${plant.variety ? `${plant.name} · ${plant.variety}` : plant.name}`);
+            // Persist to Supabase via db layer (includes purchase_shop).
+            try {
+              const { savePlant } = await import('./lib/db.js');
+              await savePlant(plant);
+            } catch (e) { console.warn('savePlant on add failed:', e?.message || e); }
           }}
         />
       )}

@@ -129,6 +129,7 @@ export default function PlantDetail({
       onUpdatePurchase?.(plantId, {
         purchaseDate: date,
         purchasePrice: Number.isFinite(price) && price != null ? price : null,
+        purchaseShop: shop,
       });
     }
     await savePlant({
