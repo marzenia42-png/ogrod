@@ -10,6 +10,8 @@ import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
 import ProactiveBanner from './ProactiveBanner.jsx';
 import Spacer from './Spacer.jsx';
 import Sprays from './Sprays.jsx';
+import Gallery from './Gallery.jsx';
+import History from './History.jsx';
 import {
   compressImage, addPhoto, loadCustomRecipes, updateVariety,
   loadUserProfile, saveUserProfile, EXPERIENCE_LEVELS, PREFERENCE_TYPES,
@@ -61,11 +63,40 @@ function wmoIconAndLabel(code) {
 }
 
 const TABS = [
-  { key: 'glowna',    label: 'Główna',    icon: '🏡' },
-  { key: 'kalendarz', label: 'Kalendarz', icon: '📅' },
-  { key: 'naturalne', label: 'Środki',    icon: '🌿' },
-  { key: 'dziennik',  label: 'Dziennik',  icon: '📔' },
+  { key: 'glowna',    label: 'Ogród',     icon: 'leaf' },
+  { key: 'kalendarz', label: 'Kalendarz', icon: 'cal' },
+  { key: 'naturalne', label: 'Receptury', icon: 'flask' },
+  { key: 'dziennik',  label: 'Dziennik',  icon: 'book' },
 ];
+
+const TAB_ICONS = {
+  leaf: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 20A7 7 0 0 1 4 13a7 7 0 0 1 7-7c6 0 9 4 9 9-5 0-9 0-9 5z" />
+      <path d="M11 20c0-4 2-7 9-7" />
+    </svg>
+  ),
+  cal: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  ),
+  flask: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 3v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-9V3" />
+      <line x1="9" y1="3" x2="15" y2="3" />
+    </svg>
+  ),
+  book: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+  ),
+};
 
 function lsLoad(key, fallback) {
   try {
@@ -1017,6 +1048,12 @@ export default function App() {
         {tab === 'srodki' && (
           <Sprays customPlants={customPlants} />
         )}
+        {tab === 'galeria' && (
+          <Gallery onOpenFlora={(seed) => openFlora(seed)} />
+        )}
+        {tab === 'historia' && (
+          <History />
+        )}
         {tab === 'dziennik' && <Diary />}
       </div>
 
@@ -1051,7 +1088,7 @@ export default function App() {
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <span style={{ fontSize: '20px', lineHeight: 1 }}>{t.icon}</span>
+                <span style={{ lineHeight: 1, display: 'grid', placeItems: 'center', width: 22, height: 22 }}>{TAB_ICONS[t.icon]}</span>
                 <span style={{ fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{t.label}</span>
               </button>
             );
