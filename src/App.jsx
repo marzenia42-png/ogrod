@@ -470,6 +470,23 @@ export default function App() {
     lsSave(NOTES_KEY, next);
   };
 
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [noteEditDraft, setNoteEditDraft] = useState('');
+  const handleStartEditNote = (note) => {
+    setEditingNoteId(note.id);
+    setNoteEditDraft(note.text);
+  };
+  const handleSaveEditNote = () => {
+    if (!editingNoteId) return;
+    const trimmed = noteEditDraft.trim();
+    if (!trimmed) { setEditingNoteId(null); return; }
+    const next = notes.map((n) => n.id === editingNoteId ? { ...n, text: trimmed } : n);
+    setNotes(next);
+    lsSave(NOTES_KEY, next);
+    setEditingNoteId(null);
+    setNoteEditDraft('');
+  };
+
   const handleDeleteCustom = (id) => {
     const next = customPlants.filter((p) => p.id !== id);
     setCustomPlants(next);
@@ -1079,29 +1096,50 @@ export default function App() {
                 </p>
               ) : (
                 <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', backdropFilter: 'blur(10px)' }}>
-                  {notes.map((n, idx) => (
+                  {notes.map((n, idx) => {
+                    const isEditing = editingNoteId === n.id;
+                    return (
                     <div
                       key={n.id}
-                      className="px-4 py-3 flex items-start gap-3"
+                      className="px-4 py-3 flex items-start gap-2"
                       style={{ borderTop: idx === 0 ? 'none' : '0.5px solid var(--border-soft)' }}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] tracking-wide" style={{ color: 'var(--gold-label)' }}>{n.date}</p>
-                        <p className="mt-0.5 text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                          {n.text}
-                        </p>
+                        <p style={{ fontSize: 11, letterSpacing: '0.04em', color: 'var(--gold-label)' }}>{n.date}</p>
+                        {isEditing ? (
+                          <textarea
+                            value={noteEditDraft}
+                            onChange={(e) => setNoteEditDraft(e.target.value)}
+                            rows={2}
+                            autoFocus
+                            className="mt-1 w-full px-2 py-1.5 rounded-lg resize-none"
+                            style={{ fontSize: 14, background: 'var(--surface-faint)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                          />
+                        ) : (
+                          <p className="mt-0.5 font-serif italic leading-relaxed" style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{n.text}</p>
+                        )}
+                        {isEditing && (
+                          <div className="mt-2 flex gap-2">
+                            <button type="button" onClick={handleSaveEditNote}
+                              style={{ padding: '5px 12px', borderRadius: 6, background: 'linear-gradient(135deg, #C9A96E, #b89556)', color: '#1A1208', fontWeight: 600, fontSize: 12, border: 'none', cursor: 'pointer' }}>Zapisz</button>
+                            <button type="button" onClick={() => { setEditingNoteId(null); setNoteEditDraft(''); }}
+                              style={{ padding: '5px 12px', borderRadius: 6, background: 'transparent', color: 'var(--text-muted)', border: '0.5px solid var(--border-medium)', fontSize: 12, cursor: 'pointer' }}>Anuluj</button>
+                          </div>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteNote(n.id)}
-                        className="cursor-pointer"
-                        style={{ background: 'none', border: 'none', color: 'var(--text-very-faint)', fontSize: '18px', lineHeight: 1, padding: 0 }}
-                        aria-label="Usuń notatkę"
-                      >
-                        ×
-                      </button>
+                      {!isEditing && (
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <button type="button" onClick={() => handleStartEditNote(n)}
+                            style={{ padding: '3px 7px', borderRadius: 6, background: 'transparent', color: 'var(--gold)', border: '0.5px solid var(--border-soft)', fontSize: 12, cursor: 'pointer' }}
+                            aria-label="Edytuj">✏️</button>
+                          <button type="button" onClick={() => handleDeleteNote(n.id)}
+                            style={{ padding: '3px 7px', borderRadius: 6, background: 'transparent', color: 'var(--text-faint)', border: '0.5px solid var(--border-soft)', fontSize: 12, cursor: 'pointer' }}
+                            aria-label="Usuń">🗑️</button>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>

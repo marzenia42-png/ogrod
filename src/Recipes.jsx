@@ -266,23 +266,37 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                     </div>
                   )}
 
-                  {r.custom && (
-                    <div className="flex gap-4 self-end mt-1">
+                  {r.custom ? (
+                    <div className="flex gap-2 self-end mt-2">
                       <button
                         type="button"
                         onClick={() => handleEdit(r)}
-                        className="text-[11px] cursor-pointer"
-                        style={{ background: 'none', border: 'none', color: '#86efac', padding: 0 }}
+                        className="cursor-pointer"
+                        style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(201,169,110,0.15)', border: '0.5px solid var(--border-medium)', color: 'var(--gold)', fontSize: 12 }}
+                        aria-label="Edytuj"
                       >
-                        Edytuj
+                        ✏️ Edytuj
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(r.id)}
-                        className="text-[11px] cursor-pointer"
-                        style={{ background: 'none', border: 'none', color: 'rgba(232,100,100,0.7)', padding: 0 }}
+                        className="cursor-pointer"
+                        style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(229,75,75,0.10)', border: '0.5px solid rgba(229,75,75,0.40)', color: 'rgba(229,75,75,0.85)', fontSize: 12 }}
+                        aria-label="Usuń"
                       >
-                        Usuń recepturę
+                        🗑️ Usuń
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 self-end mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit({ ...r, id: undefined, custom: true })}
+                        className="cursor-pointer"
+                        style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(123,201,123,0.10)', border: '0.5px solid rgba(123,201,123,0.35)', color: '#7bc97b', fontSize: 12 }}
+                        aria-label="Skopiuj i edytuj"
+                      >
+                        ✏️ Skopiuj i edytuj
                       </button>
                     </div>
                   )}
