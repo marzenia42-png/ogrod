@@ -12,7 +12,7 @@ const ENTRY_BADGES = {
   observation: { icon: '👁️', label: 'Obserwacja', color: '#5B8DB8' },
 };
 
-export default function History() {
+export default function History({ onBack }) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [summary, setSummary] = useState('');
@@ -74,9 +74,22 @@ export default function History() {
 
   return (
     <div style={{ paddingBottom: 100, animation: 'screenEnter 0.2s ease' }}>
-      <header className="px-5 pt-3 pb-3">
+      <section className="px-5 pt-3 pb-2">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="cursor-pointer mb-2"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 14, padding: '7px 14px', borderRadius: 999,
+              background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)',
+              color: 'var(--text-primary)', fontWeight: 500,
+            }}
+          >← Wróć</button>
+        )}
         <h2 className="font-serif italic" style={{ fontSize: 26, color: 'var(--gold)' }}>📖 Historia ogrodu</h2>
-      </header>
+      </section>
 
       <section className="px-5 pb-3">
         <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>

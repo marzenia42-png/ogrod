@@ -186,12 +186,13 @@ export default function CategoryPage({
             onClick={onBack}
             className="cursor-pointer"
             style={{
-              fontSize: 13, padding: '6px 12px', borderRadius: 999,
-              background: 'var(--surface-card-soft)', border: '0.5px solid var(--border-medium)',
-              color: 'var(--text-secondary)',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 14, padding: '7px 14px', borderRadius: 999,
+              background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)',
+              color: 'var(--text-primary)', fontWeight: 500,
             }}
           >
-            ← Wszystkie kategorie
+            ← Wróć
           </button>
         </div>
         <div

@@ -18,7 +18,7 @@ const TABS = [
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
-export default function Sprays({ customPlants = [] }) {
+export default function Sprays({ customPlants = [], onBack }) {
   const [sprays, setSpraysState] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
@@ -142,12 +142,25 @@ export default function Sprays({ customPlants = [] }) {
 
   return (
     <div style={{ paddingBottom: 100, animation: 'screenEnter 0.2s ease' }}>
-      <header className="px-5 pt-3 pb-2">
+      <section className="px-5 pt-3 pb-2">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="cursor-pointer mb-2"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 14, padding: '7px 14px', borderRadius: 999,
+              background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)',
+              color: 'var(--text-primary)', fontWeight: 500,
+            }}
+          >← Wróć</button>
+        )}
         <h2 className="font-serif italic" style={{ fontSize: 26, color: 'var(--gold)' }}>💊 Środki i nawozy</h2>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
           Historia oprysków i nawożeń, chronologicznie.
         </p>
-      </header>
+      </section>
 
       <section className="px-5 pb-3">
         <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>

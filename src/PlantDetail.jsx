@@ -320,14 +320,19 @@ export default function PlantDetail({
             onClick={onClose}
             aria-label="Wróć"
             className="cursor-pointer"
-            style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: 26, lineHeight: 1, padding: 4 }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 14, padding: '7px 14px', borderRadius: 999,
+              background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)',
+              color: 'var(--text-primary)', fontWeight: 500,
+            }}
           >
-            ‹
+            ← Wróć
           </button>
-          <p className="font-serif italic" style={{ fontSize: 18, color: 'var(--gold)' }}>
+          <p className="font-serif italic" style={{ fontSize: 18, color: 'var(--gold)', flex: 1, textAlign: 'center', minWidth: 0 }}>
             {category?.emoji} {plantName}
           </p>
-          <span style={{ width: 32 }} />
+          <span style={{ width: 40 }} />
         </header>
 
         {/* Section A — Tożsamość */}

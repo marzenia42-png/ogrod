@@ -1163,13 +1163,13 @@ export default function App() {
           <Recipes customRecipes={customRecipes} onRecipesChange={setCustomRecipes} />
         )}
         {tab === 'srodki' && (
-          <Sprays customPlants={customPlants} />
+          <Sprays customPlants={customPlants} onBack={() => handleTabChange('glowna')} />
         )}
         {tab === 'galeria' && (
-          <Gallery onOpenFlora={(seed) => openFlora(seed)} />
+          <Gallery onOpenFlora={(seed) => openFlora(seed)} onBack={() => handleTabChange('glowna')} />
         )}
         {tab === 'historia' && (
-          <History />
+          <History onBack={() => handleTabChange('glowna')} />
         )}
         {tab === 'dziennik' && <Diary />}
       </div>
