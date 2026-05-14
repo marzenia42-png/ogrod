@@ -688,6 +688,7 @@ export default function App() {
             onBack={() => setSelectedCategory(null)}
             onSelectCategory={setSelectedCategory}
             onOpenPlant={(id, name) => openPlantById(id, name)}
+            onOpenVariety={(v) => openVariety(v)}
             onAddPlant={() => setShowQuickAdd(true)}
           />
         )}
@@ -1178,9 +1179,9 @@ export default function App() {
           isCustom={openPlant.isCustom}
           customPlant={openPlant.isCustom ? customPlants.find((p) => p.id === openPlant.plantId) : null}
           onClose={() => setOpenPlant(null)}
-          onOpenVariety={(v) => openVariety(v)}
           onUpdateName={handleUpdatePlantName}
           onUpdatePurchase={handleUpdatePlantPurchase}
+          onOpenFlora={(seed) => openFlora(seed)}
         />
       )}
 
