@@ -549,7 +549,6 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
             ref={cameraRef}
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={(e) => { handlePhotoPick(e.target.files?.[0]); e.target.value = ''; }}
             style={{ display: 'none' }}
           />

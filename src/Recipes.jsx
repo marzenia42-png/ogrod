@@ -445,7 +445,6 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                   ref={photoRef}
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={(e) => { handlePhotoUpload(e.target.files?.[0]); e.target.value = ''; }}
                   className="hidden"
                 />

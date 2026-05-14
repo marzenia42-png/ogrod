@@ -8,6 +8,7 @@ import CategoryGrid from './CategoryGrid.jsx';
 import CategoryPage from './CategoryPage.jsx';
 import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
 import ProactiveBanner from './ProactiveBanner.jsx';
+import Spacer from './Spacer.jsx';
 import {
   compressImage, addPhoto, loadCustomRecipes, updateVariety,
   loadUserProfile, saveUserProfile, EXPERIENCE_LEVELS, PREFERENCE_TYPES,
@@ -125,6 +126,8 @@ export default function App() {
   });
   const [showSettings, setShowSettings] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showSpacer, setShowSpacer] = useState(false);
+  const [addPlantPreseed, setAddPlantPreseed] = useState(null);
   // FLORA: parent increments to ask Flora to open. Optional seed greeting.
   const [floraOpenSignal, setFloraOpenSignal] = useState(0);
   const [floraSeedMessage, setFloraSeedMessage] = useState(null);
@@ -1052,9 +1055,35 @@ export default function App() {
         </div>
       </nav>
 
-      {/* FAB "+" — always visible quick add. Sits opposite FLORA (left vs right).
-          z-index 1000 — above bottom nav (50), FLORA panel/button (999), backdrop (998),
-          so it never gets shadowed by the slide-up panel's bounding box on mobile Safari. */}
+      {/* FAB "+" — quick add + Spacer mode (📸) above it */}
+      <button
+        type="button"
+        onClick={() => setShowSpacer(true)}
+        aria-label="Spacer z aparatem"
+        style={{
+          position: 'fixed',
+          left: '20px',
+          bottom: 'calc(146px + env(safe-area-inset-bottom))',
+          width: '46px',
+          height: '46px',
+          borderRadius: '50%',
+          border: '1px solid rgba(201,169,110,0.4)',
+          background: 'rgba(20,14,8,0.85)',
+          color: '#E8C77E',
+          cursor: 'pointer',
+          zIndex: 1000,
+          display: 'grid',
+          placeItems: 'center',
+          fontSize: 18,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        📸
+      </button>
+
       <button
         type="button"
         onClick={() => setShowQuickAdd(true)}
@@ -1083,6 +1112,17 @@ export default function App() {
       >
         +
       </button>
+
+      {showSpacer && (
+        <Spacer
+          onClose={() => setShowSpacer(false)}
+          onAddToGarden={(p) => {
+            setShowSpacer(false);
+            setAddPlantPreseed(p);
+            setShowQuickAdd(true);
+          }}
+        />
+      )}
 
       <Flora
         notes={notes}
@@ -1176,12 +1216,14 @@ export default function App() {
       {/* 5-step wizard "Dodaj roślinę" (Etap 1.5) — zastępuje stary bottom sheet */}
       {showQuickAdd && (
         <AddPlantWizard
-          onClose={() => setShowQuickAdd(false)}
+          onClose={() => { setShowQuickAdd(false); setAddPlantPreseed(null); }}
+          preseed={addPlantPreseed}
           onSave={(plant) => {
             const next = [...customPlants, plant];
             setCustomPlants(next);
             lsSave(CUSTOM_PLANTS_KEY, next);
             setShowQuickAdd(false);
+            setAddPlantPreseed(null);
             setToast(`Dodano: ${plant.variety ? `${plant.name} · ${plant.variety}` : plant.name}`);
           }}
         />

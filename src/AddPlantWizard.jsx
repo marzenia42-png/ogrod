@@ -43,12 +43,13 @@ function formatPLN(value) {
  * Zdjęcie z kroku rozpoznawania NIE jest zapisywane do galerii rośliny —
  * zdjęcia rośliny dodawane są dopiero w PlantDetail (kontekst choroby/problemu).
  */
-export default function AddPlantWizard({ onClose, onSave }) {
-  const [step, setStep] = useState(1);
-  const [categoryId, setCategoryId] = useState(null);
-  const [speciesId, setSpeciesId] = useState(null);
-  const [customName, setCustomName] = useState('');
-  const [variety, setVariety] = useState('');
+export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
+  // preseed: { name, categoryId?, variety? } — pre-filled from Spacer flow.
+  const [step, setStep] = useState(preseed?.categoryId ? 2 : 1);
+  const [categoryId, setCategoryId] = useState(preseed?.categoryId || null);
+  const [speciesId, setSpeciesId] = useState(preseed?.name ? '__custom__' : null);
+  const [customName, setCustomName] = useState(preseed?.name || '');
+  const [variety, setVariety] = useState(preseed?.variety || '');
   const [location, setLocation] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
@@ -248,7 +249,6 @@ export default function AddPlantWizard({ onClose, onSave }) {
           ref={photoRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={(e) => { handlePhotoPick(e.target.files?.[0]); e.target.value = ''; setIdentifyMode(true); }}
           style={{ display: 'none' }}
         />
