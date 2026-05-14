@@ -214,7 +214,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
             <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'var(--gold-label)' }}>
               Krok {step} z {TOTAL_STEPS}
             </p>
-            <h3 className="font-serif italic" style={{ fontSize: '20px', color: GOLD }}>
+            <h3 className="font-serif italic" style={{ fontSize: '22px', color: GOLD }}>
               {identifyMode && step === 1 ? '🔍 Rozpoznawanie' : STEP_TITLES[step]}
             </h3>
           </div>
@@ -482,12 +482,12 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
 
           {/* ── KROK 2: Gatunek ── */}
           {step === 2 && (
-            <div className="flex flex-col gap-2">
-              {speciesList.length === 0 && (
-                <p className="text-[13px] font-serif italic mb-2" style={{ color: 'var(--text-muted)' }}>
-                  W tej kategorii nie ma jeszcze gotowych gatunków — wpisz nazwę poniżej.
-                </p>
-              )}
+            <div className="flex flex-col gap-2.5">
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {speciesList.length === 0
+                  ? 'W tej kategorii nie ma jeszcze gotowych gatunków — wpisz nazwę poniżej.'
+                  : 'Wybierz gatunek z listy lub wpisz własny.'}
+              </p>
               {speciesList.map((s) => {
                 const active = speciesId === s.id;
                 return (
@@ -495,18 +495,18 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     key={s.id}
                     type="button"
                     onClick={() => { setSpeciesId(s.id); setCustomName(''); }}
-                    className="text-left rounded-lg px-4 py-3 cursor-pointer"
+                    className="text-left rounded-xl px-4 py-3 cursor-pointer"
                     style={{
                       background: active
-                        ? 'linear-gradient(135deg, rgba(201,169,110,0.20), rgba(123,201,123,0.10))'
-                        : 'var(--surface-faint)',
-                      border: active ? `0.5px solid var(--gold)` : '0.5px solid var(--border-soft)',
-                      color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(123,201,123,0.14))'
+                        : 'var(--wizard-card-bg, var(--surface-card))',
+                      border: active ? `2px solid var(--gold)` : '2px solid var(--border-medium)',
+                      color: 'var(--text-primary)',
                       touchAction: 'manipulation',
                     }}
                   >
-                    <p className="font-serif italic" style={{ fontSize: '15px' }}>{s.name}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--gold-label-strong)', marginTop: '2px' }}>
+                    <p className="font-serif italic" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</p>
+                    <p style={{ fontSize: 13, color: active ? 'var(--gold)' : 'var(--text-secondary)', marginTop: 2 }}>
                       {s.guide.light} · {s.guide.frostHardy ? 'mrozoodporna' : 'nie mrozoodporna'}
                     </p>
                   </button>
@@ -516,14 +516,14 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
               <button
                 type="button"
                 onClick={() => setSpeciesId('__custom__')}
-                className="text-left rounded-lg px-4 py-3 cursor-pointer mt-1"
+                className="text-left rounded-xl px-4 py-3 cursor-pointer mt-1"
                 style={{
-                  background: isCustomNameMode ? 'var(--surface-tint)' : 'transparent',
-                  border: '0.5px dashed var(--border-strong)',
-                  color: 'var(--text-secondary)',
+                  background: isCustomNameMode ? 'var(--surface-tint)' : 'var(--wizard-card-bg, var(--surface-card))',
+                  border: '2px dashed var(--border-medium)',
+                  color: 'var(--text-primary)',
                 }}
               >
-                <p className="font-serif italic" style={{ fontSize: '14px' }}>+ Inne (wpisz nazwę)</p>
+                <p className="font-serif italic" style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)' }}>+ Inne (wpisz nazwę)</p>
               </button>
 
               {isCustomNameMode && (
@@ -534,8 +534,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     suggestions={allSpeciesNames}
                     placeholder="np. Aronia, Forsycja, Kapusta..."
                     autoFocus
-                    className="bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                    style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                    className="text-[15px] font-serif italic px-3 py-2.5 rounded-lg outline-none w-full"
+                    style={{ border: '2px solid var(--border-medium)', color: 'var(--text-primary)', background: 'var(--wizard-input-bg, rgba(255,255,255,0.12))' }}
                   />
                 </div>
               )}
@@ -554,8 +554,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                 suggestions={varietySuggestions}
                 placeholder={selectedSpecies?.id === 'roza' ? 'np. Pierre de Ronsard, New Dawn' : 'np. Malinowy, Cherry, Antonówka'}
                 autoFocus
-                className="bg-transparent text-[15px] font-serif italic px-4 py-3 rounded-lg outline-none"
-                style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                className="text-[15px] font-serif italic px-4 py-3 rounded-lg outline-none w-full"
+                style={{ border: '2px solid var(--border-medium)', color: 'var(--text-primary)', background: 'var(--wizard-input-bg)' }}
               />
               {selectedSpecies && (
                 <p className="mt-3 text-[11px]" style={{ color: 'var(--gold-label)' }}>
@@ -577,8 +577,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="np. Sad, Balkon, Działka, Ogród przedni"
-                  className="w-full bg-transparent text-[15px] font-serif italic px-4 py-3 rounded-lg outline-none"
-                  style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                  className="w-full text-[15px] font-serif italic px-4 py-3 rounded-lg outline-none"
+                  style={{ border: '2px solid var(--border-medium)', color: 'var(--text-primary)', background: 'var(--wizard-input-bg)' }}
                 />
                 <div className="flex flex-wrap gap-2 mt-3">
                   {['Sad', 'Balkon', 'Działka', 'Ogród', 'Szklarnia', 'Donica'].map((q) => (
@@ -612,8 +612,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                       type="date"
                       value={purchaseDate}
                       onChange={(e) => setPurchaseDate(e.target.value)}
-                      className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                      style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                      className="w-full text-[15px] font-serif italic px-3 py-2.5 rounded-lg outline-none"
+                      style={{ border: '2px solid var(--border-medium)', color: 'var(--text-primary)', background: 'var(--wizard-input-bg)' }}
                     />
                   </div>
                   <div style={{ width: '120px' }}>
@@ -628,8 +628,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                       value={purchasePrice}
                       onChange={(e) => setPurchasePrice(e.target.value)}
                       placeholder="np. 49.99"
-                      className="w-full bg-transparent text-[14px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                      style={{ border: '0.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                      className="w-full text-[15px] font-serif italic px-3 py-2.5 rounded-lg outline-none"
+                      style={{ border: '2px solid var(--border-medium)', color: 'var(--text-primary)', background: 'var(--wizard-input-bg)' }}
                     />
                   </div>
                 </div>

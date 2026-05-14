@@ -54,6 +54,8 @@
   --drawer-border: rgba(201, 169, 110, 0.22);
   --banner-bg: linear-gradient(135deg, #C9A96E 0%, #b89556 100%);
   --banner-text: #1A1208;
+  --wizard-card-bg: rgba(255, 255, 255, 0.06);
+  --wizard-input-bg: rgba(255, 255, 255, 0.12);
 }
 
 /* ──────────── LIGHT THEME ──────────── */
@@ -106,6 +108,8 @@ html[data-theme="light"] {
   --drawer-border: rgba(139, 111, 62, 0.25);
   --banner-bg: linear-gradient(135deg, #C9A96E 0%, #b89556 100%);
   --banner-text: #1A1208;
+  --wizard-card-bg: #FFFFFF;
+  --wizard-input-bg: #FFFFFF;
 }
 
 html[data-theme="light"] body {
