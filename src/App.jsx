@@ -850,6 +850,67 @@ export default function App() {
           </div>
         </nav>
 
+        {/* Action bar — TYLKO na stronie głównej Ogrodu (CategoryGrid widok). */}
+        {tab === 'glowna' && !selectedCategory && (
+          <div
+            className="px-3 py-2.5"
+            style={{
+              background: 'rgba(0,0,0,0.40)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              borderBottom: '0.5px solid var(--nav-border)',
+            }}
+          >
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowQuickAdd(true)}
+                className="flex-1 cursor-pointer flex items-center justify-center gap-2"
+                style={{
+                  padding: '11px 10px', borderRadius: 12,
+                  background: 'linear-gradient(135deg, rgba(201,169,110,0.20), rgba(201,169,110,0.06))',
+                  border: '1px solid var(--gold)',
+                  color: 'var(--gold)', fontSize: 13, fontWeight: 600,
+                  touchAction: 'manipulation',
+                }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
+                <span>Dodaj roślinę</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSpacer(true)}
+                className="flex-1 cursor-pointer flex items-center justify-center gap-2"
+                style={{
+                  padding: '11px 10px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--gold)',
+                  color: 'var(--gold)', fontSize: 13, fontWeight: 600,
+                  touchAction: 'manipulation',
+                }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1 }}>📷</span>
+                <span>Zdjęcie</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openFlora()}
+                className="flex-1 cursor-pointer flex items-center justify-center gap-2"
+                style={{
+                  padding: '11px 10px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--gold)',
+                  color: 'var(--gold)', fontSize: 13, fontWeight: 600,
+                  touchAction: 'manipulation',
+                }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1 }}>🌿</span>
+                <span>FLORA</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {tab === 'glowna' && selectedCategory === 'all' && (
           <AllPlantsScreen
             customPlants={customPlants}
@@ -1221,63 +1282,10 @@ export default function App() {
         {tab === 'dziennik' && <Diary />}
       </div>
 
-      {/* FAB "+" — quick add + Spacer mode (📸) above it */}
-      <button
-        type="button"
-        onClick={() => setShowSpacer(true)}
-        aria-label="Spacer z aparatem"
-        style={{
-          position: 'fixed',
-          left: '20px',
-          bottom: 'calc(86px + env(safe-area-inset-bottom))',
-          width: '46px',
-          height: '46px',
-          borderRadius: '50%',
-          border: '1px solid rgba(201,169,110,0.4)',
-          background: 'rgba(20,14,8,0.85)',
-          color: '#E8C77E',
-          cursor: 'pointer',
-          zIndex: 1000,
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: 18,
-          boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
-          touchAction: 'manipulation',
-          WebkitTapHighlightColor: 'transparent',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        📸
-      </button>
+      {/* v6.5: floating '+ Dodaj' i '📷 Spacer' usunięte — są w action barze
+          na ekranie głównym. Spacer/QuickAdd otwierane przez action bar
+          oraz CategoryPage '+ Dodaj' button. */}
 
-      <button
-        type="button"
-        onClick={() => setShowQuickAdd(true)}
-        aria-label="Dodaj roślinę"
-        style={{
-          position: 'fixed',
-          left: '20px',
-          bottom: 'calc(20px + env(safe-area-inset-bottom))',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          border: 'none',
-          background: 'linear-gradient(135deg, #C9A96E 0%, #b89556 100%)',
-          color: '#1A1208',
-          cursor: 'pointer',
-          zIndex: 1000,
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: '28px',
-          fontWeight: 300,
-          lineHeight: 1,
-          boxShadow: '0 6px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(201, 169, 110, 0.3)',
-          touchAction: 'manipulation',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        +
-      </button>
 
       {showSpacer && (
         <Spacer
@@ -1298,6 +1306,7 @@ export default function App() {
         profile={userProfile}
         openSignal={floraOpenSignal}
         seedMessage={floraSeedMessage}
+        hideFab={tab === 'glowna' && !selectedCategory}
       />
 
       {/* Drawer menu — boczny panel z nawigacją do sekcji aplikacji */}

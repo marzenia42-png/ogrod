@@ -237,7 +237,7 @@ function FabAdd({ onClick }) {
   return (
     <button type="button" onClick={onClick} aria-label="Dodaj zdjęcie"
       style={{
-        position: 'fixed', right: 20, bottom: 'calc(90px + env(safe-area-inset-bottom))',
+        position: 'fixed', left: 20, bottom: 'calc(20px + env(safe-area-inset-bottom))',
         width: 54, height: 54, borderRadius: '50%',
         background: 'linear-gradient(135deg, #C9A96E, #b89556)', color: '#1A1208',
         border: 'none', cursor: 'pointer', fontSize: 26, lineHeight: 1,

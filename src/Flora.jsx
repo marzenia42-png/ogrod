@@ -76,7 +76,7 @@ function trimHistoryForApi(messages, limit = 12) {
   return trimmed;
 }
 
-export default function Flora({ notes = [], weather, currentMonth, plants = [], profile = null, openSignal = 0, seedMessage = null }) {
+export default function Flora({ notes = [], weather, currentMonth, plants = [], profile = null, openSignal = 0, seedMessage = null, hideFab = false }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([{ role: 'assistant', content: INITIAL_MESSAGE }]);
 
@@ -239,29 +239,31 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Otwórz FLORA"
-        className="flora-btn"
-        style={{
-          position: 'fixed',
-          right: '20px',
-          bottom: 'calc(20px + env(safe-area-inset-bottom))',
-          width: '60px',
-          height: '60px',
-          borderRadius: '50%',
-          border: 'none',
-          background: 'linear-gradient(135deg, #7bc97b 0%, #C9A96E 100%)',
-          cursor: 'pointer',
-          zIndex: 999,
-          display: 'grid',
-          placeItems: 'center',
-          padding: 0,
-        }}
-      >
-        <span className="flora-emoji" style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} aria-hidden="true">🌿</span>
-      </button>
+      {!hideFab && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Otwórz FLORA"
+          className="flora-btn"
+          style={{
+            position: 'fixed',
+            right: '20px',
+            bottom: 'calc(80px + env(safe-area-inset-bottom))',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            border: 'none',
+            background: 'linear-gradient(135deg, #7bc97b 0%, #C9A96E 100%)',
+            cursor: 'pointer',
+            zIndex: 999,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 0,
+          }}
+        >
+          <span className="flora-emoji" style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} aria-hidden="true">🌿</span>
+        </button>
+      )}
 
       <div
         onClick={() => setOpen(false)}
