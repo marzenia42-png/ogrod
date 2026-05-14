@@ -9,6 +9,7 @@ import CategoryPage from './CategoryPage.jsx';
 import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
 import ProactiveBanner from './ProactiveBanner.jsx';
 import Spacer from './Spacer.jsx';
+import Sprays from './Sprays.jsx';
 import {
   compressImage, addPhoto, loadCustomRecipes, updateVariety,
   loadUserProfile, saveUserProfile, EXPERIENCE_LEVELS, PREFERENCE_TYPES,
@@ -1012,6 +1013,9 @@ export default function App() {
 
         {tab === 'naturalne' && (
           <Recipes customRecipes={customRecipes} onRecipesChange={setCustomRecipes} />
+        )}
+        {tab === 'srodki' && (
+          <Sprays customPlants={customPlants} />
         )}
         {tab === 'dziennik' && <Diary />}
       </div>
