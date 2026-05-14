@@ -163,11 +163,14 @@ Deno.serve(async (req: Request) => {
       context?: Ctx;
       image_base64?: string;
       image_media_type?: string;
-      mode?: 'chat' | 'identify' | 'daily_tip';
+      mode?: 'chat' | 'identify' | 'daily_tip' | 'spec';
+      plantName?: string;
+      plantCategory?: string;
     } | null;
-    const mode: 'chat' | 'identify' | 'daily_tip' =
+    const mode: 'chat' | 'identify' | 'daily_tip' | 'spec' =
       body?.mode === 'identify' ? 'identify'
       : body?.mode === 'daily_tip' ? 'daily_tip'
+      : body?.mode === 'spec' ? 'spec'
       : 'chat';
     const ctx: Ctx = body?.context ?? {};
 
@@ -187,6 +190,14 @@ Deno.serve(async (req: Request) => {
       messages = [{ role: 'user', content: 'Rozpoznaj roślinę na zdjęciu. Zwróć STRICT JSON zgodnie z formatem.' }];
     } else if (mode === 'daily_tip') {
       messages = [{ role: 'user', content: 'Napisz mi poradę ogrodniczą na dziś.' }];
+    } else if (mode === 'spec') {
+      const plantName = (body?.plantName || '').trim();
+      if (!plantName) return json(origin, { error: 'plant_name_required' }, 400);
+      const plantCategory = (body?.plantCategory || '').trim();
+      messages = [{
+        role: 'user',
+        content: `Podaj specyfikację rośliny "${plantName}"${plantCategory ? ` z kategorii "${plantCategory}"` : ''}. Zwróć tylko JSON.`,
+      }];
     } else {
       messages = Array.isArray(body?.messages) ? body!.messages! : [];
       if (messages.length === 0) return json(origin, { error: 'messages_required' }, 400);
@@ -206,6 +217,29 @@ Deno.serve(async (req: Request) => {
 
     // Identify mode pomija pełen kontekst — tylko obraz + minimalny prompt.
     const contextText = mode === 'identify' ? '' : buildContext(ctx);
+    const SPEC_PERSONA = `Jesteś ekspertem ogrodniczym. Dostajesz nazwę rośliny (polski lub łaciński) + opcjonalnie kategorię. Zwracasz STRICT JSON z pełną specyfikacją uprawy w Polsce, strefa 6a/6b (Małopolska, podgórze).
+
+Format JSON (każde pole string, krótkie, konkretne):
+{
+  "height_cm": "np. 50-100 cm",
+  "position": "Słoneczne" | "Półcień" | "Cień",
+  "soil": "krótko, np. próchnicza, przepuszczalna, lekko kwaśna",
+  "watering": "krótko, np. regularnie wiosną, oszczędnie zimą",
+  "fertilizing": "co i kiedy, np. azotowe kwiecień-maj, potasowe sierpień",
+  "pruning": "kiedy i jak, np. po kwitnieniu, formujące wiosną",
+  "pests": "polskie nazwy 2-3 najczęstszych, np. mszyce, przędziorek, parch",
+  "sprays": "konkretny preparat PL + dawka + termin, np. Topsin M 0.1% przed kwitnieniem",
+  "lifespan": "jednoroczna | dwuletnia | wieloletnia",
+  "frost_hardiness": "np. -25°C, strefa 6a",
+  "flowering": "np. czerwiec-sierpień",
+  "description": "1-2 zdania o roślinie, ciekawostka lub kontekst uprawy"
+}
+
+Reguły:
+- ZAWSZE prawidłowy JSON, NIC POZA NIM (bez markdown, bez komentarzy, bez \`\`\`).
+- Jeśli nie znasz wartości, użyj pustego stringa ("") zamiast nulla — łatwiej parsować.
+- Preparaty PL: Topsin M, Miedzian, Score, Switch, Signum, Polyversum, Karate Zeon, Mospilan, mocznik, gnojówka pokrzywy, skrzyp polny.`;
+
     const DAILY_TIP_PERSONA = `Jesteś FLORA, asystentem ogrodniczym dla ogrodu w Bęczarce koło Myślenic (Małopolska, podgórze, strefa 6a/6b).
 
 Otrzymujesz aktualną datę, miesiąc, temperaturę i opcjonalnie listę roślin użytkownika. Napisz JEDNĄ konkretną poradę ogrodniczą na dziś — 2-3 zdania.
@@ -219,6 +253,7 @@ Zasady:
     const systemPersona =
       mode === 'identify' ? IDENTIFY_PERSONA
       : mode === 'daily_tip' ? DAILY_TIP_PERSONA
+      : mode === 'spec' ? SPEC_PERSONA
       : PERSONA;
 
     // Build messages for Anthropic API. With image, the last user message
@@ -258,7 +293,11 @@ Zasady:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: mode === 'identify' ? 600 : (mode === 'daily_tip' ? 220 : (hasImage ? 800 : 512)),
+        max_tokens:
+          mode === 'identify' ? 600
+          : mode === 'daily_tip' ? 220
+          : mode === 'spec' ? 800
+          : (hasImage ? 800 : 512),
         system: [
           { type: 'text', text: systemPersona, cache_control: { type: 'ephemeral' } },
           { type: 'text', text: contextText || 'Brak dodatkowego kontekstu.' },
@@ -280,6 +319,21 @@ Zasady:
 
     if (mode === 'daily_tip') {
       return json(origin, { tip: reply });
+    }
+
+    if (mode === 'spec') {
+      const tryParse = (raw: string): unknown => {
+        try { return JSON.parse(raw); } catch { return null; }
+      };
+      let parsed = tryParse(reply);
+      if (!parsed) {
+        const match = reply.match(/\{[\s\S]*\}/);
+        if (match) parsed = tryParse(match[0]);
+      }
+      if (parsed && typeof parsed === 'object') {
+        return json(origin, { spec: parsed });
+      }
+      return json(origin, { spec: null, raw: reply.slice(0, 300) });
     }
 
     if (mode === 'identify') {

@@ -1294,11 +1294,32 @@ export default function App() {
             setShowQuickAdd(false);
             setAddPlantPreseed(null);
             setToast(`Dodano: ${plant.variety ? `${plant.name} · ${plant.variety}` : plant.name}`);
-            // Persist to Supabase via db layer (includes purchase_shop).
+            // Persist + auto-fetch spec from FLORA. Don't await persistence here —
+            // user shouldn't wait, ale toast pokaże postęp i finał.
+            const { savePlant } = await import('./lib/db.js');
+            try { await savePlant(plant); } catch (e) { console.warn('savePlant failed:', e?.message || e); }
+
+            // Auto-fetch FLORA spec, only if user did NOT manually fill spec fields.
+            const userHasSpec = Boolean(
+              plant.height_cm || plant.position || plant.soil || plant.watering
+              || plant.frost_hardiness || plant.flowering || plant.description
+            );
+            if (userHasSpec) return;
             try {
-              const { savePlant } = await import('./lib/db.js');
-              await savePlant(plant);
-            } catch (e) { console.warn('savePlant on add failed:', e?.message || e); }
+              setToast('🌿 FLORA uzupełnia specyfikację...');
+              const { fetchFloraSpec } = await import('./lib/floraApi.js');
+              const spec = await fetchFloraSpec({ plantName: plant.name, category: plant.categoryId });
+              if (spec) {
+                const merged = { ...plant, ...spec };
+                await savePlant(merged);
+                // Reflect in local customPlants so PlantDetail picks it up.
+                setCustomPlants((cur) => cur.map((p) => p.id === plant.id ? merged : p));
+                lsSave(CUSTOM_PLANTS_KEY, customPlants.map((p) => p.id === plant.id ? merged : p));
+                setToast('✅ FLORA uzupełniła specyfikację — sprawdź i popraw');
+              }
+            } catch (e) {
+              console.warn('fetchFloraSpec failed:', e?.message || e);
+            }
           }}
         />
       )}

@@ -42,6 +42,42 @@ export async function callFloraIdentify(imageBase64, mediaType = 'image/jpeg') {
   });
 }
 
+// Spec auto-fetch — po dodaniu rośliny w wizardzie. Mode 'spec' w Edge Function.
+// Zwraca object z polami: height_cm, position, soil, watering, fertilizing, pruning,
+// pests, sprays, lifespan, frost_hardiness, flowering, description.
+// Mapuje na pola plant w db.js (height_cm, position, soil, watering, frost_hardiness,
+// flowering, description). Pola "fertilizing", "pruning", "pests", "sprays", "lifespan"
+// gromadzone w polu description jako sufiks.
+export async function fetchFloraSpec({ plantName, category }) {
+  if (!plantName) return null;
+  try {
+    const res = await callFlora({ mode: 'spec', plantName, plantCategory: category });
+    const spec = res?.spec;
+    if (!spec || typeof spec !== 'object') return null;
+    const mapped = {
+      height_cm: spec.height_cm || spec.height || '',
+      position: spec.position || '',
+      soil: spec.soil || '',
+      watering: spec.watering || '',
+      frost_hardiness: spec.frost_hardiness || spec.frostResistance || '',
+      flowering: spec.flowering || '',
+    };
+    // Sklej advanced fields w description jeśli są — by user widział całość w jednym polu.
+    const extras = [];
+    if (spec.description) extras.push(spec.description);
+    if (spec.fertilizing) extras.push(`Nawożenie: ${spec.fertilizing}`);
+    if (spec.pruning) extras.push(`Cięcie: ${spec.pruning}`);
+    if (spec.pests) extras.push(`Szkodniki: ${spec.pests}`);
+    if (spec.sprays) extras.push(`Opryski: ${spec.sprays}`);
+    if (spec.lifespan) extras.push(`Cykl życia: ${spec.lifespan}`);
+    if (extras.length > 0) mapped.description = extras.join(' · ');
+    return mapped;
+  } catch (e) {
+    console.warn('fetchFloraSpec failed:', e?.message || e);
+    return null;
+  }
+}
+
 // Daily tip — 1 konkretna porada na dziś. Cache per YYYY-MM-DD w localStorage.
 // Zwraca string z poradą. Lazy: 1 fetch dziennie.
 const TIP_CACHE_PREFIX = 'garden-flora-tip-';
