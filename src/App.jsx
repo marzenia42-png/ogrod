@@ -13,6 +13,7 @@ import {
   loadEvents, loadTheme, saveTheme,
 } from './lib/plantStorage.js';
 import { migrateCustomPlantsV1 } from './lib/migration.js';
+import { runV6Migration } from './lib/migrateV6.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
 import { SPECIES_BY_ID } from './data/plantSpecies.js';
 
@@ -20,6 +21,8 @@ import { SPECIES_BY_ID } from './data/plantSpecies.js';
 // Idempotentna, side-effect free dla nowych userów. Bezpieczna w SSR (guard window).
 if (typeof window !== 'undefined') {
   try { migrateCustomPlantsV1(); } catch (e) { console.warn('Migration v1 skipped:', e); }
+  // Migracja v6: localStorage → Supabase. Idempotentna, marks 'garden-migrated-v6'.
+  runV6Migration().then((r) => console.info('v6 migration:', r));
 }
 
 const NOTES_KEY = 'garden-notes';
