@@ -2,8 +2,26 @@ import { useMemo } from 'react';
 import { PLANT_CATEGORIES } from './data/plantCategories.js';
 import { PLANTS } from './data/plants.js';
 
-// v6.2 — finalna lista 8 kategorii (pos 0 = "all" virtual folder).
-// Karty: gradient akcent + 60px emoji + 18px bold name + złoty badge licznika.
+// v6.3 — zdjęcia WebP dla kategorii (dostarczone przez Dario w Drive).
+import imgAll from './assets/categories/all.webp';
+import imgFruitTrees from './assets/categories/fruit-trees.webp';
+import imgFruitShrubs from './assets/categories/fruit-shrubs.webp';
+import imgGardenTrees from './assets/categories/garden-trees.webp';
+import imgVegetables from './assets/categories/vegetables.webp';
+import imgOrnamental from './assets/categories/ornamental.webp';
+import imgIndoor from './assets/categories/indoor.webp';
+import imgOther from './assets/categories/other.webp';
+
+const CATEGORY_IMAGE = {
+  'all': imgAll,
+  'fruit-trees': imgFruitTrees,
+  'fruit-shrubs': imgFruitShrubs,
+  'garden-trees': imgGardenTrees,
+  'vegetables': imgVegetables,
+  'ornamental': imgOrnamental,
+  'indoor': imgIndoor,
+  'other': imgOther,
+};
 
 function pluralRoslin(n) {
   if (n === 0) return '0 roślin';
@@ -21,7 +39,6 @@ function hexToRgb(hex) {
 }
 
 function realCatFor(p) {
-  // Built-in PLANTS use categoryId; custom may use category. herbs has been remapped.
   const id = p.categoryId || p.category;
   if (!id) return 'other';
   if (id === 'herbs') return 'vegetables';
@@ -41,7 +58,6 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
       map.all++;
     });
     customPlants.forEach((p) => {
-      // Skip variety children — they're counted under their parent's category.
       if (p.is_variety || p.parent_plant_id) return;
       const c = realCatFor(p);
       if (map[c] !== undefined) map[c]++;
@@ -64,18 +80,23 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
           const n = counts[cat.id] || 0;
           const rgb = hexToRgb(cat.accent);
           const isAll = cat.id === 'all';
+          const img = CATEGORY_IMAGE[cat.id];
           return (
             <button
               key={cat.id}
               type="button"
               onClick={() => onPickCategory?.(cat.id)}
-              className="relative rounded-2xl cursor-pointer overflow-hidden flex flex-col items-center justify-between"
+              className="relative rounded-2xl cursor-pointer overflow-hidden flex flex-col justify-end"
               style={{
-                minHeight: 160,
-                padding: '14px 12px 16px',
-                background: `linear-gradient(135deg, rgba(${rgb}, ${isAll ? 0.22 : 0.18}), rgba(${rgb}, 0.06))`,
-                border: `${isAll ? '1.5px' : '1px'} solid rgba(${rgb}, ${isAll ? 0.55 : 0.30})`,
-                boxShadow: `0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(${rgb}, 0.05) inset`,
+                minHeight: 170,
+                padding: '14px 12px 14px',
+                backgroundImage: img
+                  ? `linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.10) 100%), url(${img})`
+                  : `linear-gradient(135deg, rgba(${rgb}, 0.22), rgba(${rgb}, 0.06))`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                border: `${isAll ? '1.5px' : '1px'} solid rgba(${rgb}, ${isAll ? 0.65 : 0.40})`,
+                boxShadow: `0 4px 14px rgba(0,0,0,0.22), 0 0 0 1px rgba(${rgb}, 0.10) inset`,
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
               }}
@@ -96,46 +117,50 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
                     fontWeight: 700,
                     display: 'grid',
                     placeItems: 'center',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.45)',
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   {n}
                 </span>
               )}
+              {/* Emoji top-left as small badge */}
               <span
                 aria-hidden="true"
                 style={{
-                  fontSize: 60,
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  fontSize: 26,
                   lineHeight: 1,
-                  opacity: n === 0 ? 0.55 : 1,
-                  filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
-                  flex: 1,
-                  display: 'grid',
-                  placeItems: 'center',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+                  opacity: n === 0 ? 0.7 : 1,
                 }}
               >
                 {cat.emoji}
               </span>
               <span
                 style={{
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: 700,
-                  color: 'var(--cat-card-text, var(--text-primary))',
-                  textAlign: 'center',
+                  color: '#FFFFFF',
+                  textAlign: 'left',
                   lineHeight: 1.2,
                   letterSpacing: '0.1px',
-                  marginTop: 2,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.6)',
                 }}
               >
                 {cat.name}
               </span>
               <span
                 style={{
-                  marginTop: 2,
-                  fontSize: 13,
-                  color: 'var(--cat-card-muted, var(--text-muted))',
+                  marginTop: 3,
+                  fontSize: 12.5,
+                  color: '#E8C77E',
                   fontVariantNumeric: 'tabular-nums',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                  fontWeight: 600,
+                  letterSpacing: '0.3px',
                 }}
               >
                 {pluralRoslin(n)}
