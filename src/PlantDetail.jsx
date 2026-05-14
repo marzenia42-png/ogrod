@@ -393,11 +393,11 @@ export default function PlantDetail({
         {/* Section B — Specyfikacja */}
         <section className="px-5 pt-3 pb-3">
           <p className="font-mono uppercase tracking-widest" style={{ fontSize: 11, color: 'var(--gold-label)' }}>Specyfikacja</p>
-          <div className="mt-2 rounded-2xl p-4 flex flex-col gap-3" style={{ background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)' }}>
+          <div className="mt-2 rounded-2xl p-4 flex flex-col gap-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-medium)' }}>
             <SpecField icon="📏" label="Wysokość" value={spec.height_cm} onChange={(v) => handleSpecChange('height_cm', v)} placeholder="np. 100-150 cm" />
             <div>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>☀️ Stanowisko</p>
-              <div className="flex gap-2">
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>☀️ Stanowisko</p>
+              <div className="flex gap-2 flex-wrap">
                 {POSITION_OPTIONS.map((opt) => {
                   const active = spec.position === opt;
                   return (
@@ -406,11 +406,11 @@ export default function PlantDetail({
                       type="button"
                       onClick={() => handleSpecChange('position', active ? '' : opt)}
                       style={{
-                        padding: '7px 14px', borderRadius: 999, fontSize: 13,
-                        background: active ? 'rgba(201,169,110,0.20)' : 'var(--surface-faint)',
-                        border: active ? '1px solid var(--gold)' : '0.5px solid var(--border-soft)',
-                        color: active ? 'var(--gold)' : 'var(--text-secondary)',
-                        fontWeight: active ? 600 : 400, cursor: 'pointer',
+                        padding: '8px 16px', borderRadius: 999, fontSize: 14,
+                        background: active ? 'rgba(201,169,110,0.15)' : 'var(--surface-faint)',
+                        border: active ? '2px solid var(--gold)' : '1.5px solid var(--border-medium)',
+                        color: active ? 'var(--gold)' : 'var(--text-primary)',
+                        fontWeight: active ? 600 : 500, cursor: 'pointer',
                       }}
                     >{opt}</button>
                   );
@@ -422,14 +422,14 @@ export default function PlantDetail({
             <SpecField icon="🌡️" label="Mrozoodporność" value={spec.frost_hardiness} onChange={(v) => handleSpecChange('frost_hardiness', v)} placeholder="np. do -25°C" />
             <SpecField icon="🌸" label="Kwitnienie" value={spec.flowering} onChange={(v) => handleSpecChange('flowering', v)} placeholder="np. maj-czerwiec" />
             <div>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>📝 Opis ogólny</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>📝 Opis ogólny</p>
               <textarea
                 value={spec.description}
                 onChange={(e) => handleSpecChange('description', e.target.value)}
                 rows={3}
                 placeholder="Krótki opis, wymagania, ciekawostki..."
-                className="w-full px-3 py-2 rounded-lg resize-none"
-                style={{ fontSize: 14, background: 'var(--surface-faint)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+                className="w-full resize-none"
+                style={{ fontSize: 15, padding: '12px 14px', borderRadius: 10, background: 'var(--wizard-input-bg)', border: '1.5px solid var(--border-medium)', color: 'var(--text-primary)' }}
               />
             </div>
             {specDirty && (
@@ -744,14 +744,22 @@ export default function PlantDetail({
 function SpecField({ icon, label, value, onChange, placeholder }) {
   return (
     <div>
-      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>{icon} {label}</p>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>{icon} {label}</p>
       <input
         type="text"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-lg"
-        style={{ fontSize: 14, background: 'var(--surface-faint)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+        className="w-full"
+        style={{
+          fontSize: 15,
+          padding: '12px 14px',
+          borderRadius: 10,
+          background: 'var(--wizard-input-bg)',
+          border: '1.5px solid var(--border-medium)',
+          color: 'var(--text-primary)',
+          outline: 'none',
+        }}
       />
     </div>
   );
