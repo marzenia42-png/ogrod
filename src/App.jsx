@@ -939,7 +939,12 @@ export default function App() {
             <section className="px-6 pb-5">
               <div
                 className="rounded-[16px] p-4"
-                style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', backdropFilter: 'blur(10px)' }}
+                style={{
+                  backgroundColor: 'rgba(0,0,0,0.35)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  border: '0.5px solid var(--border-medium)',
+                }}
               >
                 {!weather && !weatherError && (
                   <p className="text-sm font-serif italic" style={{ color: 'var(--text-faint)' }}>Sprawdzam pogodę...</p>
