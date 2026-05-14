@@ -9,6 +9,10 @@ import CategoryPage from './CategoryPage.jsx';
 import AllPlantsScreen from './AllPlantsScreen.jsx';
 import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
 import ProactiveBanner from './ProactiveBanner.jsx';
+import AuthScreen from './AuthScreen.jsx';
+import { supabase } from './lib/supabaseClient.js';
+import { runUserMigrationV7 } from './lib/migrateUserV7.js';
+import { _clearUserCache } from './lib/db.js';
 import Spacer from './Spacer.jsx';
 import Sprays from './Sprays.jsx';
 import Gallery from './Gallery.jsx';
@@ -131,6 +135,35 @@ function uid() {
 export default function App() {
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
+
+  // Auth session — null = checking, false = no session, object = logged in user.
+  const [session, setSession] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      setSession(data?.session || false);
+      setAuthReady(true);
+    })();
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s || false);
+      _clearUserCache();
+      if (s?.user?.id) {
+        runUserMigrationV7(s.user.id).then((r) => console.info('v7 user migration:', r));
+      }
+    });
+    return () => { cancelled = true; sub?.subscription?.unsubscribe?.(); };
+  }, []);
+
+  // Po pierwszym wczytaniu sesji uruchom migrację (jeśli już zalogowany).
+  useEffect(() => {
+    if (session && session.user?.id) {
+      runUserMigrationV7(session.user.id).then((r) => console.info('v7 user migration (init):', r));
+    }
+  }, [session?.user?.id]);
 
   const [tab, setTab] = useState('glowna');
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -652,6 +685,20 @@ export default function App() {
   };
 
   const gold = '#C9A96E';
+
+  // Block render while checking session. Show AuthScreen when no session.
+  if (!authReady) {
+    return (
+      <div className="fixed inset-0" style={{ background: '#0d0c0a', display: 'grid', placeItems: 'center' }}>
+        <p style={{ color: 'var(--gold)', fontSize: 14, fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>
+          Otwieram ogród...
+        </p>
+      </div>
+    );
+  }
+  if (!session) {
+    return <AuthScreen bg={bg} />;
+  }
 
   return (
     <div className="relative min-h-svh flex flex-col">
@@ -1662,6 +1709,42 @@ export default function App() {
             >
               🌿 Pokaż przewodnik ponownie
             </button>
+
+            {session?.user && (
+              <>
+                <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'var(--gold-label)' }}>
+                  Konto
+                </p>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface-faint)', border: '0.5px solid var(--border-medium)' }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>Zalogowano jako:</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                    {session.user.email}
+                  </p>
+                  {session.user.user_metadata?.full_name && (
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
+                      {session.user.user_metadata.full_name}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setShowSettings(false);
+                    await supabase.auth.signOut();
+                    _clearUserCache();
+                    setToast('Wylogowano');
+                  }}
+                  className="w-full mt-3 py-2.5 rounded-full text-[14px] cursor-pointer"
+                  style={{
+                    background: 'rgba(229,75,75,0.12)',
+                    border: '0.5px solid rgba(229,75,75,0.40)',
+                    color: '#E54B4B', fontWeight: 600,
+                  }}
+                >
+                  Wyloguj się
+                </button>
+              </>
+            )}
 
             </div>{/* /overflow-y-auto */}
           </div>

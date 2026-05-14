@@ -1,9 +1,27 @@
-// Data layer v6 — Supabase primary, localStorage mirror.
+// Data layer v7 — Supabase primary (auth-aware), localStorage mirror.
 // Each mutation writes to BOTH targets so offline reads still work.
 // Reads try Supabase first, fall back to LS on error.
+//
+// v7 auth: gdy user zalogowany → wszystkie rekordy z user_id = auth.uid().
+// Bez sesji → fallback do device_id (legacy, RLS pozwala anon dla user_id IS NULL).
 
 import { supabase } from './supabaseClient.js';
 import { getDeviceId } from './deviceId.js';
+
+// Cache user.id w pamięci — odświeżany przez onAuthStateChange w App.jsx.
+let _cachedUserId = null;
+async function getCurrentUserId() {
+  if (_cachedUserId) return _cachedUserId;
+  try {
+    const { data } = await supabase.auth.getUser();
+    _cachedUserId = data?.user?.id || null;
+    return _cachedUserId;
+  } catch { return null; }
+}
+// Eksportowany helper — App.jsx czyści po wylogowaniu.
+export function _clearUserCache() { _cachedUserId = null; }
+// Eksport do auth-bound migracji.
+export { getCurrentUserId };
 
 const LS = {
   plants: 'garden-custom-plants',           // legacy + mirror
@@ -28,14 +46,23 @@ function ok(res) {
   return !res?.error && res?.data !== undefined;
 }
 
+// Scope: returns the column + value pair used to namespace rows.
+// Authenticated -> { col: 'user_id', val: uid }
+// Anonymous     -> { col: 'user_device_id', val: deviceId }
+async function userScope() {
+  const uid = await getCurrentUserId();
+  if (uid) return { col: 'user_id', val: uid, anon: false };
+  return { col: 'user_device_id', val: getDeviceId(), anon: true };
+}
+
 // ── PLANTS ────────────────────────────────────────────────────────────────────
 export async function getPlants() {
-  const device = getDeviceId();
+  const s = await userScope();
   try {
     const { data, error } = await supabase
       .from('garden_plants')
       .select('*')
-      .eq('user_device_id', device)
+      .eq(s.col, s.val)
       .order('created_at', { ascending: true });
     if (error) throw error;
     lsWrite(LS.plants, data || []);
@@ -46,10 +73,10 @@ export async function getPlants() {
 }
 
 export async function savePlant(plant) {
-  const device = getDeviceId();
+  const s = await userScope();
   const row = {
     id: plant.id,
-    user_device_id: device,
+    [s.col]: s.val,
     name: plant.name,
     category: plant.category || plant.categoryId || null,
     is_custom: plant.is_custom ?? true,
@@ -314,12 +341,12 @@ export async function deletePlantPhoto(photoId) {
 
 // ── SPRAYS / FERTILIZERS ──────────────────────────────────────────────────────
 export async function getSprays() {
-  const device = getDeviceId();
+  const s = await userScope();
   try {
     const { data, error } = await supabase
       .from('garden_sprays')
       .select('*')
-      .eq('user_device_id', device)
+      .eq(s.col, s.val)
       .order('spray_date', { ascending: false });
     if (error) throw error;
     lsWrite(LS.sprays, data || []);
@@ -330,9 +357,9 @@ export async function getSprays() {
 }
 
 export async function addSpray(spray) {
-  const device = getDeviceId();
+  const s = await userScope();
   const row = {
-    user_device_id: device,
+    [s.col]: s.val,
     spray_date: spray.date || new Date().toISOString().slice(0, 10),
     product_name: spray.product_name || spray.productName,
     product_type: spray.product_type || spray.productType || 'spray',
@@ -381,12 +408,12 @@ export async function deleteSpray(id) {
 
 // ── DIARY ─────────────────────────────────────────────────────────────────────
 export async function getDiary() {
-  const device = getDeviceId();
+  const s = await userScope();
   try {
     const { data, error } = await supabase
       .from('garden_diary')
       .select('*')
-      .eq('user_device_id', device)
+      .eq(s.col, s.val)
       .order('entry_date', { ascending: false });
     if (error) throw error;
     lsWrite(LS.diary, data || []);
@@ -397,10 +424,10 @@ export async function getDiary() {
 }
 
 export async function upsertDiary(date, content) {
-  const device = getDeviceId();
-  const row = { user_device_id: device, entry_date: date, content };
+  const s = await userScope();
+  const row = { [s.col]: s.val, entry_date: date, content };
   try {
-    await supabase.from('garden_diary').upsert(row, { onConflict: 'user_device_id,entry_date' });
+    await supabase.from('garden_diary').upsert(row, { onConflict: `${s.col},entry_date` });
   } catch (e) {
     console.warn('upsertDiary failed:', e?.message || e);
   }
@@ -413,9 +440,9 @@ export async function upsertDiary(date, content) {
 
 // ── GALLERY ───────────────────────────────────────────────────────────────────
 export async function getGallery({ album, year } = {}) {
-  const device = getDeviceId();
+  const s = await userScope();
   try {
-    let q = supabase.from('garden_gallery').select('*').eq('user_device_id', device);
+    let q = supabase.from('garden_gallery').select('*').eq(s.col, s.val);
     if (album) q = q.eq('album', album);
     if (year) q = q.eq('year', year);
     const { data, error } = await q.order('taken_date', { ascending: false });
@@ -430,10 +457,10 @@ export async function getGallery({ album, year } = {}) {
 }
 
 export async function addGalleryItem({ dataUrl, album = 'Ogród', description = '', date }) {
-  const device = getDeviceId();
+  const s = await userScope();
   const takenDate = date || new Date().toISOString().slice(0, 10);
   const row = {
-    user_device_id: device,
+    [s.col]: s.val,
     photo_data: dataUrl,
     album,
     description,
@@ -474,12 +501,12 @@ export async function deleteGalleryItem(id) {
 
 // ── YEAR SUMMARY ──────────────────────────────────────────────────────────────
 export async function getYearSummary(year) {
-  const device = getDeviceId();
+  const s = await userScope();
   try {
     const { data, error } = await supabase
       .from('garden_year_summary')
       .select('*')
-      .eq('user_device_id', device)
+      .eq(s.col, s.val)
       .eq('year', year)
       .maybeSingle();
     if (error) throw error;
@@ -490,10 +517,10 @@ export async function getYearSummary(year) {
 }
 
 export async function upsertYearSummary(year, content) {
-  const device = getDeviceId();
-  const row = { user_device_id: device, year, content, updated_at: new Date().toISOString() };
+  const s = await userScope();
+  const row = { [s.col]: s.val, year, content, updated_at: new Date().toISOString() };
   try {
-    await supabase.from('garden_year_summary').upsert(row, { onConflict: 'user_device_id,year' });
+    await supabase.from('garden_year_summary').upsert(row, { onConflict: `${s.col},year` });
   } catch (e) {
     console.warn('upsertYearSummary failed:', e?.message || e);
   }
