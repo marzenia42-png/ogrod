@@ -8,3 +8,14 @@ project_id = "ogrod"
 # No user auth in Ogród Marzeń — anyone calling the function gets a Claude response.
 # Abuse mitigation: CORS allowlist (set inside index.ts) + short max_tokens.
 verify_jwt = false
+
+[auth]
+# Beata is the primary user — disable mandatory email verification so signup
+# logs in immediately. SMTP is not configured yet so confirmation mails wouldn't
+# arrive anyway. Re-enable when SMTP/Resend is wired up.
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+double_confirm_changes = false
