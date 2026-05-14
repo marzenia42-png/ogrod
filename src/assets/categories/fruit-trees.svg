@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Drzewo owocowe">
+  <rect x="92" y="120" width="16" height="56" rx="3" fill="#7A5A3A"/>
+  <ellipse cx="100" cy="90" rx="68" ry="60" fill="#78C47E"/>
+  <ellipse cx="76" cy="80" rx="46" ry="38" fill="#9DD89E" opacity="0.6"/>
+  <circle cx="78" cy="70" r="10" fill="#E8A87C"/>
+  <circle cx="118" cy="80" r="10" fill="#E8A87C"/>
+  <circle cx="92" cy="105" r="10" fill="#E8A87C"/>
+  <circle cx="130" cy="115" r="10" fill="#E8A87C"/>
+  <circle cx="62" cy="110" r="10" fill="#E8A87C"/>
+  <path d="M78 60c0-4 2-7 4-6" stroke="#3D5A3D" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M118 70c0-4 2-7 4-6" stroke="#3D5A3D" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="100" cy="180" rx="50" ry="6" fill="#000" opacity="0.08"/>
+</svg>

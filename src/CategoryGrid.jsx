@@ -2,31 +2,28 @@ import { useMemo } from 'react';
 import { PLANT_CATEGORIES } from './data/plantCategories.js';
 import { PLANTS } from './data/plants.js';
 
-// Zdjęcia kategorii z Pexels (free license, no attribution required).
-// Importowane przez Vite — bundler hashuje + lazy-loaduje + optymalizuje.
-import imgFruitTrees from './assets/categories/fruit-trees.jpg';
-import imgFruitShrubs from './assets/categories/fruit-shrubs.jpg';
-import imgGardenTrees from './assets/categories/garden-trees.jpg';
-import imgVegetables from './assets/categories/vegetables.jpg';
-import imgVegetablesGreenhouse from './assets/categories/vegetables-greenhouse.jpg';
-import imgOrnamental from './assets/categories/ornamental.jpg';
-import imgHerbs from './assets/categories/herbs.jpg';
-import imgIndoor from './assets/categories/indoor.jpg';
+import svgFruitTrees from './assets/categories/fruit-trees.svg';
+import svgFruitShrubs from './assets/categories/fruit-shrubs.svg';
+import svgVegetables from './assets/categories/vegetables.svg';
+import svgVegetablesGreenhouse from './assets/categories/vegetables-greenhouse.svg';
+import svgOrnamental from './assets/categories/ornamental.svg';
+import svgHerbs from './assets/categories/herbs.svg';
+import svgGardenTrees from './assets/categories/garden-trees.svg';
+import svgIndoor from './assets/categories/indoor.svg';
+import svgOther from './assets/categories/other.svg';
 
-const CATEGORY_IMAGES = {
-  'fruit-trees': imgFruitTrees,
-  'fruit-shrubs': imgFruitShrubs,
-  'garden-trees': imgGardenTrees,
-  'vegetables': imgVegetables,
-  'vegetables-greenhouse': imgVegetablesGreenhouse,
-  'ornamental': imgOrnamental,
-  'herbs': imgHerbs,
-  'indoor': imgIndoor,
+const CATEGORY_SVG = {
+  'fruit-trees': svgFruitTrees,
+  'fruit-shrubs': svgFruitShrubs,
+  'vegetables': svgVegetables,
+  'vegetables-greenhouse': svgVegetablesGreenhouse,
+  'ornamental': svgOrnamental,
+  'herbs': svgHerbs,
+  'garden-trees': svgGardenTrees,
+  'indoor': svgIndoor,
+  'other': svgOther,
 };
 
-const GOLD = 'var(--gold)';
-
-// Polish plural: 1 roślina / 2-4 rośliny / 5+ roślin (z wyjątkiem 12-14).
 function pluralRoslin(n) {
   if (n === 0) return '0 roślin';
   if (n === 1) return '1 roślina';
@@ -36,16 +33,13 @@ function pluralRoslin(n) {
   return `${n} roślin`;
 }
 
-/**
- * Siatka 8 kategorii roślin. Karta = zdjęcie tła + emoji + nazwa + licznik.
- * - filled (n>0): zdjęcie Pexels jako background + gradient ciemny od dołu dla czytelności
- * - empty (n=0): bez zdjęcia, glass dark + przygaszone emoji
- *
- * Props:
- *   customPlants  — Array<{ id, name, variety?, categoryId? }>
- *   removedSet    — Set<string> kluczy builtin plants ukrytych przez user
- *   onPickCategory(categoryId)
- */
+// Hex (#RRGGBB) → "r, g, b" string for rgba() usage.
+function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+  if (!m) return '155, 155, 155';
+  return `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}`;
+}
+
 export default function CategoryGrid({ customPlants = [], removedSet, onPickCategory }) {
   const counts = useMemo(() => {
     const map = {};
@@ -55,85 +49,94 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
       if (p.categoryId && map[p.categoryId] !== undefined) map[p.categoryId]++;
     });
     customPlants.forEach((p) => {
-      if (p.categoryId && map[p.categoryId] !== undefined) map[p.categoryId]++;
+      const cat = p.categoryId || p.category;
+      if (cat && map[cat] !== undefined) map[cat]++;
+      else map['other']++;
     });
     return map;
   }, [customPlants, removedSet]);
 
   return (
-    <section className="px-6 pb-8">
-      <h2 className="font-serif italic mb-4" style={{ fontSize: '20px', color: GOLD, textShadow: '0 1px 3px rgba(0,0,0,0.45)' }}>
+    <section className="px-5 pb-8">
+      <h2
+        className="font-serif italic mb-4"
+        style={{ fontSize: 22, color: 'var(--gold)', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}
+      >
         Twoje rośliny
       </h2>
       <div className="grid grid-cols-2 gap-3">
         {PLANT_CATEGORIES.map((cat) => {
           const n = counts[cat.id] || 0;
-          const filled = n > 0;
-          const imageUrl = CATEGORY_IMAGES[cat.id];
-          // Filled: zdjęcie + gradient overlay (czarne od dołu → przezroczyste u góry)
-          // Empty: glass dark + drobne tonowanie zdjęciem w tle (40% opacity)
-          const cardBackground = filled
-            ? `linear-gradient(to top, rgba(8,5,2,0.88) 0%, rgba(8,5,2,0.55) 45%, rgba(8,5,2,0.20) 100%), url(${imageUrl}) center/cover no-repeat`
-            : `linear-gradient(to top, rgba(8,5,2,0.92) 0%, rgba(8,5,2,0.80) 60%, rgba(8,5,2,0.70) 100%), url(${imageUrl}) center/cover no-repeat`;
+          const rgb = hexToRgb(cat.accent);
           return (
             <button
               key={cat.id}
               type="button"
               onClick={() => onPickCategory?.(cat.id)}
-              className="rounded-2xl flex flex-col items-center justify-end cursor-pointer overflow-hidden relative"
+              className="relative rounded-2xl cursor-pointer overflow-hidden flex flex-col items-center"
               style={{
-                minHeight: '150px',
+                minHeight: 160,
                 padding: '12px 12px 14px',
-                gap: '4px',
-                background: cardBackground,
-                border: filled
-                  ? '0.5px solid rgba(201, 169, 110, 0.55)'
-                  : '0.5px solid rgba(201, 169, 110, 0.22)',
-                boxShadow: filled
-                  ? '0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
-                  : '0 2px 8px rgba(0, 0, 0, 0.22)',
+                background: `linear-gradient(180deg, rgba(${rgb}, 0.18) 0%, var(--cat-card-bg, rgba(20, 14, 8, 0.55)) 100%)`,
+                border: `1.5px solid rgba(${rgb}, 0.35)`,
+                boxShadow: `0 2px 12px rgba(0,0,0,0.18), 0 0 0 1px rgba(${rgb}, 0.05) inset`,
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              {/* Emoji w prawym górnym rogu — mały akcent over zdjęciem */}
-              <span
+              {n > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    minWidth: 24,
+                    height: 22,
+                    padding: '0 7px',
+                    borderRadius: 11,
+                    background: 'linear-gradient(135deg, #C9A96E, #b89556)',
+                    color: '#1A1208',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    display: 'grid',
+                    placeItems: 'center',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {n}
+                </span>
+              )}
+              <img
+                src={CATEGORY_SVG[cat.id]}
+                alt=""
                 aria-hidden="true"
                 style={{
-                  position: 'absolute',
-                  top: 10,
-                  right: 10,
-                  fontSize: 22,
-                  opacity: filled ? 0.95 : 0.5,
-                  lineHeight: 1,
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+                  width: 80,
+                  height: 80,
+                  margin: '8px 0 4px',
+                  filter: n === 0 ? 'grayscale(0.4) opacity(0.65)' : 'none',
                 }}
-              >
-                {cat.emoji}
-              </span>
-
+              />
               <span
-                className="font-serif italic text-center px-1 self-stretch"
                 style={{
-                  fontSize: 15,
-                  color: filled ? '#F8F0DC' : 'rgba(248, 240, 220, 0.65)',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: 'var(--cat-card-text, #F0E8D8)',
+                  textAlign: 'center',
                   lineHeight: 1.2,
-                  fontWeight: filled ? 600 : 500,
-                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.5)',
-                  letterSpacing: '0.2px',
+                  letterSpacing: '0.1px',
+                  marginTop: 2,
                 }}
               >
                 {cat.name}
               </span>
               <span
-                className="tracking-wide self-stretch text-center"
                 style={{
-                  fontSize: 11,
-                  color: filled ? '#E8C77E' : 'rgba(232, 221, 208, 0.55)',
-                  fontVariantNumeric: 'lining-nums tabular-nums',
-                  fontWeight: filled ? 600 : 500,
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.85)',
-                  letterSpacing: '0.4px',
+                  marginTop: 2,
+                  fontSize: 13,
+                  color: 'var(--cat-card-muted, rgba(232, 221, 208, 0.65))',
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 {pluralRoslin(n)}

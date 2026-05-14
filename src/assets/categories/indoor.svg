@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Rośliny domowe">
+  <ellipse cx="100" cy="180" rx="55" ry="5" fill="#000" opacity="0.08"/>
+  <!-- Doniczka -->
+  <path d="M60 130 L70 175 L130 175 L140 130 Z" fill="#C9A96E"/>
+  <path d="M60 130 L140 130 L138 138 L62 138 Z" fill="#A68A52"/>
+  <path d="M65 145 L70 170" stroke="#8A7048" stroke-width="1" opacity="0.4"/>
+  <path d="M135 145 L130 170" stroke="#8A7048" stroke-width="1" opacity="0.4"/>
+  <!-- Łodyga -->
+  <path d="M100 130 Q100 90 100 55" stroke="#5FA868" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Liście fikusa — szeroko-eliptyczne -->
+  <ellipse cx="78" cy="105" rx="20" ry="10" transform="rotate(-25 78 105)" fill="#5FA868"/>
+  <ellipse cx="122" cy="95" rx="20" ry="10" transform="rotate(25 122 95)" fill="#78C47E"/>
+  <ellipse cx="74" cy="78" rx="20" ry="11" transform="rotate(-20 74 78)" fill="#78C47E"/>
+  <ellipse cx="126" cy="70" rx="20" ry="11" transform="rotate(20 126 70)" fill="#5FA868"/>
+  <ellipse cx="90" cy="52" rx="18" ry="10" transform="rotate(-10 90 52)" fill="#9DD89E"/>
+  <ellipse cx="110" cy="48" rx="18" ry="10" transform="rotate(10 110 48)" fill="#78C47E"/>
+  <!-- Żyłki na liściach -->
+  <line x1="78" y1="105" x2="95" y2="105" stroke="#3D5A3D" stroke-width="1" opacity="0.5"/>
+  <line x1="122" y1="95" x2="105" y2="100" stroke="#3D5A3D" stroke-width="1" opacity="0.5"/>
+</svg>

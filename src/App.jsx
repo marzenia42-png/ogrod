@@ -123,9 +123,18 @@ export default function App() {
     return FALLBACK_LOCATION;
   });
   const [showSettings, setShowSettings] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
+  // FLORA: parent increments to ask Flora to open. Optional seed greeting.
+  const [floraOpenSignal, setFloraOpenSignal] = useState(0);
+  const [floraSeedMessage, setFloraSeedMessage] = useState(null);
   // Onboarding pokazywany tylko na pierwszym otwarciu — flag w localStorage.
   // Hook init wykonywany raz, więc tryb SSR-safe (hasSeenOnboarding ma fallback).
   const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
+
+  const openFlora = (seed) => {
+    setFloraSeedMessage(seed || null);
+    setFloraOpenSignal((n) => n + 1);
+  };
   // Open plant detail by id (string). For variety, also store { isVariety, parentId, parentName, name }.
   const [openPlant, setOpenPlant] = useState(null);
   // Wizard "Dodaj roślinę" (Etap 1.5) — 5 kroków, komponent AddPlantWizard.
@@ -606,35 +615,68 @@ export default function App() {
       />
 
       <div className="relative z-10 flex flex-col flex-1 max-w-lg mx-auto w-full pb-24">
-        <header className="px-6 pt-10 pb-3">
+        <header className="px-5 pt-9 pb-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] tracking-[3px] uppercase" style={{ color: 'var(--gold-label)' }}>
+            <button
+              type="button"
+              onClick={() => setShowDrawer(true)}
+              aria-label="Otwórz menu"
+              className="shrink-0 cursor-pointer"
+              style={{ background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', color: 'var(--gold-label-strong)', width: 36, height: 36, borderRadius: 12, display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)', marginTop: 4 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            </button>
+
+            <div className="flex-1 min-w-0 text-center">
+              <p style={{ fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--gold-label)' }}>
                 {location.label} · {location.lat.toFixed(2)}°N
               </p>
-              <h1 className="mt-1 font-serif italic tracking-wide leading-tight" style={{ fontSize: '34px', color: 'var(--gold)' }}>
+              <h1 className="mt-1 font-serif italic tracking-wide leading-tight" style={{ fontSize: '32px', color: 'var(--gold)' }}>
                 Ogród Marzeń
               </h1>
-              <p className="mt-1 text-[14px] tracking-wide font-serif italic" style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'lining-nums tabular-nums' }}>
-                {now.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
-                <span style={{ color: 'var(--gold)', margin: '0 8px', fontWeight: 600 }}>·</span>
-                <span style={{ fontWeight: 500, color: 'var(--gold)' }}>{now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</span>
-              </p>
-            </div>
-            <div className="shrink-0 pt-2">
               <button
                 type="button"
-                onClick={openSettings}
-                aria-label="Ustawienia"
+                onClick={() => openFlora('Dzień dobry! Co planujemy dziś w ogrodzie? 🌿')}
                 className="cursor-pointer"
-                style={{ background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', color: 'var(--gold-label-strong)', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'none', border: 'none', padding: 0, marginTop: 4 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
+                <span className="font-serif italic" style={{ fontSize: 15, color: 'var(--text-secondary)', fontVariantNumeric: 'lining-nums tabular-nums' }}>
+                  {now.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  <span style={{ color: 'var(--gold)', margin: '0 8px', fontWeight: 600 }}>·</span>
+                  <span style={{ fontWeight: 500, color: 'var(--gold)' }}>{now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</span>
+                </span>
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => handleToggleTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label="Zmień motyw"
+              className="shrink-0 cursor-pointer"
+              style={{ background: 'var(--surface-card)', border: '0.5px solid var(--border-medium)', color: 'var(--gold-label-strong)', width: 36, height: 36, borderRadius: 12, display: 'grid', placeItems: 'center', backdropFilter: 'blur(8px)', marginTop: 4 }}
+            >
+              {theme === 'dark' ? (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4" />
+                  <line x1="12" y1="2" x2="12" y2="5" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                  <line x1="2" y1="12" x2="5" y2="12" />
+                  <line x1="19" y1="12" x2="22" y2="12" />
+                  <line x1="4.5" y1="4.5" x2="6.5" y2="6.5" />
+                  <line x1="17.5" y1="17.5" x2="19.5" y2="19.5" />
+                  <line x1="4.5" y1="19.5" x2="6.5" y2="17.5" />
+                  <line x1="17.5" y1="6.5" x2="19.5" y2="4.5" />
+                </svg>
+              ) : (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
+            </button>
           </div>
         </header>
 
@@ -1026,7 +1068,88 @@ export default function App() {
         currentMonth={currentMonth}
         plants={plantsForFlora}
         profile={userProfile}
+        openSignal={floraOpenSignal}
+        seedMessage={floraSeedMessage}
       />
+
+      {/* Drawer menu — boczny panel z nawigacją do sekcji aplikacji */}
+      {showDrawer && (
+        <>
+          <div
+            onClick={() => setShowDrawer(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1100, animation: 'drawerFade 0.25s ease' }}
+          />
+          <aside
+            style={{
+              position: 'fixed', top: 0, bottom: 0, left: 0, width: 280,
+              background: 'var(--drawer-bg)', borderRight: '1px solid var(--drawer-border)',
+              zIndex: 1101, display: 'flex', flexDirection: 'column',
+              paddingTop: 'env(safe-area-inset-top)',
+              animation: 'drawerSlide 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
+            }}
+          >
+            <div style={{ padding: '22px 18px 14px', borderBottom: '1px solid var(--drawer-border)' }}>
+              <p className="font-serif italic" style={{ fontSize: 20, color: 'var(--gold)', letterSpacing: 1 }}>🌱 Ogród Marzeń</p>
+            </div>
+            <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {[
+                { key: 'glowna',     icon: '🪴', label: 'Moje rośliny' },
+                { key: 'srodki',     icon: '💊', label: 'Środki i nawozy' },
+                { key: 'galeria',    icon: '📸', label: 'Galeria ogrodu' },
+                { key: 'historia',   icon: '📖', label: 'Historia ogrodu' },
+                { key: 'kalendarz',  icon: '📅', label: 'Kalendarz' },
+                { key: 'dziennik',   icon: '📔', label: 'Dziennik' },
+              ].map((item) => {
+                const isActive = tab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => { setTab(item.key); setSelectedCategory(null); setShowDrawer(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '11px 14px', borderRadius: 10,
+                      background: isActive ? 'var(--surface-tint)' : 'transparent',
+                      borderLeft: isActive ? '3px solid var(--gold)' : '3px solid transparent',
+                      color: isActive ? 'var(--gold)' : 'var(--text-primary)',
+                      cursor: 'pointer', fontSize: 14, fontWeight: isActive ? 600 : 400,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+              <div style={{ height: 1, background: 'var(--drawer-border)', margin: '8px 6px' }} />
+              <button
+                type="button"
+                onClick={() => { setShowDrawer(false); openFlora(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
+                  background: 'transparent', borderLeft: '3px solid transparent',
+                  color: 'var(--text-primary)', cursor: 'pointer', fontSize: 14, textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>🌿</span>
+                <span>FLORA</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowDrawer(false); openSettings(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
+                  background: 'transparent', borderLeft: '3px solid transparent',
+                  color: 'var(--text-primary)', cursor: 'pointer', fontSize: 14, textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>⚙️</span>
+                <span>Ustawienia</span>
+              </button>
+            </nav>
+          </aside>
+        </>
+      )}
 
       {/* 5-step wizard "Dodaj roślinę" (Etap 1.5) — zastępuje stary bottom sheet */}
       {showQuickAdd && (

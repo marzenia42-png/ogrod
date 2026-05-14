@@ -76,9 +76,25 @@ function trimHistoryForApi(messages, limit = 12) {
   return trimmed;
 }
 
-export default function Flora({ notes = [], weather, currentMonth, plants = [], profile = null }) {
+export default function Flora({ notes = [], weather, currentMonth, plants = [], profile = null, openSignal = 0, seedMessage = null }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([{ role: 'assistant', content: INITIAL_MESSAGE }]);
+
+  // External open trigger — parent increments openSignal to open the panel.
+  // If seedMessage is provided, prepend it as the assistant greeting.
+  useEffect(() => {
+    if (openSignal > 0) {
+      setOpen(true);
+      if (seedMessage) {
+        setMessages((prev) => {
+          const first = prev[0];
+          const seedAlreadyFirst = first?.role === 'assistant' && first?.content === seedMessage;
+          if (seedAlreadyFirst) return prev;
+          return [{ role: 'assistant', content: seedMessage }, ...prev];
+        });
+      }
+    }
+  }, [openSignal, seedMessage]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

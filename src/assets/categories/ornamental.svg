@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Rośliny ozdobne">
+  <ellipse cx="100" cy="180" rx="55" ry="5" fill="#000" opacity="0.08"/>
+  <!-- Łodyga -->
+  <path d="M100 175 Q98 130 100 90" stroke="#5FA868" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Liście -->
+  <path d="M100 140 Q70 132 65 150 Q80 158 100 148 Z" fill="#5FA868"/>
+  <path d="M100 120 Q130 113 135 130 Q120 138 100 128 Z" fill="#78C47E"/>
+  <!-- Płatki róży (warstwy) -->
+  <circle cx="100" cy="80" r="32" fill="#C45A8F"/>
+  <path d="M100 80 m-26 0 a26 26 0 0 1 52 0 a26 26 0 0 1 -52 0" fill="#E87CB3" opacity="0.9"/>
+  <path d="M100 80 m-18 0 a18 18 0 0 1 36 0 a18 18 0 0 1 -36 0" fill="#F4A0C8"/>
+  <path d="M100 80 m-10 0 a10 10 0 0 1 20 0 a10 10 0 0 1 -20 0" fill="#FBC3DC"/>
+  <ellipse cx="100" cy="76" rx="4" ry="3" fill="#fff" opacity="0.55"/>
+  <!-- Cierń -->
+  <path d="M104 130 L108 128" stroke="#5FA868" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
