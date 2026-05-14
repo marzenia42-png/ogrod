@@ -58,6 +58,11 @@
   --wizard-input-bg: rgba(255, 255, 255, 0.12);
   --screen-overlay: rgba(13, 12, 10, 0.55);
   --screen-overlay-strong: rgba(13, 12, 10, 0.75);
+
+  /* v6.5: karty roślin na podstronach (glassmorphism) */
+  --plant-card-bg: rgba(255, 255, 255, 0.12);
+  --plant-card-border: rgba(255, 255, 255, 0.25);
+  --plant-card-text: #FFFFFF;
 }
 
 /* ──────────── LIGHT THEME ──────────── */
@@ -114,6 +119,11 @@ html[data-theme="light"] {
   --wizard-input-bg: #FFFFFF;
   --screen-overlay: rgba(247, 241, 226, 0.55);
   --screen-overlay-strong: rgba(247, 241, 226, 0.82);
+
+  /* Light: ciemniejsze tło karty dla kontrastu */
+  --plant-card-bg: rgba(0, 0, 0, 0.06);
+  --plant-card-border: rgba(0, 0, 0, 0.12);
+  --plant-card-text: #1A1A1A;
 }
 
 html[data-theme="light"] body {

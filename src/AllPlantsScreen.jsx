@@ -173,16 +173,19 @@ export default function AllPlantsScreen({
                       style={{
                         padding: '16px',
                         borderRadius: 12,
-                        background: `rgba(${rgb}, 0.15)`,
+                        background: 'var(--plant-card-bg)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        borderTop: '1.5px solid var(--plant-card-border)',
+                        borderRight: '1.5px solid var(--plant-card-border)',
+                        borderBottom: '1.5px solid var(--plant-card-border)',
                         borderLeft: `3px solid ${accent}`,
-                        borderTop: `0.5px solid rgba(${rgb}, 0.20)`,
-                        borderRight: `0.5px solid rgba(${rgb}, 0.20)`,
-                        borderBottom: `0.5px solid rgba(${rgb}, 0.20)`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.20)',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                       }}
                     >
                       <div className="flex-1 min-w-0">
-                        <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                        <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--plant-card-text)', lineHeight: 1.25 }}>
                           {p.name}
                         </p>
                         {p.variety && (
