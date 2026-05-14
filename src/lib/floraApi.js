@@ -41,3 +41,21 @@ export async function callFloraIdentify(imageBase64, mediaType = 'image/jpeg') {
     image_media_type: mediaType,
   });
 }
+
+// Daily tip — 1 konkretna porada na dziś. Cache per YYYY-MM-DD w localStorage.
+// Zwraca string z poradą. Lazy: 1 fetch dziennie.
+const TIP_CACHE_PREFIX = 'garden-flora-tip-';
+export async function getFloraDailyTip(context) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = TIP_CACHE_PREFIX + today;
+  try {
+    const cached = localStorage.getItem(key);
+    if (cached) return cached;
+  } catch { /* ignore */ }
+  const res = await callFlora({ mode: 'daily_tip', context });
+  const tip = (res?.tip || '').trim();
+  if (tip) {
+    try { localStorage.setItem(key, tip); } catch { /* ignore */ }
+  }
+  return tip;
+}

@@ -7,6 +7,7 @@ import AddPlantWizard from './AddPlantWizard.jsx';
 import CategoryGrid from './CategoryGrid.jsx';
 import CategoryPage from './CategoryPage.jsx';
 import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
+import ProactiveBanner from './ProactiveBanner.jsx';
 import {
   compressImage, addPhoto, loadCustomRecipes, updateVariety,
   loadUserProfile, saveUserProfile, EXPERIENCE_LEVELS, PREFERENCE_TYPES,
@@ -775,11 +776,31 @@ export default function App() {
         )}
 
         {tab === 'glowna' && !selectedCategory && (
-          <CategoryGrid
-            customPlants={customPlants}
-            removedSet={removedSet}
-            onPickCategory={setSelectedCategory}
-          />
+          <>
+            <ProactiveBanner
+              plants={plantsForFlora}
+              weather={weather}
+              currentMonth={currentMonth}
+              onOpenFlora={(seed) => openFlora(seed)}
+              context={{
+                monthName: MONTHS[currentMonth - 1],
+                dateStr: now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }),
+                timeStr: now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+                weather: weather?.current ? {
+                  temperature: weather.current.temperature_2m,
+                  humidity: weather.current.relative_humidity_2m,
+                  wind: weather.current.wind_speed_10m,
+                  minToday: weather.daily?.temperature_2m_min?.[0],
+                  maxToday: weather.daily?.temperature_2m_max?.[0],
+                } : null,
+              }}
+            />
+            <CategoryGrid
+              customPlants={customPlants}
+              removedSet={removedSet}
+              onPickCategory={setSelectedCategory}
+            />
+          </>
         )}
 
         {tab === 'kalendarz' && (

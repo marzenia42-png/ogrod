@@ -163,9 +163,12 @@ Deno.serve(async (req: Request) => {
       context?: Ctx;
       image_base64?: string;
       image_media_type?: string;
-      mode?: 'chat' | 'identify';
+      mode?: 'chat' | 'identify' | 'daily_tip';
     } | null;
-    const mode: 'chat' | 'identify' = body?.mode === 'identify' ? 'identify' : 'chat';
+    const mode: 'chat' | 'identify' | 'daily_tip' =
+      body?.mode === 'identify' ? 'identify'
+      : body?.mode === 'daily_tip' ? 'daily_tip'
+      : 'chat';
     const ctx: Ctx = body?.context ?? {};
 
     // Optional image — wymagane dla identify, opcjonalne dla chat (foto-diagnostyka).
@@ -182,6 +185,8 @@ Deno.serve(async (req: Request) => {
     if (mode === 'identify') {
       if (!hasImage) return json(origin, { error: 'image_required_for_identify' }, 400);
       messages = [{ role: 'user', content: 'Rozpoznaj roślinę na zdjęciu. Zwróć STRICT JSON zgodnie z formatem.' }];
+    } else if (mode === 'daily_tip') {
+      messages = [{ role: 'user', content: 'Napisz mi poradę ogrodniczą na dziś.' }];
     } else {
       messages = Array.isArray(body?.messages) ? body!.messages! : [];
       if (messages.length === 0) return json(origin, { error: 'messages_required' }, 400);
@@ -201,7 +206,20 @@ Deno.serve(async (req: Request) => {
 
     // Identify mode pomija pełen kontekst — tylko obraz + minimalny prompt.
     const contextText = mode === 'identify' ? '' : buildContext(ctx);
-    const systemPersona = mode === 'identify' ? IDENTIFY_PERSONA : PERSONA;
+    const DAILY_TIP_PERSONA = `Jesteś FLORA, asystentem ogrodniczym dla ogrodu w Bęczarce koło Myślenic (Małopolska, podgórze, strefa 6a/6b).
+
+Otrzymujesz aktualną datę, miesiąc, temperaturę i opcjonalnie listę roślin użytkownika. Napisz JEDNĄ konkretną poradę ogrodniczą na dziś — 2-3 zdania.
+
+Zasady:
+- Po polsku, ciepło, konkretnie.
+- Bez markdownu, bez bulletów, bez emoji na początku.
+- Wskaż KONKRETNĄ czynność do wykonania DZIŚ lub w tym tygodniu, dopasowaną do miesiąca i pogody.
+- Jeśli to oprysk — wymień polski preparat z dawką (np. "Topsin M 0,1%" = 1 g/L).
+- Bez owijania w bawełnę. Bez wstępu "dziś polecam".`;
+    const systemPersona =
+      mode === 'identify' ? IDENTIFY_PERSONA
+      : mode === 'daily_tip' ? DAILY_TIP_PERSONA
+      : PERSONA;
 
     // Build messages for Anthropic API. With image, the last user message
     // becomes a content array: [image block, text block] (text after image as docs suggest).
@@ -240,7 +258,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: mode === 'identify' ? 600 : (hasImage ? 800 : 512),
+        max_tokens: mode === 'identify' ? 600 : (mode === 'daily_tip' ? 220 : (hasImage ? 800 : 512)),
         system: [
           { type: 'text', text: systemPersona, cache_control: { type: 'ephemeral' } },
           { type: 'text', text: contextText || 'Brak dodatkowego kontekstu.' },
@@ -259,6 +277,10 @@ Deno.serve(async (req: Request) => {
     const reply: string =
       typeof data?.content?.[0]?.text === 'string' ? data.content[0].text.trim() : '';
     if (!reply) return json(origin, { error: 'empty_response' }, 502);
+
+    if (mode === 'daily_tip') {
+      return json(origin, { tip: reply });
+    }
 
     if (mode === 'identify') {
       // Parse STRICT JSON. Fallback: szukaj pierwszego bloku { ... } w odpowiedzi.
