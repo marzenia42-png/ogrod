@@ -211,7 +211,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
           style={{ borderBottom: '0.5px solid var(--border-soft)' }}
         >
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] tracking-[2px] uppercase" style={{ color: 'var(--gold-label)' }}>
+            <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'var(--gold-label)' }}>
               Krok {step} z {TOTAL_STEPS}
             </p>
             <h3 className="font-serif italic" style={{ fontSize: '20px', color: GOLD }}>
@@ -605,7 +605,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                 </p>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <label className="text-[10px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
+                    <label className="text-[11px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
                       Data zakupu
                     </label>
                     <input
@@ -617,7 +617,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     />
                   </div>
                   <div style={{ width: '120px' }}>
-                    <label className="text-[10px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
+                    <label className="text-[11px] tracking-wide block mb-1" style={{ color: 'var(--text-muted)' }}>
                       Cena (PLN)
                     </label>
                     <input
@@ -647,7 +647,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                 className="rounded-xl p-3"
                 style={{ background: 'var(--surface-tint)', border: '0.5px solid var(--border-soft)' }}
               >
-                <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'var(--gold-label)' }}>Podsumowanie</p>
+                <p className="text-[11px] tracking-[2px] uppercase mb-2" style={{ color: 'var(--gold-label)' }}>Podsumowanie</p>
                 <p className="text-[14px] font-serif italic" style={{ color: 'var(--text-primary)' }}>
                   {isCustomNameMode ? customName : selectedSpecies?.name}
                   {variety && <span style={{ color: 'var(--gold-label-strong)' }}> · {variety}</span>}

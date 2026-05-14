@@ -743,7 +743,7 @@ export default function App() {
                               className="flex-1 rounded-lg px-2 py-2 flex flex-col items-center gap-0.5"
                               style={{ background: 'var(--surface-tint)', border: '0.5px solid var(--border-soft)' }}
                             >
-                              <p className="text-[10px] tracking-wide" style={{ color: 'var(--gold-label-strong)' }}>{shortDay(iso)}</p>
+                              <p className="text-[11px] tracking-wide" style={{ color: 'var(--gold-label-strong)' }}>{shortDay(iso)}</p>
                               <span style={{ fontSize: '22px', lineHeight: 1 }}>{wmo.icon}</span>
                               <p className="text-[11px] tabular-nums" style={{ color: 'var(--text-secondary)' }}>{tmax}° / {tmin}°</p>
                               {prec > 0 && (
@@ -877,8 +877,8 @@ export default function App() {
                             >
                               {a.isRecipe ? `🌿 ${a.plantName}` : a.plantName}
                             </span>
-                            {a.custom && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.6, fontWeight: 400, color: cat.text }}>własna</span>}
-                            {a.isRecipe && <span style={{ marginLeft: 8, fontSize: '10px', opacity: 0.7, fontWeight: 400, color: cat.text }}>receptura →</span>}
+                            {a.custom && <span style={{ marginLeft: 8, fontSize: '11px', opacity: 0.7, fontWeight: 400, color: cat.text }}>własna</span>}
+                            {a.isRecipe && <span style={{ marginLeft: 8, fontSize: '11px', opacity: 0.8, fontWeight: 400, color: cat.text }}>receptura →</span>}
                             <p
                               className="mt-1 font-serif italic leading-relaxed"
                               style={{ color: 'var(--text-secondary)', fontSize: '13.5px' }}
@@ -920,7 +920,7 @@ export default function App() {
                   <p className="text-[11px] tracking-[2px] uppercase mb-1" style={{ color: 'var(--gold-label)' }}>
                     Przypomnienia
                   </p>
-                  <p className="text-[12.5px] font-serif italic" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="text-[13.5px] font-serif italic" style={{ color: 'var(--text-secondary)' }}>
                     {notifPermission === 'granted'
                       ? 'Włączone. Pokażemy akcje na ten miesiąc.'
                       : notifPermission === 'denied'
@@ -1052,7 +1052,7 @@ export default function App() {
                 }}
               >
                 <span style={{ fontSize: '20px', lineHeight: 1 }}>{t.icon}</span>
-                <span style={{ fontSize: '10px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{t.label}</span>
+                <span style={{ fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{t.label}</span>
               </button>
             );
           })}
@@ -1338,7 +1338,7 @@ export default function App() {
               </div>
             </div>
 
-            <p className="text-[12px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[13px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
               Wgraj własne zdjęcie — zapisze się lokalnie. Zalecane: krajobraz, max 1920px.
             </p>
             <input
@@ -1377,7 +1377,7 @@ export default function App() {
             <p className="text-[11px] tracking-[2px] uppercase mb-2 mt-5" style={{ color: 'var(--gold-label)' }}>
               Profil FLORA
             </p>
-            <p className="text-[12px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[13px] font-serif italic mb-3" style={{ color: 'var(--text-muted)' }}>
               FLORA dopasuje rady do Twojego doświadczenia i preferencji.
             </p>
 
