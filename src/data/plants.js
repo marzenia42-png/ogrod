@@ -28,7 +28,7 @@ export const PLANTS = [
   { key: 'hortensja',   name: 'Hortensja',            categoryId: 'ornamental' },
   { key: 'rododendron', name: 'Rododendron',          categoryId: 'ornamental' },
   { key: 'magnolia',    name: 'Magnolia',             categoryId: 'ornamental' },
-  { key: 'lawenda',     name: 'Lawenda',              categoryId: 'herbs' },
+  { key: 'lawenda',     name: 'Lawenda',              categoryId: 'vegetables' },
   { key: 'iglaki',      name: 'Iglaki',               categoryId: 'garden-trees' },
 ];
 

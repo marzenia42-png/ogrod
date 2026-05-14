@@ -2,27 +2,8 @@ import { useMemo } from 'react';
 import { PLANT_CATEGORIES } from './data/plantCategories.js';
 import { PLANTS } from './data/plants.js';
 
-import svgFruitTrees from './assets/categories/fruit-trees.svg';
-import svgFruitShrubs from './assets/categories/fruit-shrubs.svg';
-import svgVegetables from './assets/categories/vegetables.svg';
-import svgVegetablesGreenhouse from './assets/categories/vegetables-greenhouse.svg';
-import svgOrnamental from './assets/categories/ornamental.svg';
-import svgHerbs from './assets/categories/herbs.svg';
-import svgGardenTrees from './assets/categories/garden-trees.svg';
-import svgIndoor from './assets/categories/indoor.svg';
-import svgOther from './assets/categories/other.svg';
-
-const CATEGORY_SVG = {
-  'fruit-trees': svgFruitTrees,
-  'fruit-shrubs': svgFruitShrubs,
-  'vegetables': svgVegetables,
-  'vegetables-greenhouse': svgVegetablesGreenhouse,
-  'ornamental': svgOrnamental,
-  'herbs': svgHerbs,
-  'garden-trees': svgGardenTrees,
-  'indoor': svgIndoor,
-  'other': svgOther,
-};
+// v6.2 — finalna lista 8 kategorii (pos 0 = "all" virtual folder).
+// Karty: gradient akcent + 60px emoji + 18px bold name + złoty badge licznika.
 
 function pluralRoslin(n) {
   if (n === 0) return '0 roślin';
@@ -33,25 +14,39 @@ function pluralRoslin(n) {
   return `${n} roślin`;
 }
 
-// Hex (#RRGGBB) → "r, g, b" string for rgba() usage.
 function hexToRgb(hex) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
   if (!m) return '155, 155, 155';
   return `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}`;
 }
 
+function realCatFor(p) {
+  // Built-in PLANTS use categoryId; custom may use category. herbs has been remapped.
+  const id = p.categoryId || p.category;
+  if (!id) return 'other';
+  if (id === 'herbs') return 'vegetables';
+  if (id === 'vegetables-greenhouse') return 'vegetables';
+  return id;
+}
+
 export default function CategoryGrid({ customPlants = [], removedSet, onPickCategory }) {
   const counts = useMemo(() => {
-    const map = {};
+    const map = { all: 0 };
     for (const cat of PLANT_CATEGORIES) map[cat.id] = 0;
+
     PLANTS.forEach((p) => {
       if (removedSet && removedSet.has(p.key)) return;
-      if (p.categoryId && map[p.categoryId] !== undefined) map[p.categoryId]++;
+      const c = realCatFor(p);
+      if (map[c] !== undefined) map[c]++;
+      map.all++;
     });
     customPlants.forEach((p) => {
-      const cat = p.categoryId || p.category;
-      if (cat && map[cat] !== undefined) map[cat]++;
-      else map['other']++;
+      // Skip variety children — they're counted under their parent's category.
+      if (p.is_variety || p.parent_plant_id) return;
+      const c = realCatFor(p);
+      if (map[c] !== undefined) map[c]++;
+      else map.other++;
+      map.all++;
     });
     return map;
   }, [customPlants, removedSet]);
@@ -68,18 +63,19 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
         {PLANT_CATEGORIES.map((cat) => {
           const n = counts[cat.id] || 0;
           const rgb = hexToRgb(cat.accent);
+          const isAll = cat.id === 'all';
           return (
             <button
               key={cat.id}
               type="button"
               onClick={() => onPickCategory?.(cat.id)}
-              className="relative rounded-2xl cursor-pointer overflow-hidden flex flex-col items-center"
+              className="relative rounded-2xl cursor-pointer overflow-hidden flex flex-col items-center justify-between"
               style={{
                 minHeight: 160,
-                padding: '12px 12px 14px',
-                background: `linear-gradient(180deg, rgba(${rgb}, 0.18) 0%, var(--cat-card-bg, rgba(20, 14, 8, 0.55)) 100%)`,
-                border: `1.5px solid rgba(${rgb}, 0.35)`,
-                boxShadow: `0 2px 12px rgba(0,0,0,0.18), 0 0 0 1px rgba(${rgb}, 0.05) inset`,
+                padding: '14px 12px 16px',
+                background: `linear-gradient(135deg, rgba(${rgb}, ${isAll ? 0.22 : 0.18}), rgba(${rgb}, 0.06))`,
+                border: `${isAll ? '1.5px' : '1px'} solid rgba(${rgb}, ${isAll ? 0.55 : 0.30})`,
+                boxShadow: `0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(${rgb}, 0.05) inset`,
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
               }}
@@ -90,13 +86,13 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
                     position: 'absolute',
                     top: 8,
                     right: 8,
-                    minWidth: 24,
-                    height: 22,
-                    padding: '0 7px',
-                    borderRadius: 11,
+                    minWidth: 26,
+                    height: 24,
+                    padding: '0 8px',
+                    borderRadius: 12,
                     background: 'linear-gradient(135deg, #C9A96E, #b89556)',
                     color: '#1A1208',
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
                     display: 'grid',
                     placeItems: 'center',
@@ -107,22 +103,25 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
                   {n}
                 </span>
               )}
-              <img
-                src={CATEGORY_SVG[cat.id]}
-                alt=""
+              <span
                 aria-hidden="true"
                 style={{
-                  width: 80,
-                  height: 80,
-                  margin: '8px 0 4px',
-                  filter: n === 0 ? 'grayscale(0.4) opacity(0.65)' : 'none',
+                  fontSize: 60,
+                  lineHeight: 1,
+                  opacity: n === 0 ? 0.55 : 1,
+                  filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
+                  flex: 1,
+                  display: 'grid',
+                  placeItems: 'center',
                 }}
-              />
+              >
+                {cat.emoji}
+              </span>
               <span
                 style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: 'var(--cat-card-text, #F0E8D8)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: 'var(--cat-card-text, var(--text-primary))',
                   textAlign: 'center',
                   lineHeight: 1.2,
                   letterSpacing: '0.1px',
@@ -135,7 +134,7 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
                 style={{
                   marginTop: 2,
                   fontSize: 13,
-                  color: 'var(--cat-card-muted, rgba(232, 221, 208, 0.65))',
+                  color: 'var(--cat-card-muted, var(--text-muted))',
                   fontVariantNumeric: 'tabular-nums',
                 }}
               >

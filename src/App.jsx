@@ -19,6 +19,7 @@ import {
 } from './lib/plantStorage.js';
 import { migrateCustomPlantsV1 } from './lib/migration.js';
 import { runV6Migration } from './lib/migrateV6.js';
+import { runCategoriesMigrationV62 } from './lib/migrateCategoriesV62.js';
 import { MONTHS, MONTHS_SHORT, CATEGORIES, CATEGORY_BY_KEY, PLANTS, ACTIONS } from './data/plants.js';
 import { SPECIES_BY_ID } from './data/plantSpecies.js';
 
@@ -28,6 +29,8 @@ if (typeof window !== 'undefined') {
   try { migrateCustomPlantsV1(); } catch (e) { console.warn('Migration v1 skipped:', e); }
   // Migracja v6: localStorage → Supabase. Idempotentna, marks 'garden-migrated-v6'.
   runV6Migration().then((r) => console.info('v6 migration:', r));
+  // Migracja v6.2: kategorie (herbs/vegetables-greenhouse → vegetables, unknown → other).
+  runCategoriesMigrationV62().then((r) => console.info('v6.2 categories migration:', r));
 }
 
 const NOTES_KEY = 'garden-notes';

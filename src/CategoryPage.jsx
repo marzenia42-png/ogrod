@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo, useState } from 'react';
-import { PLANT_CATEGORIES, CATEGORY_BY_ID } from './data/plantCategories.js';
+import { PLANT_CATEGORIES, CATEGORY_BY_ID, REAL_CATEGORIES, normalizeCategoryId } from './data/plantCategories.js';
 import { PLANTS } from './data/plants.js';
 
 const GOLD = 'var(--gold)';
@@ -46,19 +46,16 @@ export default function CategoryPage({
   const legacyVarieties = useMemo(readLegacyVarieties, [customPlants]);
 
   const builtinForCategory = useMemo(
-    () => PLANTS.filter((p) => p.categoryId === categoryId && !(removedSet && removedSet.has(p.key))),
+    () => PLANTS.filter((p) => normalizeCategoryId(p.categoryId) === categoryId && !(removedSet && removedSet.has(p.key))),
     [categoryId, removedSet],
   );
 
-  // Custom plants top-level: nie odmiana (legacy: brak `parent` w obiekcie variety; tutaj filtrujemy customPlants
-  // które są w tej kategorii i nie są odmianami). Custom plants z is_variety=true poznajemy po obecności parent_plant_id.
+  // Custom plants top-level: nie odmiana. Normalize legacy categoryId (herbs → vegetables).
   const customForCategory = useMemo(
     () => customPlants.filter((p) => {
       const isVariety = p.is_variety || p.parent_plant_id;
       if (isVariety) return false;
-      const cat = p.categoryId || p.category;
-      if (categoryId === 'other') return !cat || !PLANT_CATEGORIES.some((c) => c.id === cat);
-      return cat === categoryId;
+      return normalizeCategoryId(p.categoryId || p.category) === categoryId;
     }),
     [customPlants, categoryId],
   );
@@ -202,7 +199,7 @@ export default function CategoryPage({
           className="flex gap-2 px-5 overflow-x-auto pb-1"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
-          {PLANT_CATEGORIES.map((c) => {
+          {REAL_CATEGORIES.map((c) => {
             const active = c.id === categoryId;
             return (
               <button
@@ -298,32 +295,40 @@ export default function CategoryPage({
   );
 }
 
-function PlantCard({ accentRgb, name, variety, location, varietyCount = 0, onClick }) {
+function PlantCard({ accentRgb, accentHex, name, variety, location, lastActivity, varietyCount = 0, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="cursor-pointer text-left"
       style={{
-        padding: '14px 16px',
-        borderRadius: 14,
-        background: `rgba(${accentRgb}, 0.10)`,
-        border: `1px solid rgba(${accentRgb}, 0.28)`,
+        padding: '16px',
+        borderRadius: 12,
+        background: `rgba(${accentRgb}, 0.15)`,
+        borderLeft: `3px solid ${accentHex}`,
+        borderTop: `0.5px solid rgba(${accentRgb}, 0.20)`,
+        borderRight: `0.5px solid rgba(${accentRgb}, 0.20)`,
+        borderBottom: `0.5px solid rgba(${accentRgb}, 0.20)`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
       }}
     >
       <div className="flex-1 min-w-0">
-        <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+        <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.25 }}>
           {name}
         </p>
         {variety && (
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
             {variety}
           </p>
         )}
         {location && (
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>📍 {location}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>📍 {location}</p>
+        )}
+        {lastActivity && (
+          <p style={{ fontSize: 12, color: 'var(--gold)', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+            🕐 {lastActivity}
+          </p>
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -340,7 +345,7 @@ function PlantCard({ accentRgb, name, variety, location, varietyCount = 0, onCli
             {varietyCount}
           </span>
         )}
-        <span style={{ color: 'var(--gold-label)', fontSize: 16 }}>›</span>
+        <span style={{ color: 'var(--gold-label)', fontSize: 20, lineHeight: 1 }}>›</span>
       </div>
     </button>
   );
