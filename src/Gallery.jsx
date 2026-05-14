@@ -93,7 +93,7 @@ export default function Gallery({ onOpenFlora, onBack }) {
   // Year list view
   if (openYear == null) {
     return (
-      <div style={{ paddingBottom: 100, animation: 'screenEnter 0.2s ease' }}>
+      <div style={{ paddingBottom: 100, background: 'transparent', animation: 'screenEnter 0.2s ease' }}>
         <section className="px-5 pt-3 pb-2">
           {onBack && (
             <button
@@ -108,7 +108,7 @@ export default function Gallery({ onOpenFlora, onBack }) {
               }}
             >← Wróć</button>
           )}
-          <h2 className="font-serif italic" style={{ fontSize: 26, color: 'var(--gold)' }}>📸 Galeria ogrodu</h2>
+          <h2 className="font-serif italic" style={{ fontSize: 26, color: 'var(--gold)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>📸 Galeria ogrodu</h2>
         </section>
 
         <section className="px-5 pb-3">
@@ -161,7 +161,7 @@ export default function Gallery({ onOpenFlora, onBack }) {
   // Year detail view
   const yearItems = (byYear[openYear] || []).filter((i) => albumFilter === 'Wszystkie' || i.album === albumFilter);
   return (
-    <div style={{ paddingBottom: 100, animation: 'screenEnter 0.2s ease' }}>
+    <div style={{ paddingBottom: 100, background: 'transparent', animation: 'screenEnter 0.2s ease' }}>
       <header className="px-5 pt-3 pb-2">
         <button type="button" onClick={() => setOpenYear(null)} className="cursor-pointer mb-2"
           style={{ fontSize: 13, padding: '6px 12px', borderRadius: 999, background: 'var(--surface-card-soft)', border: '0.5px solid var(--border-medium)', color: 'var(--text-secondary)' }}>
