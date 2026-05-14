@@ -62,10 +62,11 @@ function wmoIconAndLabel(code) {
   return { icon: '·', label: '' };
 }
 
+// Top nav (v6.1) — primary horizontal switcher.
+// Drawer holds secondary screens (Środki, Galeria, Historia, Receptury).
 const TABS = [
   { key: 'glowna',    label: 'Ogród',     icon: 'leaf' },
   { key: 'kalendarz', label: 'Kalendarz', icon: 'cal' },
-  { key: 'naturalne', label: 'Receptury', icon: 'flask' },
   { key: 'dziennik',  label: 'Dziennik',  icon: 'book' },
 ];
 
@@ -652,7 +653,7 @@ export default function App() {
         }}
       />
 
-      <div className="relative z-10 flex flex-col flex-1 max-w-lg mx-auto w-full pb-24">
+      <div className="relative z-10 flex flex-col flex-1 max-w-lg mx-auto w-full pb-8">
         <header className="px-5 pt-9 pb-3">
           <div className="flex items-start justify-between gap-3">
             <button
@@ -717,6 +718,69 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {/* Top nav — primary horizontal switcher (v6.1, replaces bottom nav) */}
+        <nav
+          className="px-3 pb-2"
+          style={{
+            position: 'sticky', top: 0, zIndex: 40,
+            background: 'var(--nav-bg)',
+            borderBottom: '0.5px solid var(--nav-border)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+        >
+          <div className="flex gap-1.5 pt-2 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            {TABS.map((t) => {
+              const active = tab === t.key && !selectedCategory;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => handleTabChange(t.key)}
+                  className="shrink-0 cursor-pointer flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 13px', borderRadius: 999,
+                    background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(123,201,123,0.12))' : 'transparent',
+                    border: active ? '1px solid var(--gold)' : '0.5px solid transparent',
+                    color: active ? 'var(--gold)' : 'var(--text-secondary)',
+                    fontWeight: active ? 600 : 500,
+                    fontSize: 13, whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span style={{ display: 'grid', placeItems: 'center', width: 18, height: 18 }}>{TAB_ICONS[t.icon]}</span>
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => openFlora()}
+              className="shrink-0 cursor-pointer flex items-center gap-1.5"
+              style={{
+                padding: '8px 13px', borderRadius: 999,
+                background: 'transparent', border: '0.5px solid transparent',
+                color: 'var(--text-secondary)', fontWeight: 500, fontSize: 13, whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>🌿</span>
+              <span>FLORA</span>
+            </button>
+            <button
+              type="button"
+              onClick={openSettings}
+              className="shrink-0 cursor-pointer flex items-center gap-1.5"
+              style={{
+                padding: '8px 13px', borderRadius: 999,
+                background: 'transparent', border: '0.5px solid transparent',
+                color: 'var(--text-secondary)', fontWeight: 500, fontSize: 13, whiteSpace: 'nowrap',
+              }}
+              aria-label="Ustawienia"
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>⚙️</span>
+            </button>
+          </div>
+        </nav>
 
         {tab === 'glowna' && selectedCategory && (
           <CategoryPage
@@ -1059,45 +1123,6 @@ export default function App() {
         {tab === 'dziennik' && <Diary />}
       </div>
 
-      {/* Bottom navigation bar — z-index 50, below FAB/FLORA but above content. */}
-      <nav
-        className="fixed left-0 right-0"
-        style={{
-          bottom: 0,
-          zIndex: 50,
-          background: 'var(--nav-bg)',
-          borderTop: '0.5px solid var(--nav-border)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        <div className="max-w-lg mx-auto flex">
-          {TABS.map((t) => {
-            const active = tab === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => handleTabChange(t.key)}
-                className="flex-1 flex flex-col items-center gap-0.5 py-2.5 cursor-pointer"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: active ? 'var(--gold)' : 'var(--text-faint)',
-                  fontWeight: active ? 500 : 400,
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                <span style={{ lineHeight: 1, display: 'grid', placeItems: 'center', width: 22, height: 22 }}>{TAB_ICONS[t.icon]}</span>
-                <span style={{ fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
       {/* FAB "+" — quick add + Spacer mode (📸) above it */}
       <button
         type="button"
@@ -1106,7 +1131,7 @@ export default function App() {
         style={{
           position: 'fixed',
           left: '20px',
-          bottom: 'calc(146px + env(safe-area-inset-bottom))',
+          bottom: 'calc(86px + env(safe-area-inset-bottom))',
           width: '46px',
           height: '46px',
           borderRadius: '50%',
@@ -1134,7 +1159,7 @@ export default function App() {
         style={{
           position: 'fixed',
           left: '20px',
-          bottom: 'calc(80px + env(safe-area-inset-bottom))',
+          bottom: 'calc(20px + env(safe-area-inset-bottom))',
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -1200,6 +1225,7 @@ export default function App() {
               {[
                 { key: 'glowna',     icon: '🪴', label: 'Moje rośliny' },
                 { key: 'srodki',     icon: '💊', label: 'Środki i nawozy' },
+                { key: 'naturalne',  icon: '🌿', label: 'Receptury naturalne' },
                 { key: 'galeria',    icon: '📸', label: 'Galeria ogrodu' },
                 { key: 'historia',   icon: '📖', label: 'Historia ogrodu' },
                 { key: 'kalendarz',  icon: '📅', label: 'Kalendarz' },

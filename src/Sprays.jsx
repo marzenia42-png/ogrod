@@ -222,7 +222,7 @@ export default function Sprays({ customPlants = [] }) {
         onClick={openForm}
         aria-label="Dodaj oprysk lub nawóz"
         style={{
-          position: 'fixed', right: 20, bottom: 'calc(150px + env(safe-area-inset-bottom))',
+          position: 'fixed', right: 20, bottom: 'calc(90px + env(safe-area-inset-bottom))',
           width: 54, height: 54, borderRadius: '50%',
           background: 'linear-gradient(135deg, #C9A96E, #b89556)', color: '#1A1208',
           border: 'none', cursor: 'pointer', fontSize: 26, lineHeight: 1,
