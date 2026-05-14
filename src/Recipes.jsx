@@ -363,7 +363,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
             <div className="overflow-y-auto px-5 py-4 flex flex-col gap-3 flex-1">
               <input
-                type="text"
+                type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 placeholder="Nazwa (np. Macerat z mniszka)"
@@ -398,7 +398,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               </div>
 
               <input
-                type="text"
+                type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                 value={draft.target}
                 onChange={(e) => setDraft({ ...draft, target: e.target.value })}
                 placeholder="Na co działa (opcjonalnie)"
@@ -406,7 +406,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
               />
               <input
-                type="text"
+                type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                 value={draft.appliesTo}
                 onChange={(e) => setDraft({ ...draft, appliesTo: e.target.value })}
                 placeholder="Zastosowanie — na które rośliny (opcjonalnie)"
@@ -414,7 +414,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
               />
               <input
-                type="text"
+                type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                 value={draft.frequency}
                 onChange={(e) => setDraft({ ...draft, frequency: e.target.value })}
                 placeholder="Częstotliwość (opcjonalnie)"
@@ -494,7 +494,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 <div key={i} className="flex gap-2">
                   <span className="font-serif italic" style={{ color: '#86efac', fontWeight: 500, minWidth: '20px', paddingTop: '8px' }}>{i + 1}.</span>
                   <input
-                    type="text"
+                    type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                     value={s}
                     onChange={(e) => handleStepChange(i, e.target.value)}
                     placeholder="Krok..."

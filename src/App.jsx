@@ -1085,7 +1085,7 @@ export default function App() {
               </p>
               <div className="flex gap-2 mb-3">
                 <input
-                  type="text"
+                  type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                   value={noteDraft}
                   onChange={(e) => setNoteDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
@@ -1120,7 +1120,7 @@ export default function App() {
                       <div className="flex-1 min-w-0">
                         <p style={{ fontSize: 11, letterSpacing: '0.04em', color: 'var(--gold-label)' }}>{n.date}</p>
                         {isEditing ? (
-                          <textarea
+                          <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                             value={noteEditDraft}
                             onChange={(e) => setNoteEditDraft(e.target.value)}
                             rows={2}
@@ -1350,7 +1350,9 @@ export default function App() {
             const { savePlant } = await import('./lib/db.js');
             try { await savePlant(plant); } catch (e) { console.warn('savePlant failed:', e?.message || e); }
 
-            // Auto-fetch FLORA spec, only if user did NOT manually fill spec fields.
+            // Auto-fetch FLORA spec — opt-in z banneru wizarda (krok 5).
+            // _wantsFloraSpec: true = wykonaj, false/null = pomiń.
+            if (plant._wantsFloraSpec !== true) return;
             const userHasSpec = Boolean(
               plant.height_cm || plant.position || plant.soil || plant.watering
               || plant.frost_hardiness || plant.flowering || plant.description
@@ -1583,7 +1585,7 @@ export default function App() {
                   <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'var(--gold-label)' }}>
                     O Tobie (opcjonalne)
                   </p>
-                  <textarea
+                  <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                     value={profileDraft.notes}
                     onChange={(e) => setProfileDraft({ ...profileDraft, notes: e.target.value })}
                     placeholder="np. Beata, lubi zioła, alergia na sosnowe oleje, ogród 200m²..."

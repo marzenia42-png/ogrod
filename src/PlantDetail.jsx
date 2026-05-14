@@ -308,12 +308,24 @@ export default function PlantDetail({
       role="dialog"
       aria-label={`Szczegóły rośliny: ${plantName}`}
       className="fixed inset-0 overflow-y-auto"
-      style={{ zIndex: 1000, background: 'var(--surface-modal)', animation: 'screenEnter 0.2s ease' }}
+      style={{
+        zIndex: 1000,
+        background: 'var(--screen-overlay)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        animation: 'screenEnter 0.2s ease',
+      }}
     >
       <div className="max-w-lg mx-auto pb-24" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <header
           className="sticky top-0 flex items-center justify-between px-4 py-3"
-          style={{ background: 'var(--surface-modal)', borderBottom: '1px solid var(--border-soft)', zIndex: 10 }}
+          style={{
+            background: 'var(--screen-overlay-strong)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderBottom: '1px solid var(--border-soft)',
+            zIndex: 10,
+          }}
         >
           <button
             type="button"
@@ -342,7 +354,7 @@ export default function PlantDetail({
             {editingName ? (
               <div className="flex gap-2">
                 <input
-                  type="text"
+                  type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                   value={nameDraft}
                   onChange={(e) => setNameDraft(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-lg"
@@ -423,7 +435,7 @@ export default function PlantDetail({
             <SpecField icon="🌸" label="Kwitnienie" value={spec.flowering} onChange={(v) => handleSpecChange('flowering', v)} placeholder="np. maj-czerwiec" />
             <div>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>📝 Opis ogólny</p>
-              <textarea
+              <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                 value={spec.description}
                 onChange={(e) => handleSpecChange('description', e.target.value)}
                 rows={3}
@@ -464,7 +476,7 @@ export default function PlantDetail({
                   </label>
                   <label style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                     Sklep
-                    <input type="text" value={purchaseShopDraft} onChange={(e) => setPurchaseShopDraft(e.target.value)}
+                    <input type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences" value={purchaseShopDraft} onChange={(e) => setPurchaseShopDraft(e.target.value)}
                       placeholder="np. Castorama, ogrodnik za rogiem..."
                       className="mt-1 w-full px-3 py-2 rounded-lg"
                       style={{ fontSize: 14, background: 'var(--surface-faint)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
@@ -536,7 +548,7 @@ export default function PlantDetail({
             </div>
             <div>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>Notatka sezonu {activeYear}</p>
-              <textarea
+              <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                 value={seasonNotes}
                 onChange={(e) => setSeasonNotes(e.target.value)}
                 onBlur={handleSaveSeasonNotes}
@@ -568,7 +580,7 @@ export default function PlantDetail({
                     );
                   })}
                 </div>
-                <textarea
+                <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                   value={entryDraft.text}
                   onChange={(e) => setEntryDraft((d) => ({ ...d, text: e.target.value }))}
                   rows={2}
@@ -616,7 +628,7 @@ export default function PlantDetail({
                           <input type="date" value={editingEntry.date || ''} onChange={(e) => setEditingEntry((s) => ({ ...s, date: e.target.value }))}
                             className="px-3 py-2 rounded-lg"
                             style={{ fontSize: 13, background: 'var(--surface-card)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                          <textarea value={editingEntry.text} onChange={(e) => setEditingEntry((s) => ({ ...s, text: e.target.value }))} rows={2}
+                          <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences" value={editingEntry.text} onChange={(e) => setEditingEntry((s) => ({ ...s, text: e.target.value }))} rows={2}
                             className="w-full px-3 py-2 rounded-lg resize-none"
                             style={{ fontSize: 14, background: 'var(--surface-card)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
                           <div className="flex gap-2">
@@ -746,7 +758,7 @@ function SpecField({ icon, label, value, onChange, placeholder }) {
     <div>
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>{icon} {label}</p>
       <input
-        type="text"
+        type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

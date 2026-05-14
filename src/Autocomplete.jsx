@@ -75,7 +75,7 @@ export default function Autocomplete({
     <div ref={wrapRef} style={{ position: 'relative', width: '100%' }}>
       <input
         ref={inputRef}
-        type="text"
+        type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         onFocus={() => setFocused(true)}

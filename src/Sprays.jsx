@@ -287,7 +287,7 @@ export default function Sprays({ customPlants = [], onBack }) {
               <label style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                 Produkt
                 <input
-                  type="text" value={draft.product_name}
+                  type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences" value={draft.product_name}
                   onChange={(e) => setDraft((d) => ({ ...d, product_name: e.target.value }))}
                   placeholder={draft.product_type === 'spray' ? 'np. Topsin M, Miedzian, Karate Zeon' : 'np. NPK 13-13-21, Azofoska'}
                   className="mt-1 w-full px-3 py-2 rounded-lg"
@@ -308,7 +308,7 @@ export default function Sprays({ customPlants = [], onBack }) {
               <label style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                 Stężenie / dawka
                 <input
-                  type="text" value={draft.concentration}
+                  type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences" value={draft.concentration}
                   onChange={(e) => setDraft((d) => ({ ...d, concentration: e.target.value }))}
                   placeholder="np. 0.1% lub 1 g/L"
                   className="mt-1 w-full px-3 py-2 rounded-lg"
@@ -351,7 +351,7 @@ export default function Sprays({ customPlants = [], onBack }) {
 
               <label style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                 Notatka (opcjonalna)
-                <textarea
+                <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                   value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
                   rows={2} placeholder="np. po deszczu, profilaktycznie..."
                   className="mt-1 w-full px-3 py-2 rounded-lg resize-none"

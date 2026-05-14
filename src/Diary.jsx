@@ -311,7 +311,7 @@ export default function Diary() {
                 </svg>
               </button>
             </div>
-            <textarea
+            <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Co dziś zrobiłeś w ogrodzie?"

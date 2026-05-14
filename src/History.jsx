@@ -115,7 +115,7 @@ export default function History({ onBack }) {
         <>
           <section className="px-5 pb-4">
             <p className="font-mono uppercase tracking-widest mb-2" style={{ fontSize: 11, color: 'var(--gold-label)' }}>Notatka roku</p>
-            <textarea
+            <textarea lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               onBlur={handleSaveSummary}

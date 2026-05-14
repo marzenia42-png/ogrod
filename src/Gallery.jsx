@@ -275,7 +275,7 @@ function GalleryForm({ draft, setDraft, adding, onSave, onClose }) {
           </label>
           <label style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             Opis (opcjonalny)
-            <input type="text" maxLength={100} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            <input type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences" maxLength={100} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               placeholder="np. Pierwsze pomidory, lipiec"
               className="mt-1 w-full px-3 py-2 rounded-lg"
               style={{ fontSize: 15, background: 'var(--surface-faint)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />

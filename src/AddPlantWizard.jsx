@@ -54,6 +54,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
   const [purchaseDate, setPurchaseDate] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
   const [purchaseShop, setPurchaseShop] = useState('');
+  // Opt-in dla auto-uzupełnienia specyfikacji przez FLORA. null = nieodpowiedziano.
+  const [wantsFloraSpec, setWantsFloraSpec] = useState(null);
   // Rozpoznawanie zdjęciem — tryb opcjonalny w kroku 1.
   const [identifyMode, setIdentifyMode] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -182,6 +184,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
       months,
       type: 'naturalny',
       text: variety.trim() ? `${finalName} · ${variety.trim()}` : finalName,
+      _wantsFloraSpec: wantsFloraSpec,
     };
 
     onSave?.(plant);
@@ -575,7 +578,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                   📍 Lokalizacja (opcjonalna)
                 </p>
                 <input
-                  type="text"
+                  type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="np. Sad, Balkon, Działka, Ogród przedni"
@@ -640,7 +643,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     Sklep / Źródło
                   </label>
                   <input
-                    type="text"
+                    type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                     value={purchaseShop}
                     onChange={(e) => setPurchaseShop(e.target.value)}
                     placeholder="Np. Ogrodnik Bęczarka, od sąsiadki, targi..."
@@ -685,6 +688,52 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                   </p>
                 )}
               </div>
+
+              {/* FLORA spec opt-in banner */}
+              {(isCustomNameMode ? customName.trim().length >= 3 : !!selectedSpecies) && (
+                <div
+                  className="mt-4 rounded-xl p-3.5"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(123,201,123,0.18), rgba(201,169,110,0.10))',
+                    border: '1px solid rgba(123,201,123,0.40)',
+                  }}
+                >
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    🌿 Mogę uzupełnić specyfikację tej rośliny automatycznie
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    Wysokość, gleba, podlewanie, mrozoodporność, kwitnienie itd.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setWantsFloraSpec(true)}
+                      style={{
+                        flex: 1, padding: '10px 12px', borderRadius: 10, fontSize: 14,
+                        background: wantsFloraSpec === true
+                          ? 'linear-gradient(135deg, #7bc97b, #4CAF50)'
+                          : 'rgba(123,201,123,0.15)',
+                        color: wantsFloraSpec === true ? '#0a0f0a' : '#2e7d32',
+                        border: wantsFloraSpec === true ? 'none' : '1px solid rgba(76,175,80,0.45)',
+                        fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >Tak, uzupełnij</button>
+                    <button
+                      type="button"
+                      onClick={() => setWantsFloraSpec(false)}
+                      style={{
+                        flex: 1, padding: '10px 12px', borderRadius: 10, fontSize: 14,
+                        background: wantsFloraSpec === false ? 'var(--surface-tint)' : 'transparent',
+                        color: 'var(--text-secondary)',
+                        border: wantsFloraSpec === false
+                          ? '1px solid var(--border-strong)'
+                          : '1px solid var(--border-medium)',
+                        fontWeight: 500, cursor: 'pointer',
+                      }}
+                    >Nie, wpiszę sam</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -2,26 +2,7 @@ import { useMemo } from 'react';
 import { PLANT_CATEGORIES } from './data/plantCategories.js';
 import { PLANTS } from './data/plants.js';
 
-// v6.3 — zdjęcia WebP dla kategorii (dostarczone przez Dario w Drive).
-import imgAll from './assets/categories/all.webp';
-import imgFruitTrees from './assets/categories/fruit-trees.webp';
-import imgFruitShrubs from './assets/categories/fruit-shrubs.webp';
-import imgGardenTrees from './assets/categories/garden-trees.webp';
-import imgVegetables from './assets/categories/vegetables.webp';
-import imgOrnamental from './assets/categories/ornamental.webp';
-import imgIndoor from './assets/categories/indoor.webp';
-import imgOther from './assets/categories/other.webp';
-
-const CATEGORY_IMAGE = {
-  'all': imgAll,
-  'fruit-trees': imgFruitTrees,
-  'fruit-shrubs': imgFruitShrubs,
-  'garden-trees': imgGardenTrees,
-  'vegetables': imgVegetables,
-  'ornamental': imgOrnamental,
-  'indoor': imgIndoor,
-  'other': imgOther,
-};
+// v6.4 — zdjęcia WebP w polu cat.image (import statyczny z plantCategories.js).
 
 function pluralRoslin(n) {
   if (n === 0) return '0 roślin';
@@ -80,7 +61,6 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
           const n = counts[cat.id] || 0;
           const rgb = hexToRgb(cat.accent);
           const isAll = cat.id === 'all';
-          const img = CATEGORY_IMAGE[cat.id];
           return (
             <button
               key={cat.id}
@@ -90,13 +70,15 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
               style={{
                 minHeight: 170,
                 padding: '14px 12px 14px',
-                backgroundImage: img
-                  ? `linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.10) 100%), url(${img})`
+                backgroundImage: cat.image
+                  ? `linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.10) 70%, transparent 100%), url(${cat.image})`
                   : `linear-gradient(135deg, rgba(${rgb}, 0.22), rgba(${rgb}, 0.06))`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                border: `${isAll ? '1.5px' : '1px'} solid rgba(${rgb}, ${isAll ? 0.65 : 0.40})`,
-                boxShadow: `0 4px 14px rgba(0,0,0,0.22), 0 0 0 1px rgba(${rgb}, 0.10) inset`,
+                border: isAll
+                  ? '2.5px solid var(--gold)'
+                  : '2.5px solid rgba(255,255,255,0.5)',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.15) inset, 0 4px 20px rgba(0,0,0,0.3)',
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
               }}

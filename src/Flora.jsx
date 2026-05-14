@@ -260,7 +260,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
           padding: 0,
         }}
       >
-        <LeafIcon size={30} stroke="#0a0f0a" strokeWidth={1.6} />
+        <span className="flora-emoji" style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} aria-hidden="true">🌿</span>
       </button>
 
       <div
@@ -589,7 +589,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
 
             <input
               ref={inputRef}
-              type="text"
+              type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
