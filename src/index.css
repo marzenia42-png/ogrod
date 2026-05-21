@@ -1,67 +1,78 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0d0c0a;
+  --color-bg: #0d150f;
   --color-gold: #c9a96e;
   --color-cream: #f0e8d8;
   --color-text: #e8ddd0;
+  --color-leaf: #4CAF50;
 }
 
-/* ──────────── DARK THEME (default) ──────────── */
+/* ──────────── DARK THEME (default) — leśna hybryda + złoto ──────────── */
 :root {
-  /* Tła powierzchni */
-  --bg-image-overlay: rgba(0, 0, 0, 0.30);
-  --surface-modal: #0d0c0a;        /* główne tło modali (AddPlantWizard, PlantDetail, Settings) */
-  --surface-flora: #0a0f0a;        /* zielonkawe tło panelu FLORA */
-  --surface-card: rgba(0, 0, 0, 0.70);     /* karty (pogoda, notatki) */
-  --surface-card-soft: rgba(0, 0, 0, 0.55); /* lżejsze karty */
-  --surface-elevated: rgba(0, 0, 0, 0.40); /* tła event/notatka items */
-  --surface-deep: rgba(0, 0, 0, 0.35);     /* deep panele */
-  --surface-faint: rgba(255, 255, 255, 0.03); /* subtelne kafelki, inputy */
-  --surface-tint: rgba(201, 169, 110, 0.06); /* podświetlone karty */
+  /* Tła powierzchni — bardzo ciemna leśna zieleń */
+  --bg-image-overlay: rgba(8, 14, 10, 0.32);
+  --surface-modal: #0d150f;        /* główne tło modali (AddPlantWizard, PlantDetail, Settings) */
+  --surface-flora: #0a130d;        /* zielonkawe tło panelu FLORA */
+  --surface-card: rgba(8, 16, 10, 0.72);     /* karty (pogoda, notatki) */
+  --surface-card-soft: rgba(8, 16, 10, 0.55); /* lżejsze karty */
+  --surface-elevated: rgba(8, 16, 10, 0.42); /* tła event/notatka items */
+  --surface-deep: rgba(8, 16, 10, 0.36);     /* deep panele */
+  --surface-faint: rgba(140, 200, 150, 0.04); /* subtelne kafelki, inputy */
+  --surface-tint: rgba(76, 175, 80, 0.08); /* podświetlone karty — zielony tint */
 
-  /* Bordery */
+  /* Bordery — złoto + lekka zieleń */
   --border-soft: rgba(201, 169, 110, 0.18);
   --border-medium: rgba(201, 169, 110, 0.25);
   --border-strong: rgba(201, 169, 110, 0.35);
+  --border-leaf-soft: rgba(76, 175, 80, 0.22);
+  --border-leaf-medium: rgba(76, 175, 80, 0.35);
 
   /* Tekst */
   --text-primary: #F0E8D8;
   --text-secondary: rgba(232, 221, 208, 0.85);
-  --text-muted: rgba(232, 221, 208, 0.6);
-  --text-faint: rgba(232, 221, 208, 0.45);
+  --text-muted: rgba(232, 221, 208, 0.62);
+  --text-faint: rgba(232, 221, 208, 0.46);
   --text-very-faint: rgba(232, 221, 208, 0.3);
 
-  /* Złote akcenty */
+  /* Złote akcenty (typografia + nagłówki) */
   --gold: #C9A96E;
-  --gold-on-button: #1A1208;       /* tekst na złotym przycisku */
+  --gold-on-button: #0a130d;       /* tekst na złotym przycisku (ciemna leśna zieleń) */
   --gold-label: rgba(201, 169, 110, 0.55);
-  --gold-label-strong: rgba(201, 169, 110, 0.7);
+  --gold-label-strong: rgba(201, 169, 110, 0.72);
+
+  /* Zielone akcenty (akcent główny CTA / glow / pozytywne stany) */
+  --leaf: #4CAF50;
+  --leaf-bright: #7CB342;
+  --leaf-deep: #2E7D32;
+  --leaf-on-button: #ffffff;
+  --leaf-soft: rgba(76, 175, 80, 0.18);
+  --leaf-glow: rgba(76, 175, 80, 0.40);
 
   /* Bottom nav */
-  --nav-bg: rgba(13, 12, 10, 0.94);
-  --nav-border: rgba(201, 169, 110, 0.2);
+  --nav-bg: rgba(11, 19, 13, 0.94);
+  --nav-border: rgba(201, 169, 110, 0.22);
 
   /* Body */
-  --body-bg: #0d0c0a;
+  --body-bg: #0d150f;
   --body-color: #e8ddd0;
 
   /* v6: kategoria karta, drawer, banner */
-  --cat-card-bg: rgba(20, 14, 8, 0.55);
+  --cat-card-bg: rgba(15, 26, 18, 0.58);
   --cat-card-text: #F0E8D8;
   --cat-card-muted: rgba(232, 221, 208, 0.7);
-  --drawer-bg: #14110a;
+  --drawer-bg: #0f1a12;
   --drawer-border: rgba(201, 169, 110, 0.22);
   --banner-bg: linear-gradient(135deg, #C9A96E 0%, #b89556 100%);
   --banner-text: #1A1208;
-  --wizard-card-bg: rgba(255, 255, 255, 0.06);
-  --wizard-input-bg: rgba(255, 255, 255, 0.12);
-  --screen-overlay: rgba(13, 12, 10, 0.55);
-  --screen-overlay-strong: rgba(13, 12, 10, 0.75);
+  --wizard-card-bg: rgba(140, 200, 150, 0.06);
+  --wizard-input-bg: rgba(140, 200, 150, 0.10);
+  --screen-overlay: rgba(11, 19, 13, 0.55);
+  --screen-overlay-strong: rgba(11, 19, 13, 0.76);
 
   /* v6.5: karty roślin na podstronach (glassmorphism) */
-  --plant-card-bg: rgba(255, 255, 255, 0.12);
-  --plant-card-border: rgba(255, 255, 255, 0.25);
+  --plant-card-bg: rgba(220, 255, 220, 0.10);
+  --plant-card-border: rgba(180, 220, 180, 0.25);
   --plant-card-text: #FFFFFF;
 }
 
@@ -100,6 +111,16 @@ html[data-theme="light"] {
   --color-bg: #F5F4F1;
   --body-bg: #F5F4F1;
   --body-color: #1A1A1A;
+
+  /* Zielone akcenty w light mode (ciemniejsze dla kontrastu na jasnym tle) */
+  --leaf: #2E7D32;
+  --leaf-bright: #4A7C59;
+  --leaf-deep: #1B5E20;
+  --leaf-on-button: #ffffff;
+  --leaf-soft: rgba(46, 125, 50, 0.10);
+  --leaf-glow: rgba(46, 125, 50, 0.25);
+  --border-leaf-soft: rgba(46, 125, 50, 0.22);
+  --border-leaf-medium: rgba(46, 125, 50, 0.35);
 
   /* Light: jaśniejsze, bardziej czytelne karty */
   --text-primary: #1A1A1A;
@@ -261,4 +282,65 @@ select option {
 .flora-dots {
   animation: flora-dots 1.2s ease-in-out infinite;
   display: inline-block;
+}
+
+/* ─── Stagger fade-in kart roślin / kategorii ─── */
+@keyframes cardFadeInUp {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.card-fade-in {
+  opacity: 0;
+  animation: cardFadeInUp 0.48s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: calc(var(--card-index, 0) * 55ms);
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-fade-in {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ─── Floating Action Button (FAB) dodawania rośliny ─── */
+.fab-add {
+  position: fixed;
+  right: 18px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 60%, #C9A96E 100%);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(201, 169, 110, 0.35) inset,
+    0 0 18px rgba(76, 175, 80, 0.45),
+    0 6px 22px rgba(0, 0, 0, 0.55);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+  z-index: 50;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab-add:hover {
+  transform: scale(1.06);
+  box-shadow:
+    0 0 0 1px rgba(201, 169, 110, 0.5) inset,
+    0 0 26px rgba(76, 175, 80, 0.6),
+    0 6px 22px rgba(0, 0, 0, 0.55);
+}
+
+.fab-add:active {
+  transform: scale(0.96);
+  transition: transform 0.08s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab-add { transition: none; }
 }

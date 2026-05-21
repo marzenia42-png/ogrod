@@ -263,11 +263,12 @@ export default function CategoryPage({
 
         {!isEmpty && (
           <div className="flex flex-col gap-2.5">
-            {builtinForCategory.map((p) => {
+            {builtinForCategory.map((p, idx) => {
               const vCount = varietiesByParent[p.key] || 0;
               return (
                 <PlantCard
                   key={p.key}
+                  index={idx}
                   accentRgb={accentRgb}
                   accentHex={cat?.accent}
                   name={p.name}
@@ -276,11 +277,12 @@ export default function CategoryPage({
                 />
               );
             })}
-            {customForCategory.map((p) => {
+            {customForCategory.map((p, idx) => {
               const vCount = varietiesByParent[p.id] || 0;
               return (
                 <PlantCard
                   key={p.id}
+                  index={builtinForCategory.length + idx}
                   accentRgb={accentRgb}
                   accentHex={cat?.accent}
                   name={p.name}
@@ -294,37 +296,71 @@ export default function CategoryPage({
           </div>
         )}
       </section>
+
+      {/* FAB +Dodaj roślinę — pływający przycisk w prawym dolnym rogu */}
+      <button
+        type="button"
+        onClick={onAddPlant}
+        aria-label="Dodaj roślinę"
+        className="fab-add"
+        title="Dodaj roślinę"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
     </div>
   );
 }
 
-function PlantCard({ accentRgb, accentHex, name, variety, location, lastActivity, varietyCount = 0, onClick }) {
+function PlantCard({ index = 0, accentRgb, accentHex, name, variety, location, lastActivity, varietyCount = 0, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer text-left"
+      className="card-fade-in cursor-pointer text-left"
       style={{
-        padding: '16px',
-        borderRadius: 12,
+        '--card-index': index,
+        padding: '18px 18px',
+        borderRadius: 14,
         background: 'var(--plant-card-bg)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         borderTop: '1.5px solid var(--plant-card-border)',
         borderRight: '1.5px solid var(--plant-card-border)',
         borderBottom: '1.5px solid var(--plant-card-border)',
         borderLeft: `3px solid ${accentHex || 'var(--gold)'}`,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.20)',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
       }}
     >
       <div className="flex-1 min-w-0">
-        <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--plant-card-text)', lineHeight: 1.25 }}>
+        <p
+          className="font-serif italic"
+          style={{
+            fontSize: 21,
+            fontWeight: 500,
+            color: 'var(--plant-card-text)',
+            lineHeight: 1.2,
+            letterSpacing: '0.2px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+          }}
+        >
           {name}
         </p>
         {variety && (
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--gold)',
+              marginTop: 4,
+              fontWeight: 500,
+              letterSpacing: '0.4px',
+              textTransform: 'uppercase',
+            }}
+          >
             {variety}
           </p>
         )}

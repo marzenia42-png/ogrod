@@ -47,6 +47,7 @@ export default function AllPlantsScreen({
   removedSet,
   onBack,
   onOpenPlant,
+  onAddPlant,
 }) {
   const [view, setView] = useState(() => {
     try { return localStorage.getItem(VIEW_KEY) || 'category'; }
@@ -139,74 +140,111 @@ export default function AllPlantsScreen({
         </div>
       </section>
 
-      <section className="px-5 pb-8">
+      <section className="px-5 pb-24">
         {plants.length === 0 && (
           <p style={{ fontSize: 14, color: 'var(--text-faint)', padding: '20px 0', textAlign: 'center' }}>
-            Brak roślin. Dodaj pierwszą przyciskiem + na dole.
+            Brak roślin. Dodaj pierwszą przyciskiem + w prawym dolnym rogu.
           </p>
         )}
-        {grouped.map((group) => {
-          const heading = group.kind === 'category'
-            ? `${group.cat.emoji} ${group.cat.name}`
-            : group.letter;
-          return (
-            <div key={group.kind === 'category' ? group.cat.id : group.letter} className="mb-5">
-              <div className="flex items-baseline justify-between mb-2">
-                <h3 className="font-serif italic" style={{ fontSize: 20, fontWeight: 700, color: 'var(--gold)' }}>
-                  {heading}
-                </h3>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                  {group.items.length}
-                </span>
+        {(() => {
+          let cardCounter = 0;
+          return grouped.map((group) => {
+            const heading = group.kind === 'category'
+              ? `${group.cat.emoji} ${group.cat.name}`
+              : group.letter;
+            return (
+              <div key={group.kind === 'category' ? group.cat.id : group.letter} className="mb-5">
+                <div className="flex items-baseline justify-between mb-2">
+                  <h3 className="font-serif italic" style={{ fontSize: 20, fontWeight: 700, color: 'var(--gold)' }}>
+                    {heading}
+                  </h3>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    {group.items.length}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  {group.items.map((p) => {
+                    const cat = CATEGORY_BY_ID[p.categoryId] || CATEGORY_BY_ID.other;
+                    const accent = cat.accent;
+                    const idx = cardCounter++;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => onOpenPlant?.(p.id, p.variety ? `${p.name} · ${p.variety}` : p.name)}
+                        className="card-fade-in cursor-pointer text-left"
+                        style={{
+                          '--card-index': idx,
+                          padding: '18px 18px',
+                          borderRadius: 14,
+                          background: 'var(--plant-card-bg)',
+                          backdropFilter: 'blur(10px)',
+                          WebkitBackdropFilter: 'blur(10px)',
+                          borderTop: '1.5px solid var(--plant-card-border)',
+                          borderRight: '1.5px solid var(--plant-card-border)',
+                          borderBottom: '1.5px solid var(--plant-card-border)',
+                          borderLeft: `3px solid ${accent}`,
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="font-serif italic"
+                            style={{
+                              fontSize: 21,
+                              fontWeight: 500,
+                              color: 'var(--plant-card-text)',
+                              lineHeight: 1.2,
+                              letterSpacing: '0.2px',
+                              textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+                            }}
+                          >
+                            {p.name}
+                          </p>
+                          {p.variety && (
+                            <p style={{
+                              fontSize: 13,
+                              color: 'var(--gold)',
+                              marginTop: 4,
+                              fontWeight: 500,
+                              letterSpacing: '0.4px',
+                              textTransform: 'uppercase',
+                            }}>{p.variety}</p>
+                          )}
+                          {view === 'alpha' && (
+                            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{cat.emoji} {cat.name}</p>
+                          )}
+                          {p.location && (
+                            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>📍 {p.location}</p>
+                          )}
+                        </div>
+                        <span style={{ color: 'var(--gold-label)', fontSize: 20, lineHeight: 1 }}>›</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-col gap-2.5">
-                {group.items.map((p) => {
-                  const cat = CATEGORY_BY_ID[p.categoryId] || CATEGORY_BY_ID.other;
-                  const accent = cat.accent;
-                  const rgb = hexToRgb(accent);
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => onOpenPlant?.(p.id, p.variety ? `${p.name} · ${p.variety}` : p.name)}
-                      className="cursor-pointer text-left"
-                      style={{
-                        padding: '16px',
-                        borderRadius: 12,
-                        background: 'var(--plant-card-bg)',
-                        backdropFilter: 'blur(8px)',
-                        WebkitBackdropFilter: 'blur(8px)',
-                        borderTop: '1.5px solid var(--plant-card-border)',
-                        borderRight: '1.5px solid var(--plant-card-border)',
-                        borderBottom: '1.5px solid var(--plant-card-border)',
-                        borderLeft: `3px solid ${accent}`,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.20)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                      }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--plant-card-text)', lineHeight: 1.25 }}>
-                          {p.name}
-                        </p>
-                        {p.variety && (
-                          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>{p.variety}</p>
-                        )}
-                        {view === 'alpha' && (
-                          <p style={{ fontSize: 12, color: 'var(--gold)', marginTop: 3 }}>{cat.emoji} {cat.name}</p>
-                        )}
-                        {p.location && (
-                          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>📍 {p.location}</p>
-                        )}
-                      </div>
-                      <span style={{ color: 'var(--text-muted)', fontSize: 20, lineHeight: 1 }}>›</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
       </section>
+
+      {/* FAB +Dodaj roślinę */}
+      {onAddPlant && (
+        <button
+          type="button"
+          onClick={onAddPlant}
+          aria-label="Dodaj roślinę"
+          className="fab-add"
+          title="Dodaj roślinę"
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

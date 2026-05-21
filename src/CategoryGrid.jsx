@@ -57,7 +57,7 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
         Twoje rośliny
       </h2>
       <div className="grid grid-cols-2 gap-3">
-        {PLANT_CATEGORIES.map((cat) => {
+        {PLANT_CATEGORIES.map((cat, idx) => {
           const n = counts[cat.id] || 0;
           const rgb = hexToRgb(cat.accent);
           const isAll = cat.id === 'all';
@@ -66,8 +66,9 @@ export default function CategoryGrid({ customPlants = [], removedSet, onPickCate
               key={cat.id}
               type="button"
               onClick={() => onPickCategory?.(cat.id)}
-              className="relative rounded-2xl cursor-pointer overflow-hidden flex flex-col justify-end"
+              className="card-fade-in relative rounded-2xl cursor-pointer overflow-hidden flex flex-col justify-end"
               style={{
+                '--card-index': idx,
                 minHeight: 170,
                 padding: '14px 12px 14px',
                 backgroundImage: cat.image

@@ -341,7 +341,20 @@ export default function PlantDetail({
           >
             ← Wróć
           </button>
-          <p className="font-serif italic" style={{ fontSize: 18, color: 'var(--gold)', flex: 1, textAlign: 'center', minWidth: 0 }}>
+          <p
+            className="font-serif italic"
+            style={{
+              fontSize: 22,
+              color: 'var(--gold)',
+              flex: 1,
+              textAlign: 'center',
+              minWidth: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              letterSpacing: '0.3px',
+            }}
+          >
             {category?.emoji} {plantName}
           </p>
           <span style={{ width: 40 }} />
@@ -370,9 +383,20 @@ export default function PlantDetail({
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>{plantName}</p>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="font-serif italic"
+                    style={{
+                      fontSize: 26,
+                      fontWeight: 500,
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.15,
+                      letterSpacing: '0.2px',
+                    }}
+                  >
+                    {plantName}
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
                     {category ? `${category.name}` : 'Brak kategorii'}
                     {parentName && ` · odmiana ${parentName}`}
                     {species && ` · ${species.botanicalName || ''}`}

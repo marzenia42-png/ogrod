@@ -917,6 +917,7 @@ export default function App() {
             removedSet={removedSet}
             onBack={() => setSelectedCategory(null)}
             onOpenPlant={(id, name) => openPlantById(id, name)}
+            onAddPlant={() => setShowQuickAdd(true)}
           />
         )}
 
