@@ -9,6 +9,8 @@ import conifersBg from '../assets/categories/conifers.webp';
 import vegetablesBg from '../assets/categories/vegetables.webp';
 import ornamentalBg from '../assets/categories/ornamental.webp';
 import indoorBg from '../assets/categories/indoor.webp';
+import otherBg from '../assets/categories/other.webp';
+import allBg from '../assets/categories/all.webp';
 
 export const PLANT_CATEGORIES = [
   { id: 'fruit-trees',   name: 'Drzewa owocowe',      emoji: '🍎', accent: '#E8A87C', image: fruitTreesBg },
@@ -18,8 +20,8 @@ export const PLANT_CATEGORIES = [
   { id: 'vegetables',    name: 'Warzywa i zioła',     emoji: '🥕', accent: '#56C596', image: vegetablesBg },
   { id: 'ornamental',    name: 'Rośliny ozdobne i kwiaty', emoji: '🌸', accent: '#E87CB3', image: ornamentalBg },
   { id: 'indoor',        name: 'Rośliny domowe',      emoji: '🪴', accent: '#C9A96E', image: indoorBg },
-  { id: 'other',         name: 'Rośliny inne',        emoji: '🌿', accent: '#9B9B9B', image: null },
-  { id: 'all',           name: 'Wszystkie rośliny',   emoji: '🌱', accent: '#C9A96E', image: null },
+  { id: 'other',         name: 'Rośliny inne',        emoji: '🌿', accent: '#9B9B9B', image: otherBg },
+  { id: 'all',           name: 'Wszystkie rośliny',   emoji: '🌱', accent: '#C9A96E', image: allBg },
 ];
 
 export const CATEGORY_BY_ID = Object.fromEntries(
