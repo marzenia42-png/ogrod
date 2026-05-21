@@ -22,8 +22,8 @@ export default defineConfig({
         start_url: `${base}`,
         scope: base,
         display: 'standalone',
-        background_color: '#0d0c0a',
-        theme_color: '#0d0c0a',
+        background_color: '#0d150f',
+        theme_color: '#0d150f',
         orientation: 'portrait',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -32,6 +32,11 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // v7.1.2 — wymusić invalidację starego cache po zmianach palety/UI.
+        cacheId: 'ogrod-v7-1-2',
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         // Open-Meteo: cache responses for a short window so the app feels alive offline.
         runtimeCaching: [
           {
