@@ -1779,7 +1779,10 @@ export default function App() {
       {/* Onboarding — pokazywany RAZ na pierwszym otwarciu. Render na samym końcu
           żeby z-index 2000 nakładał się nad WSZYSTKO (modale 1000, fullscreen 1100). */}
       {showOnboarding && (
-        <Onboarding onClose={() => setShowOnboarding(false)} />
+        <Onboarding
+          onClose={() => setShowOnboarding(false)}
+          userName={session?.user?.user_metadata?.full_name || ''}
+        />
       )}
     </div>
   );

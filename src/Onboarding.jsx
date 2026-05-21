@@ -16,11 +16,15 @@ export function markOnboardingSeen() {
   catch { /* ignore */ }
 }
 
-export default function Onboarding({ onClose }) {
+export default function Onboarding({ onClose, userName }) {
   const handleStart = () => {
     markOnboardingSeen();
     onClose?.();
   };
+
+  // Pierwsze słowo z full_name (np. "Beata Kowalska" → "Beata"). Brak imienia → bez zwrotu.
+  const firstName = (userName || '').trim().split(/\s+/)[0] || '';
+  const greeting = firstName ? `Cześć, ${firstName}!` : 'Cześć!';
 
   return (
     <div
@@ -70,7 +74,7 @@ export default function Onboarding({ onClose }) {
                 marginBottom: '6px',
               }}
             >
-              Cześć Beato!
+              {greeting}
             </h2>
             <p
               className="font-serif italic"
