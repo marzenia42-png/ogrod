@@ -852,59 +852,54 @@ export default function App() {
 
         {/* Action bar — TYLKO na stronie głównej Ogrodu (CategoryGrid widok). */}
         {tab === 'glowna' && !selectedCategory && (
-          <div
-            className="px-3 py-2.5"
-            style={{
-              background: 'rgba(0,0,0,0.40)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              borderBottom: '0.5px solid var(--nav-border)',
-            }}
-          >
-            <div className="flex gap-2">
+          <div className="px-3 pt-2 pb-1">
+            <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() => setShowQuickAdd(true)}
-                className="flex-1 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 cursor-pointer flex items-center justify-center gap-1.5"
                 style={{
-                  padding: '11px 10px', borderRadius: 12,
-                  background: 'linear-gradient(135deg, rgba(201,169,110,0.20), rgba(201,169,110,0.06))',
-                  border: '1px solid var(--gold)',
-                  color: 'var(--gold)', fontSize: 13, fontWeight: 600,
+                  padding: '6px 10px', borderRadius: 999,
+                  background: 'rgba(76,175,80,0.10)',
+                  border: '0.5px solid rgba(76,175,80,0.35)',
+                  color: 'var(--leaf)', fontSize: 12, fontWeight: 500,
+                  letterSpacing: '0.2px',
                   touchAction: 'manipulation',
                 }}
               >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-                <span>Dodaj roślinę</span>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
+                <span>Roślina</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowSpacer(true)}
-                className="flex-1 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 cursor-pointer flex items-center justify-center gap-1.5"
                 style={{
-                  padding: '11px 10px', borderRadius: 12,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--gold)',
-                  color: 'var(--gold)', fontSize: 13, fontWeight: 600,
+                  padding: '6px 10px', borderRadius: 999,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '0.5px solid var(--border-soft)',
+                  color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500,
+                  letterSpacing: '0.2px',
                   touchAction: 'manipulation',
                 }}
               >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>📷</span>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>📷</span>
                 <span>Zdjęcie</span>
               </button>
               <button
                 type="button"
                 onClick={() => openFlora()}
-                className="flex-1 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 cursor-pointer flex items-center justify-center gap-1.5"
                 style={{
-                  padding: '11px 10px', borderRadius: 12,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--gold)',
-                  color: 'var(--gold)', fontSize: 13, fontWeight: 600,
+                  padding: '6px 10px', borderRadius: 999,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '0.5px solid var(--border-soft)',
+                  color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500,
+                  letterSpacing: '0.2px',
                   touchAction: 'manipulation',
                 }}
               >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>🌿</span>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>🌿</span>
                 <span>FLORA</span>
               </button>
             </div>
@@ -1045,6 +1040,19 @@ export default function App() {
               removedSet={removedSet}
               onPickCategory={setSelectedCategory}
             />
+            {/* FAB +Dodaj na ekranie głównym */}
+            <button
+              type="button"
+              onClick={() => setShowQuickAdd(true)}
+              aria-label="Dodaj roślinę"
+              className="fab-add"
+              title="Dodaj roślinę"
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
           </>
         )}
 

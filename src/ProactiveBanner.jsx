@@ -145,15 +145,31 @@ export default function ProactiveBanner({ plants = [], weather, currentMonth, on
         onClick={handleClick}
         className="w-full text-left cursor-pointer relative rounded-2xl px-4 py-3"
         style={{
-          background: 'var(--banner-bg)',
-          color: 'var(--banner-text)',
-          border: '1px solid rgba(0,0,0,0.10)',
-          boxShadow: '0 4px 14px rgba(201, 169, 110, 0.25)',
+          background: 'rgba(8, 16, 10, 0.55)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-leaf-soft)',
+          borderLeft: '3px solid var(--leaf)',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.30), 0 0 22px rgba(76, 175, 80, 0.12)',
           paddingRight: 40,
         }}
       >
-        <p style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.2 }}>{active.title}</p>
-        <p style={{ fontSize: 13, marginTop: 4, lineHeight: 1.35, opacity: 0.9 }}>{active.body}</p>
+        <p
+          className="font-serif italic"
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            lineHeight: 1.25,
+            color: 'var(--gold)',
+            letterSpacing: '0.2px',
+          }}
+        >
+          {active.title}
+        </p>
+        <p style={{ fontSize: 13, marginTop: 5, lineHeight: 1.45, color: 'var(--text-secondary)' }}>
+          {active.body}
+        </p>
         <button
           type="button"
           onClick={handleDismiss}
@@ -161,8 +177,9 @@ export default function ProactiveBanner({ plants = [], weather, currentMonth, on
           style={{
             position: 'absolute', top: 6, right: 6,
             width: 28, height: 28, borderRadius: '50%',
-            background: 'rgba(26, 18, 8, 0.10)', color: 'var(--banner-text)',
-            border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1,
+            background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)',
+            border: '0.5px solid var(--border-soft)',
+            cursor: 'pointer', fontSize: 16, lineHeight: 1,
           }}
         >×</button>
       </button>
