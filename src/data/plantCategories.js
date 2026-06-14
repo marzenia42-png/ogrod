@@ -16,7 +16,7 @@ export const PLANT_CATEGORIES = [
   { id: 'fruit-trees',   name: 'Drzewa owocowe',      emoji: '🍎', accent: '#E8A87C', image: fruitTreesBg },
   { id: 'fruit-shrubs',  name: 'Krzewy owocowe',      emoji: '🫐', accent: '#7B6CF6', image: fruitShrubsBg },
   { id: 'garden-trees',  name: 'Drzewa ogrodowe',     emoji: '🌳', accent: '#5B8DB8', image: gardenTreesBg },
-  { id: 'conifers',      name: 'Iglaki',              emoji: '🌲', accent: '#4A7C59', image: conifersBg },
+  { id: 'conifers',      name: 'Iglaki',              emoji: '🌲', accent: '#4E8E7E', image: conifersBg },
   { id: 'vegetables',    name: 'Warzywa i zioła',     emoji: '🥕', accent: '#56C596', image: vegetablesBg },
   { id: 'ornamental',    name: 'Rośliny ozdobne i kwiaty', emoji: '🌸', accent: '#E87CB3', image: ornamentalBg },
   { id: 'indoor',        name: 'Rośliny domowe',      emoji: '🪴', accent: '#C9A96E', image: indoorBg },

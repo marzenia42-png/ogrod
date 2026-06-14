@@ -339,7 +339,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
             height: '60px',
             borderRadius: '50%',
             border: 'none',
-            background: 'linear-gradient(135deg, #7bc97b 0%, #C9A96E 100%)',
+            background: 'linear-gradient(135deg, #7FC3B0 0%, #C9A96E 100%)',
             cursor: 'pointer',
             zIndex: 999,
             display: 'grid',
@@ -384,7 +384,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
           backgroundColor: 'var(--surface-flora)',
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',
-          border: '1px solid rgba(123, 201, 123, 0.25)',
+          border: '1px solid rgba(127, 195, 176, 0.25)',
           borderBottom: 'none',
           display: 'flex',
           flexDirection: 'column',
@@ -394,7 +394,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
       >
         <div
           className="flex items-center justify-between px-6 pt-5 pb-3"
-          style={{ borderBottom: '1px solid rgba(123, 201, 123, 0.15)' }}
+          style={{ borderBottom: '1px solid rgba(127, 195, 176, 0.15)' }}
         >
           <div className="flex items-center gap-3">
             <div
@@ -403,7 +403,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #7bc97b, #C9A96E)',
+                background: 'linear-gradient(135deg, #7FC3B0, #C9A96E)',
                 display: 'grid',
                 placeItems: 'center',
               }}
@@ -411,8 +411,8 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               <LeafIcon size={18} stroke="#0a0f0a" strokeWidth={1.8} />
             </div>
             <div>
-              <p className="font-serif italic" style={{ fontSize: '18px', color: '#7bc97b', lineHeight: 1.1 }}>FLORA</p>
-              <p style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(123, 201, 123, 0.5)', marginTop: '2px' }}>
+              <p className="font-serif italic" style={{ fontSize: '18px', color: '#7FC3B0', lineHeight: 1.1 }}>FLORA</p>
+              <p style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(127, 195, 176, 0.5)', marginTop: '2px' }}>
                 ogrodnik AI
               </p>
             </div>
@@ -432,8 +432,8 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                 aria-label={ttsOn ? 'Wyłącz czytanie na głos' : 'Czytaj odpowiedzi na głos'}
                 title={ttsOn ? 'Czytanie na głos: włączone' : 'Czytaj odpowiedzi na głos'}
                 style={{
-                  background: ttsOn ? 'rgba(123, 201, 123, 0.18)' : 'none',
-                  border: ttsOn ? '0.5px solid rgba(123, 201, 123, 0.5)' : '0.5px solid transparent',
+                  background: ttsOn ? 'rgba(127, 195, 176, 0.18)' : 'none',
+                  border: ttsOn ? '0.5px solid rgba(127, 195, 176, 0.5)' : '0.5px solid transparent',
                   borderRadius: '50%', width: 34, height: 34, padding: 0, cursor: 'pointer',
                   fontSize: 17, lineHeight: 1, display: 'grid', placeItems: 'center',
                 }}
@@ -445,7 +445,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Zamknij"
-              style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: 'rgba(123, 201, 123, 0.55)' }}
+              style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: 'rgba(127, 195, 176, 0.55)' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M6 6l12 12M6 18L18 6" />
@@ -476,15 +476,15 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                   className="font-serif italic px-4 py-2.5 rounded-2xl"
                   style={m.role === 'assistant'
                     ? {
-                        backgroundColor: 'rgba(123, 201, 123, 0.10)',
-                        border: '0.5px solid rgba(123, 201, 123, 0.30)',
+                        backgroundColor: 'rgba(127, 195, 176, 0.10)',
+                        border: '0.5px solid rgba(127, 195, 176, 0.30)',
                         color: 'var(--text-primary)',
                         fontSize: '14px',
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',
                       }
                     : {
-                        background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.22), rgba(201, 169, 110, 0.22))',
+                        background: 'linear-gradient(135deg, rgba(127, 195, 176, 0.22), rgba(201, 169, 110, 0.22))',
                         color: 'var(--text-primary)',
                         fontSize: '14px',
                         lineHeight: 1.55,
@@ -501,7 +501,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                     onClick={() => setShowPlantPicker(true)}
                     className="self-start cursor-pointer px-3 py-1.5 rounded-full text-[11px] tracking-wide"
                     style={{
-                      background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
+                      background: 'linear-gradient(135deg, #5FAE9A, #357F70)',
                       color: '#0a0f0a',
                       border: 'none',
                       fontWeight: 500,
@@ -515,12 +515,12 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                   <div
                     className="self-start rounded-xl p-3"
                     style={{
-                      background: 'rgba(76, 175, 80, 0.08)',
-                      border: '0.5px solid rgba(76, 175, 80, 0.35)',
+                      background: 'rgba(95, 174, 154, 0.08)',
+                      border: '0.5px solid rgba(95, 174, 154, 0.35)',
                       maxWidth: '100%',
                     }}
                   >
-                    <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
+                    <p className="text-[10px] tracking-[2px] uppercase mb-2" style={{ color: 'rgba(155, 224, 200, 0.7)' }}>
                       Do której rośliny?
                     </p>
                     <div
@@ -534,8 +534,8 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                           className="px-2.5 py-1 rounded-full text-[11px] cursor-pointer"
                           style={{
                             background: 'rgba(0,0,0,0.4)',
-                            border: '0.5px solid rgba(134, 239, 172, 0.3)',
-                            color: '#86efac',
+                            border: '0.5px solid rgba(155, 224, 200, 0.3)',
+                            color: '#9BE0C8',
                           }}
                         >
                           {p.name}
@@ -560,9 +560,9 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               className="font-serif italic px-4 py-2.5 rounded-2xl"
               style={{
                 alignSelf: 'flex-start',
-                backgroundColor: 'rgba(123, 201, 123, 0.08)',
-                border: '0.5px solid rgba(123, 201, 123, 0.22)',
-                color: 'rgba(123, 201, 123, 0.7)',
+                backgroundColor: 'rgba(127, 195, 176, 0.08)',
+                border: '0.5px solid rgba(127, 195, 176, 0.22)',
+                color: 'rgba(127, 195, 176, 0.7)',
                 fontSize: '14px',
               }}
             >
@@ -588,7 +588,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
         <div
           className="px-4 pt-3"
           style={{
-            borderTop: '1px solid rgba(123, 201, 123, 0.15)',
+            borderTop: '1px solid rgba(127, 195, 176, 0.15)',
             paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
           }}
         >
@@ -596,7 +596,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
           {imagePreview && (
             <div
               className="flex flex-col gap-1.5 mb-2 p-2 rounded-xl"
-              style={{ background: 'rgba(123, 201, 123, 0.08)', border: '0.5px solid rgba(123, 201, 123, 0.25)' }}
+              style={{ background: 'rgba(127, 195, 176, 0.08)', border: '0.5px solid rgba(127, 195, 176, 0.25)' }}
             >
               <div className="flex items-center gap-2">
                 <img
@@ -624,12 +624,12 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                   className="flex-1 py-1.5 rounded-full text-[11px] cursor-pointer"
                   style={{
                     background: photoMode === 'identify'
-                      ? 'linear-gradient(135deg, rgba(123,201,123,0.35), rgba(76,175,80,0.20))'
+                      ? 'linear-gradient(135deg, rgba(127,195,176,0.35), rgba(95,174,154,0.20))'
                       : 'transparent',
                     border: photoMode === 'identify'
-                      ? '0.5px solid rgba(76, 175, 80, 0.6)'
-                      : '0.5px solid rgba(123, 201, 123, 0.25)',
-                    color: photoMode === 'identify' ? '#2e7d32' : 'var(--text-secondary)',
+                      ? '0.5px solid rgba(95, 174, 154, 0.6)'
+                      : '0.5px solid rgba(127, 195, 176, 0.25)',
+                    color: photoMode === 'identify' ? '#357F70' : 'var(--text-secondary)',
                     fontWeight: photoMode === 'identify' ? 600 : 400,
                     touchAction: 'manipulation',
                   }}
@@ -646,7 +646,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                       : 'transparent',
                     border: photoMode === 'diagnose'
                       ? '0.5px solid rgba(239, 68, 68, 0.5)'
-                      : '0.5px solid rgba(123, 201, 123, 0.25)',
+                      : '0.5px solid rgba(127, 195, 176, 0.25)',
                     color: photoMode === 'diagnose' ? '#c62828' : 'var(--text-secondary)',
                     fontWeight: photoMode === 'diagnose' ? 600 : 400,
                     touchAction: 'manipulation',
@@ -668,7 +668,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
 
           <div
             className="flex items-center gap-2 rounded-full pl-1.5 pr-1.5 py-1"
-            style={{ backgroundColor: 'var(--surface-faint)', border: '1px solid rgba(123, 201, 123, 0.30)' }}
+            style={{ backgroundColor: 'var(--surface-faint)', border: '1px solid rgba(127, 195, 176, 0.30)' }}
           >
             {/* Camera button — visibly first (left of input), emoji for guaranteed mobile rendering. */}
             <button
@@ -678,8 +678,8 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               aria-label="Dodaj zdjęcie do diagnozy"
               title="Dodaj zdjęcie do diagnozy"
               style={{
-                background: 'linear-gradient(135deg, rgba(123, 201, 123, 0.30), rgba(123, 201, 123, 0.18))',
-                border: '0.5px solid rgba(123, 201, 123, 0.55)',
+                background: 'linear-gradient(135deg, rgba(127, 195, 176, 0.30), rgba(127, 195, 176, 0.18))',
+                border: '0.5px solid rgba(127, 195, 176, 0.55)',
                 width: 40,
                 height: 40,
                 minWidth: 40,
@@ -712,8 +712,8 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
                 style={{
                   background: listening
                     ? 'linear-gradient(135deg, rgba(239,68,68,0.85), rgba(220,38,38,0.7))'
-                    : 'linear-gradient(135deg, rgba(123, 201, 123, 0.30), rgba(123, 201, 123, 0.18))',
-                  border: listening ? '0.5px solid rgba(239,68,68,0.7)' : '0.5px solid rgba(123, 201, 123, 0.55)',
+                    : 'linear-gradient(135deg, rgba(127, 195, 176, 0.30), rgba(127, 195, 176, 0.18))',
+                  border: listening ? '0.5px solid rgba(239,68,68,0.7)' : '0.5px solid rgba(127, 195, 176, 0.55)',
                   width: 40, height: 40, minWidth: 40, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0,
@@ -745,7 +745,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               disabled={(!input.trim() && !imageData) || loading}
               aria-label="Wyślij"
               style={{
-                background: 'linear-gradient(135deg, #7bc97b, #C9A96E)',
+                background: 'linear-gradient(135deg, #7FC3B0, #C9A96E)',
                 border: 'none',
                 width: 40,
                 height: 40,
@@ -777,8 +777,8 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
             transform: 'translateX(-50%)',
             bottom: 'calc(20px + env(safe-area-inset-bottom))',
             backgroundColor: '#0a0f0a',
-            border: '1px solid rgba(76, 175, 80, 0.5)',
-            color: '#86efac',
+            border: '1px solid rgba(95, 174, 154, 0.5)',
+            color: '#9BE0C8',
             zIndex: 1200,
           }}
         >

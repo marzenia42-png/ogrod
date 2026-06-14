@@ -7,7 +7,7 @@ export const MONTHS_SHORT = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'S
 
 export const CATEGORIES = [
   { key: 'chemia',    label: '🧪 Chemia',    border: '#ef4444', bg: '#3b1a1a', text: '#fca5a5' },
-  { key: 'naturalny', label: '🌿 Naturalny', border: '#22c55e', bg: '#1a2e1a', text: '#86efac' },
+  { key: 'naturalny', label: '🌿 Naturalny', border: '#22c55e', bg: '#1a2e1a', text: '#9BE0C8' },
   { key: 'nawozenie', label: '🪴 Nawożenie', border: '#84cc16', bg: '#1a2218', text: '#bef264' },
   { key: 'ciecie',    label: '✂️ Cięcie',    border: '#818cf8', bg: '#1a1a2e', text: '#c7d2fe' },
   { key: 'ochrona',   label: '🛡️ Ochrona',   border: '#f97316', bg: '#2a1a10', text: '#fdba74' },

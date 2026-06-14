@@ -209,7 +209,7 @@ export default function Diary() {
               className="aspect-square rounded-lg flex flex-col items-center justify-center cursor-pointer relative"
               style={{
                 background: today
-                  ? 'linear-gradient(135deg, rgba(201, 169, 110, 0.18), rgba(123, 201, 123, 0.12))'
+                  ? 'linear-gradient(135deg, rgba(201, 169, 110, 0.18), rgba(127, 195, 176, 0.12))'
                   : holiday
                   ? 'rgba(239, 68, 68, 0.10)'
                   : has

@@ -107,7 +107,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
   return (
     <div className="px-5 pb-10">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
+        <p className="text-[11px] tracking-[2px] uppercase" style={{ color: 'rgba(155, 224, 200, 0.7)' }}>
           Środki ochrony i pielęgnacji
         </p>
         <button
@@ -115,7 +115,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
           onClick={() => setShowAdd(true)}
           className="text-[11px] tracking-wide cursor-pointer px-3 py-1 rounded-full"
           style={{
-            background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
+            background: 'linear-gradient(135deg, #5FAE9A, #357F70)',
             color: '#0a0f0a',
             border: 'none',
             fontWeight: 500,
@@ -142,9 +142,9 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               onClick={() => setFilter(t.key)}
               className="shrink-0 px-3 py-1.5 rounded-full text-[11px] tracking-wide cursor-pointer"
               style={{
-                background: active ? 'rgba(76, 175, 80, 0.25)' : 'var(--surface-card-soft)',
-                border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
-                color: active ? '#86efac' : 'var(--text-muted)',
+                background: active ? 'rgba(95, 174, 154, 0.25)' : 'var(--surface-card-soft)',
+                border: active ? '0.5px solid #5FAE9A' : '0.5px solid rgba(155, 224, 200, 0.2)',
+                color: active ? '#9BE0C8' : 'var(--text-muted)',
                 fontWeight: active ? 500 : 400,
               }}
             >
@@ -180,15 +180,15 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 style={{ background: 'none', border: 'none' }}
               >
                 <div className="flex-1 min-w-0">
-                  <span className="font-serif italic block truncate" style={{ color: '#86efac', fontSize: '16px' }}>
+                  <span className="font-serif italic block truncate" style={{ color: '#9BE0C8', fontSize: '16px' }}>
                     🌿 {r.name}
-                    {r.custom && <span className="ml-2 text-[10px] font-normal" style={{ color: 'rgba(134,239,172,0.5)' }}>własna</span>}
+                    {r.custom && <span className="ml-2 text-[10px] font-normal" style={{ color: 'rgba(155,224,200,0.5)' }}>własna</span>}
                   </span>
-                  <span className="text-[10px] tracking-[2px] uppercase" style={{ color: 'rgba(134,239,172,0.6)' }}>
+                  <span className="text-[10px] tracking-[2px] uppercase" style={{ color: 'rgba(155,224,200,0.6)' }}>
                     {typeMeta.label}
                   </span>
                 </div>
-                <span style={{ color: 'rgba(134, 239, 172, 0.6)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s ease' }}>
+                <span style={{ color: 'rgba(155, 224, 200, 0.6)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s ease' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 9l6 6 6-6" />
                   </svg>
@@ -196,17 +196,17 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               </button>
 
               {open && (
-                <div className="px-4 pb-4 pt-1 flex flex-col gap-3" style={{ borderTop: '0.5px solid rgba(134, 239, 172, 0.2)' }}>
+                <div className="px-4 pb-4 pt-1 flex flex-col gap-3" style={{ borderTop: '0.5px solid rgba(155, 224, 200, 0.2)' }}>
                   {r.photoData && (
                     <img
                       src={r.photoData}
                       alt=""
-                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '0.5px solid rgba(134, 239, 172, 0.25)' }}
+                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '0.5px solid rgba(155, 224, 200, 0.25)' }}
                     />
                   )}
                   {r.target && (
                     <div>
-                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                         Na co działa
                       </p>
                       <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -217,7 +217,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
                   {r.appliesTo && (
                     <div>
-                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                         Zastosowanie
                       </p>
                       <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -228,7 +228,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
                   {r.frequency && (
                     <div>
-                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                         Częstotliwość
                       </p>
                       <p className="text-[13.5px] font-serif italic leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -238,7 +238,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                   )}
 
                   <div>
-                    <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                    <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                       Przygotowanie
                     </p>
                     <ol className="flex flex-col gap-1.5">
@@ -248,7 +248,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                           className="text-[13.5px] font-serif italic leading-relaxed flex gap-2"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          <span style={{ color: '#86efac', fontWeight: 500, minWidth: '20px' }}>{i + 1}.</span>
+                          <span style={{ color: '#9BE0C8', fontWeight: 500, minWidth: '20px' }}>{i + 1}.</span>
                           <span>{s}</span>
                         </li>
                       ))}
@@ -257,7 +257,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
                   {r.months?.length > 0 && (
                     <div>
-                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                      <p className="text-[10px] tracking-[2px] uppercase mb-1" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                         Miesiące przypomnień
                       </p>
                       <p className="text-[13px] font-serif italic" style={{ color: 'var(--text-secondary)' }}>
@@ -293,7 +293,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                         type="button"
                         onClick={() => handleEdit({ ...r, id: undefined, custom: true })}
                         className="cursor-pointer"
-                        style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(123,201,123,0.10)', border: '0.5px solid rgba(123,201,123,0.35)', color: '#7bc97b', fontSize: 12 }}
+                        style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(127,195,176,0.10)', border: '0.5px solid rgba(127,195,176,0.35)', color: '#7FC3B0', fontSize: 12 }}
                         aria-label="Skopiuj i edytuj"
                       >
                         ✏️ Skopiuj i edytuj
@@ -309,9 +309,9 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
 
       <div
         className="mt-8 rounded-[14px] p-4"
-        style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid rgba(134, 239, 172, 0.35)', backdropFilter: 'blur(8px)' }}
+        style={{ backgroundColor: 'var(--surface-card)', border: '0.5px solid rgba(155, 224, 200, 0.35)', backdropFilter: 'blur(8px)' }}
       >
-        <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(134, 239, 172, 0.7)' }}>
+        <p className="text-[11px] tracking-[2px] uppercase mb-3" style={{ color: 'rgba(155, 224, 200, 0.7)' }}>
           Zasady oprysków naturalnych
         </p>
         <ul className="flex flex-col gap-2">
@@ -321,7 +321,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               className="text-[13px] font-serif italic leading-relaxed flex gap-2"
               style={{ color: 'var(--text-secondary)' }}
             >
-              <span style={{ color: '#86efac', marginTop: '6px' }}>•</span>
+              <span style={{ color: '#9BE0C8', marginTop: '6px' }}>•</span>
               <span>{rule}</span>
             </li>
           ))}
@@ -341,12 +341,12 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               maxWidth: '480px',
               maxHeight: '90vh',
               backgroundColor: 'var(--surface-modal)',
-              border: '1px solid rgba(134, 239, 172, 0.35)',
+              border: '1px solid rgba(155, 224, 200, 0.35)',
               borderRadius: '20px',
             }}
           >
-            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: '0.5px solid rgba(134, 239, 172, 0.2)' }}>
-              <h3 className="font-serif italic" style={{ fontSize: '20px', color: '#86efac' }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: '0.5px solid rgba(155, 224, 200, 0.2)' }}>
+              <h3 className="font-serif italic" style={{ fontSize: '20px', color: '#9BE0C8' }}>
                 {editingId ? 'Edytuj recepturę' : 'Twoja receptura'}
               </h3>
               <button
@@ -369,11 +369,11 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 placeholder="Nazwa (np. Macerat z mniszka)"
                 autoFocus
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
+                style={{ border: '0.5px solid rgba(155, 224, 200, 0.25)', color: 'var(--text-primary)' }}
               />
 
               <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>Typ</p>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>Typ</p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {RECIPE_TYPES.map((t) => {
                     const active = draft.type === t.key;
@@ -384,9 +384,9 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                         onClick={() => setDraft({ ...draft, type: t.key })}
                         className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
                         style={{
-                          background: active ? 'rgba(76, 175, 80, 0.25)' : 'var(--surface-faint)',
-                          border: active ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
-                          color: active ? '#86efac' : 'var(--text-secondary)',
+                          background: active ? 'rgba(95, 174, 154, 0.25)' : 'var(--surface-faint)',
+                          border: active ? '0.5px solid #5FAE9A' : '0.5px solid rgba(155, 224, 200, 0.2)',
+                          color: active ? '#9BE0C8' : 'var(--text-secondary)',
                           fontWeight: active ? 500 : 400,
                         }}
                       >
@@ -403,7 +403,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 onChange={(e) => setDraft({ ...draft, target: e.target.value })}
                 placeholder="Na co działa (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
+                style={{ border: '0.5px solid rgba(155, 224, 200, 0.25)', color: 'var(--text-primary)' }}
               />
               <input
                 type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
@@ -411,7 +411,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 onChange={(e) => setDraft({ ...draft, appliesTo: e.target.value })}
                 placeholder="Zastosowanie — na które rośliny (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
+                style={{ border: '0.5px solid rgba(155, 224, 200, 0.25)', color: 'var(--text-primary)' }}
               />
               <input
                 type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
@@ -419,11 +419,11 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 onChange={(e) => setDraft({ ...draft, frequency: e.target.value })}
                 placeholder="Częstotliwość (opcjonalnie)"
                 className="bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
+                style={{ border: '0.5px solid rgba(155, 224, 200, 0.25)', color: 'var(--text-primary)' }}
               />
 
               <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                   Miesiące przypomnień (opcjonalne)
                 </p>
                 <p className="text-[11px] mb-2 font-serif italic" style={{ color: 'var(--text-muted)' }}>
@@ -440,9 +440,9 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                         onClick={() => toggleDraftMonth(month)}
                         className="py-1.5 rounded-md text-[11px] cursor-pointer"
                         style={{
-                          border: selected ? '0.5px solid #4CAF50' : '0.5px solid rgba(134, 239, 172, 0.2)',
-                          background: selected ? 'rgba(76, 175, 80, 0.20)' : 'transparent',
-                          color: selected ? '#86efac' : 'var(--text-muted)',
+                          border: selected ? '0.5px solid #5FAE9A' : '0.5px solid rgba(155, 224, 200, 0.2)',
+                          background: selected ? 'rgba(95, 174, 154, 0.20)' : 'transparent',
+                          color: selected ? '#9BE0C8' : 'var(--text-muted)',
                           fontWeight: selected ? 500 : 400,
                         }}
                       >
@@ -454,7 +454,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
               </div>
 
               <div>
-                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>Zdjęcie (opcjonalne)</p>
+                <p className="text-[10px] tracking-[2px] uppercase mb-1.5" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>Zdjęcie (opcjonalne)</p>
                 <input
                   ref={photoRef}
                   type="file"
@@ -463,7 +463,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                   className="hidden"
                 />
                 {draft.photoData ? (
-                  <div className="relative rounded-lg overflow-hidden" style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)' }}>
+                  <div className="relative rounded-lg overflow-hidden" style={{ border: '0.5px solid rgba(155, 224, 200, 0.25)' }}>
                     <img src={draft.photoData} alt="" style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
                     <button
                       type="button"
@@ -480,26 +480,26 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                     type="button"
                     onClick={() => photoRef.current?.click()}
                     className="w-full py-2.5 rounded-lg text-[12px] cursor-pointer"
-                    style={{ background: 'none', border: '0.5px dashed rgba(134, 239, 172, 0.4)', color: 'rgba(134, 239, 172, 0.85)' }}
+                    style={{ background: 'none', border: '0.5px dashed rgba(155, 224, 200, 0.4)', color: 'rgba(155, 224, 200, 0.85)' }}
                   >
                     📷 Wybierz / zrób zdjęcie
                   </button>
                 )}
               </div>
 
-              <p className="text-[10px] tracking-[2px] uppercase mt-1" style={{ color: 'rgba(134, 239, 172, 0.55)' }}>
+              <p className="text-[10px] tracking-[2px] uppercase mt-1" style={{ color: 'rgba(155, 224, 200, 0.55)' }}>
                 Kroki
               </p>
               {draft.steps.map((s, i) => (
                 <div key={i} className="flex gap-2">
-                  <span className="font-serif italic" style={{ color: '#86efac', fontWeight: 500, minWidth: '20px', paddingTop: '8px' }}>{i + 1}.</span>
+                  <span className="font-serif italic" style={{ color: '#9BE0C8', fontWeight: 500, minWidth: '20px', paddingTop: '8px' }}>{i + 1}.</span>
                   <input
                     type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
                     value={s}
                     onChange={(e) => handleStepChange(i, e.target.value)}
                     placeholder="Krok..."
                     className="flex-1 bg-transparent text-[13px] font-serif italic px-3 py-2 rounded-lg outline-none"
-                    style={{ border: '0.5px solid rgba(134, 239, 172, 0.25)', color: 'var(--text-primary)' }}
+                    style={{ border: '0.5px solid rgba(155, 224, 200, 0.25)', color: 'var(--text-primary)' }}
                   />
                   {draft.steps.length > 1 && (
                     <button
@@ -518,7 +518,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                 type="button"
                 onClick={handleAddStep}
                 className="py-2 rounded-lg text-[12px] cursor-pointer"
-                style={{ background: 'none', border: '0.5px dashed rgba(134, 239, 172, 0.4)', color: '#86efac' }}
+                style={{ background: 'none', border: '0.5px dashed rgba(155, 224, 200, 0.4)', color: '#9BE0C8' }}
               >
                 + dodaj krok
               </button>
@@ -538,7 +538,7 @@ export default function Recipes({ customRecipes = [], onRecipesChange = () => {}
                   disabled={!canSave}
                   className="flex-1 py-2 rounded-full text-[12px] cursor-pointer"
                   style={{
-                    background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
+                    background: 'linear-gradient(135deg, #5FAE9A, #357F70)',
                     color: '#0a0f0a',
                     border: 'none',
                     fontWeight: 500,

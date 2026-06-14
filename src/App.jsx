@@ -810,7 +810,7 @@ export default function App() {
                   className="shrink-0 cursor-pointer flex items-center gap-1.5"
                   style={{
                     padding: '8px 13px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(123,201,123,0.12))' : 'transparent',
+                    background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(127,195,176,0.12))' : 'transparent',
                     border: active ? '1px solid var(--gold)' : '0.5px solid transparent',
                     color: active ? 'var(--gold)' : 'var(--text-secondary)',
                     fontWeight: active ? 600 : 500,
@@ -861,8 +861,8 @@ export default function App() {
                 className="flex-1 cursor-pointer flex items-center justify-center gap-1.5"
                 style={{
                   padding: '6px 10px', borderRadius: 999,
-                  background: 'rgba(76,175,80,0.10)',
-                  border: '0.5px solid rgba(76,175,80,0.35)',
+                  background: 'rgba(95,174,154,0.10)',
+                  border: '0.5px solid rgba(95,174,154,0.35)',
                   color: 'var(--leaf)', fontSize: 12, fontWeight: 500,
                   letterSpacing: '0.2px',
                   touchAction: 'manipulation',
@@ -1003,7 +1003,7 @@ export default function App() {
                     {tab === 'kalendarz' && drySprayWindow && !humidityAlert && (
                       <div
                         className="mt-3 px-3 py-2 rounded-lg text-[12px] font-serif italic"
-                        style={{ backgroundColor: 'rgba(76, 175, 80, 0.10)', border: '1px solid rgba(76, 175, 80, 0.35)', color: '#86efac' }}
+                        style={{ backgroundColor: 'rgba(95, 174, 154, 0.10)', border: '1px solid rgba(95, 174, 154, 0.35)', color: '#9BE0C8' }}
                       >
                         🌿 Dobry czas na oprysk — najbliższe 6h bez deszczu.
                       </div>
@@ -1075,7 +1075,7 @@ export default function App() {
                       style={{
                         minWidth: 56,
                         border: isSelected ? `1px solid var(--gold)` : '0.5px solid var(--border-soft)',
-                        background: isSelected ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(123,201,123,0.12))' : 'var(--surface-card-soft)',
+                        background: isSelected ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(127,195,176,0.12))' : 'var(--surface-card-soft)',
                         color: isSelected ? 'var(--gold)' : isCurrent ? 'var(--gold-label-strong)' : 'var(--text-muted)',
                         fontWeight: isSelected ? 500 : 400,
                         backdropFilter: 'blur(6px)',
@@ -1634,9 +1634,9 @@ export default function App() {
                           onClick={() => setProfileDraft({ ...profileDraft, preferences: pref.id })}
                           className="py-1.5 px-2 rounded-md text-[11px] cursor-pointer"
                           style={{
-                            background: active ? 'rgba(76, 175, 80, 0.20)' : 'transparent',
-                            border: active ? '0.5px solid rgba(76, 175, 80, 0.5)' : '0.5px solid var(--border-soft)',
-                            color: active ? '#2e7d32' : 'var(--text-secondary)',
+                            background: active ? 'rgba(95, 174, 154, 0.20)' : 'transparent',
+                            border: active ? '0.5px solid rgba(95, 174, 154, 0.5)' : '0.5px solid var(--border-soft)',
+                            color: active ? '#357F70' : 'var(--text-secondary)',
                             fontWeight: active ? 500 : 400,
                           }}
                         >

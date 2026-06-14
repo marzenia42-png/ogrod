@@ -145,13 +145,13 @@ export default function ProactiveBanner({ plants = [], weather, currentMonth, on
         onClick={handleClick}
         className="w-full text-left cursor-pointer relative rounded-2xl px-4 py-3"
         style={{
-          background: 'rgba(8, 16, 10, 0.55)',
+          background: 'rgba(7, 18, 17, 0.55)',
           backdropFilter: 'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
           color: 'var(--text-primary)',
           border: '1px solid var(--border-leaf-soft)',
           borderLeft: '3px solid var(--leaf)',
-          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.30), 0 0 22px rgba(76, 175, 80, 0.12)',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.30), 0 0 22px rgba(95, 174, 154, 0.12)',
           paddingRight: 40,
         }}
       >

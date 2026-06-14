@@ -59,8 +59,8 @@ export default function Onboarding({ onClose, userName }) {
                 width: 72,
                 height: 72,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #7bc97b 0%, #C9A96E 100%)',
-                boxShadow: '0 4px 14px rgba(123, 201, 123, 0.35)',
+                background: 'linear-gradient(135deg, #7FC3B0 0%, #C9A96E 100%)',
+                boxShadow: '0 4px 14px rgba(127, 195, 176, 0.35)',
               }}
             >
               <span style={{ fontSize: 36, lineHeight: 1 }}>🌿</span>
@@ -108,7 +108,7 @@ export default function Onboarding({ onClose, userName }) {
               title="Pytaj FLORA o wszystko"
               text={(
                 <>
-                  Zielony liść w prawym dolnym rogu to <strong style={{ color: '#7bc97b' }}>FLORA</strong> — asystentka AI.
+                  Zielony liść w prawym dolnym rogu to <strong style={{ color: '#7FC3B0' }}>FLORA</strong> — asystentka AI.
                   Możesz zapytać o cokolwiek lub wysłać jej zdjęcie:
                   <em> „Co to za roślina?"</em>, <em>„Co tu jest chore?"</em>, <em>„Kiedy podlać?"</em>.
                 </>

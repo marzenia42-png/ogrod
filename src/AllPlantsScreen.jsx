@@ -127,7 +127,7 @@ export default function AllPlantsScreen({
                 className="cursor-pointer"
                 style={{
                   flex: 1, padding: '8px 12px', borderRadius: 999, fontSize: 14,
-                  background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(123,201,123,0.12))' : 'var(--surface-card-soft)',
+                  background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(127,195,176,0.12))' : 'var(--surface-card-soft)',
                   border: active ? '1px solid var(--gold)' : '0.5px solid var(--border-soft)',
                   color: active ? 'var(--gold)' : 'var(--text-secondary)',
                   fontWeight: active ? 600 : 500,

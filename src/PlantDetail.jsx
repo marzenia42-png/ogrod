@@ -419,7 +419,7 @@ export default function PlantDetail({
               type="button"
               onClick={() => onOpenFlora?.(`Powiedz mi więcej o tej roślinie: ${plantName}.\nMam już swoje notatki o wysokości, podlewaniu, glebie itd. — uzupełnij wiedzą botaniczną i podpowiedz co przeoczyłem.`)}
               className="w-full text-left cursor-pointer rounded-2xl px-4 py-3"
-              style={{ background: 'linear-gradient(135deg, rgba(123,201,123,0.18), rgba(201,169,110,0.10))', border: '1px solid rgba(123,201,123,0.40)' }}
+              style={{ background: 'linear-gradient(135deg, rgba(127,195,176,0.18), rgba(201,169,110,0.10))', border: '1px solid rgba(127,195,176,0.40)' }}
             >
               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--gold)' }}>🌿 Mam więcej informacji o tej roślinie</p>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Zapytaj mnie — dopowiem botanikę i pielęgnację.</p>
@@ -555,7 +555,7 @@ export default function PlantDetail({
                     onClick={() => setActiveYear(y)}
                     style={{
                       padding: '6px 14px', borderRadius: 999, fontSize: 13,
-                      background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.30), rgba(123,201,123,0.10))' : 'var(--surface-faint)',
+                      background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.30), rgba(127,195,176,0.10))' : 'var(--surface-faint)',
                       color: active ? 'var(--gold)' : 'var(--text-muted)',
                       border: active ? '1px solid var(--gold)' : '0.5px solid var(--border-soft)',
                       fontWeight: active ? 600 : 400, fontVariantNumeric: 'tabular-nums', cursor: 'pointer', whiteSpace: 'nowrap',

@@ -267,9 +267,9 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                 onClick={() => { setIdentifyMode(true); }}
                 className="w-full py-3 rounded-xl cursor-pointer mb-4 flex items-center justify-center gap-2"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(123,201,123,0.18), rgba(76,175,80,0.10))',
-                  border: '0.5px dashed rgba(76, 175, 80, 0.45)',
-                  color: '#2e7d32',
+                  background: 'linear-gradient(135deg, rgba(127,195,176,0.18), rgba(95,174,154,0.10))',
+                  border: '0.5px dashed rgba(95, 174, 154, 0.45)',
+                  color: '#357F70',
                   fontSize: 13,
                   fontWeight: 500,
                 }}
@@ -288,7 +288,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                       className="rounded-xl py-5 flex flex-col items-center justify-center gap-1.5 cursor-pointer"
                       style={{
                         background: active
-                          ? 'linear-gradient(135deg, rgba(201,169,110,0.25), rgba(123,201,123,0.15))'
+                          ? 'linear-gradient(135deg, rgba(201,169,110,0.25), rgba(127,195,176,0.15))'
                           : 'var(--surface-faint)',
                         border: active ? `1px solid var(--gold)` : '0.5px solid var(--border-soft)',
                         touchAction: 'manipulation',
@@ -322,9 +322,9 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     onClick={() => photoRef.current?.click()}
                     className="w-full py-6 rounded-xl cursor-pointer"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(123,201,123,0.25), rgba(76,175,80,0.15))',
-                      border: '0.5px solid rgba(76, 175, 80, 0.45)',
-                      color: '#2e7d32',
+                      background: 'linear-gradient(135deg, rgba(127,195,176,0.25), rgba(95,174,154,0.15))',
+                      border: '0.5px solid rgba(95, 174, 154, 0.45)',
+                      color: '#357F70',
                       fontSize: 15,
                       fontWeight: 500,
                     }}
@@ -364,7 +364,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                         onClick={handleIdentify}
                         className="w-full py-3 rounded-full cursor-pointer"
                         style={{
-                          background: 'linear-gradient(135deg, #7bc97b, #4CAF50)',
+                          background: 'linear-gradient(135deg, #7FC3B0, #5FAE9A)',
                           color: '#0a0f0a',
                           border: 'none',
                           fontWeight: 600,
@@ -387,10 +387,10 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                   {identifying && (
                     <div
                       className="py-4 rounded-xl flex items-center justify-center gap-3"
-                      style={{ background: 'rgba(76, 175, 80, 0.08)', border: '0.5px solid rgba(76, 175, 80, 0.25)' }}
+                      style={{ background: 'rgba(95, 174, 154, 0.08)', border: '0.5px solid rgba(95, 174, 154, 0.25)' }}
                     >
                       <span style={{ fontSize: 24 }}>🌿</span>
-                      <span className="font-serif italic" style={{ color: '#2e7d32', fontSize: 14 }}>
+                      <span className="font-serif italic" style={{ color: '#357F70', fontSize: 14 }}>
                         FLORA myśli...
                       </span>
                     </div>
@@ -400,7 +400,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     <div>
                       <p
                         className="text-[11px] tracking-[2px] uppercase mb-2"
-                        style={{ color: 'rgba(46, 125, 50, 0.8)' }}
+                        style={{ color: 'rgba(53, 127, 112, 0.8)' }}
                       >
                         🌿 FLORA proponuje
                       </p>
@@ -416,10 +416,10 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                               className="text-left rounded-lg px-3 py-3 cursor-pointer flex items-center gap-3"
                               style={{
                                 background: i === 0
-                                  ? 'linear-gradient(135deg, rgba(123,201,123,0.18), rgba(76,175,80,0.10))'
+                                  ? 'linear-gradient(135deg, rgba(127,195,176,0.18), rgba(95,174,154,0.10))'
                                   : 'var(--surface-faint)',
                                 border: i === 0
-                                  ? '0.5px solid rgba(76, 175, 80, 0.45)'
+                                  ? '0.5px solid rgba(95, 174, 154, 0.45)'
                                   : '0.5px solid var(--border-soft)',
                                 touchAction: 'manipulation',
                               }}
@@ -440,7 +440,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                               <span
                                 style={{
                                   fontSize: 11,
-                                  color: conf >= 60 ? '#2e7d32' : conf >= 30 ? 'var(--gold-label-strong)' : 'var(--text-muted)',
+                                  color: conf >= 60 ? '#357F70' : conf >= 30 ? 'var(--gold-label-strong)' : 'var(--text-muted)',
                                   fontWeight: 500,
                                   minWidth: 44,
                                   textAlign: 'right',
@@ -503,7 +503,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                     className="text-left rounded-xl px-4 py-3 cursor-pointer"
                     style={{
                       background: active
-                        ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(123,201,123,0.14))'
+                        ? 'linear-gradient(135deg, rgba(201,169,110,0.28), rgba(127,195,176,0.14))'
                         : 'var(--wizard-card-bg, var(--surface-card))',
                       border: active ? `2px solid var(--gold)` : '2px solid var(--border-medium)',
                       color: 'var(--text-primary)',
@@ -694,8 +694,8 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                 <div
                   className="mt-4 rounded-xl p-3.5"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(123,201,123,0.18), rgba(201,169,110,0.10))',
-                    border: '1px solid rgba(123,201,123,0.40)',
+                    background: 'linear-gradient(135deg, rgba(127,195,176,0.18), rgba(201,169,110,0.10))',
+                    border: '1px solid rgba(127,195,176,0.40)',
                   }}
                 >
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -711,10 +711,10 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
                       style={{
                         flex: 1, padding: '10px 12px', borderRadius: 10, fontSize: 14,
                         background: wantsFloraSpec === true
-                          ? 'linear-gradient(135deg, #7bc97b, #4CAF50)'
-                          : 'rgba(123,201,123,0.15)',
-                        color: wantsFloraSpec === true ? '#0a0f0a' : '#2e7d32',
-                        border: wantsFloraSpec === true ? 'none' : '1px solid rgba(76,175,80,0.45)',
+                          ? 'linear-gradient(135deg, #7FC3B0, #5FAE9A)'
+                          : 'rgba(127,195,176,0.15)',
+                        color: wantsFloraSpec === true ? '#0a0f0a' : '#357F70',
+                        border: wantsFloraSpec === true ? 'none' : '1px solid rgba(95,174,154,0.45)',
                         fontWeight: 600, cursor: 'pointer',
                       }}
                     >Tak, uzupełnij</button>
@@ -783,7 +783,7 @@ export default function AddPlantWizard({ onClose, onSave, preseed = null }) {
               onClick={handleSave}
               className="flex-1 py-2.5 rounded-full text-[13px] cursor-pointer"
               style={{
-                background: 'linear-gradient(135deg, #4CAF50, #2e7d32)',
+                background: 'linear-gradient(135deg, #5FAE9A, #357F70)',
                 color: '#0a0f0a',
                 border: 'none',
                 fontWeight: 600,

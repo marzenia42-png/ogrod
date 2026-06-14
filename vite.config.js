@@ -32,8 +32,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // v7.1.2 — wymusić invalidację starego cache po zmianach palety/UI.
-        cacheId: 'ogrod-v7-1-2',
+        // v8.1 — paleta Calm (teal/szałwia + gold); wymuś invalidację cache.
+        cacheId: 'ogrod-v8-1-calm',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
