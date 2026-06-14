@@ -141,6 +141,64 @@ export function deleteEvent(plantId, eventId) {
   return next;
 }
 
+// Historia diagnoz FLORA — zdjęcie problemu + diagnoza AI + data.
+// Pozwala śledzić postęp leczenia w czasie i porównać "przed/po".
+// Miniatury kompresowane mocniej niż zwykłe zdjęcia (oszczędność localStorage).
+const DIAGNOSIS_PREFIX = 'garden-plant-diagnoses-';
+export const DIAGNOSIS_LIMIT = 8;
+
+export function loadDiagnoses(plantId) {
+  return readArray(DIAGNOSIS_PREFIX + plantId);
+}
+
+// Zmniejsza dataURL do miniatury (mniej miejsca). Zwraca oryginał, jeśli się nie uda.
+export async function shrinkDataUrl(dataUrl, maxDim = 640, quality = 0.6) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch { resolve(dataUrl); }
+  });
+}
+
+// Dodaje wpis diagnozy. dataUrl = pełny data URL zdjęcia (zostanie zmniejszony).
+// Przy braku miejsca w localStorage usuwa najstarsze wpisy aż się zmieści.
+export async function addDiagnosis(plantId, { dataUrl, text }) {
+  const thumb = dataUrl ? await shrinkDataUrl(dataUrl) : null;
+  const entry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    date: new Date().toISOString().slice(0, 10),
+    dataUrl: thumb,
+    text: (text || '').trim(),
+  };
+  let next = [entry, ...loadDiagnoses(plantId)].slice(0, DIAGNOSIS_LIMIT);
+  let stored = writeArray(DIAGNOSIS_PREFIX + plantId, next);
+  while (!stored && next.length > 1) {
+    next = next.slice(0, next.length - 1); // zrzuć najstarszy
+    stored = writeArray(DIAGNOSIS_PREFIX + plantId, next);
+  }
+  return stored ? next : loadDiagnoses(plantId);
+}
+
+export function deleteDiagnosis(plantId, id) {
+  const next = loadDiagnoses(plantId).filter((d) => d.id !== id);
+  writeArray(DIAGNOSIS_PREFIX + plantId, next);
+  return next;
+}
+
 // Varieties — flat array of { id, parent, name, addedAt }
 export function loadVarieties() {
   return readArray(VARIETIES_KEY);

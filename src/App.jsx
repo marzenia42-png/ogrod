@@ -9,6 +9,7 @@ import CategoryPage from './CategoryPage.jsx';
 import AllPlantsScreen from './AllPlantsScreen.jsx';
 import Onboarding, { hasSeenOnboarding } from './Onboarding.jsx';
 import ProactiveBanner from './ProactiveBanner.jsx';
+import WeeklyPlan from './WeeklyPlan.jsx';
 import AuthScreen from './AuthScreen.jsx';
 import { supabase } from './lib/supabaseClient.js';
 import { runUserMigrationV7 } from './lib/migrateUserV7.js';
@@ -1034,6 +1035,14 @@ export default function App() {
                   maxToday: weather.daily?.temperature_2m_max?.[0],
                 } : null,
               }}
+            />
+            <WeeklyPlan
+              plants={plantsForFlora}
+              weather={weather}
+              currentMonth={currentMonth}
+              profile={userProfile}
+              notes={notes}
+              onOpenFlora={(seed) => openFlora(seed)}
             />
             <CategoryGrid
               customPlants={customPlants}

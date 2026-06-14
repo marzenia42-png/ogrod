@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { callFlora } from './lib/floraApi.js';
 import { listRecentDiaryEntries } from './Diary.jsx';
 import { MONTHS, PLANTS } from './data/plants.js';
-import { compressImage, addEvent } from './lib/plantStorage.js';
+import { compressImage, addEvent, addDiagnosis } from './lib/plantStorage.js';
 
 const CUSTOM_PLANTS_KEY = 'garden-custom-plants';
 
@@ -106,11 +106,19 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
   const [photoMode, setPhotoMode] = useState('identify');
   // Po odpowiedzi na zdjęcie: indeks ostatniej diagnozy + flow "Dodaj do dziennika".
   const [diagnosisAtIdx, setDiagnosisAtIdx] = useState(null);
+  const [pendingDiagnosisImage, setPendingDiagnosisImage] = useState(null); // zdjęcie do zapisania w historii
   const [showPlantPicker, setShowPlantPicker] = useState(false);
   const [logToast, setLogToast] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const cameraRef = useRef(null);
+  // Sterowanie głosem (pl-PL): mowa→tekst + czytanie odpowiedzi.
+  const recognitionRef = useRef(null);
+  const lastSpokeRef = useRef(-1);
+  const [listening, setListening] = useState(false);
+  const [ttsOn, setTtsOn] = useState(false);
+  const voiceInputSupported = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+  const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -118,6 +126,25 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
 
   useEffect(() => {
     if (open && inputRef.current) setTimeout(() => inputRef.current?.focus(), 350);
+  }, [open]);
+
+  // Czytaj nową odpowiedź FLORY na głos, gdy włączony tryb mówienia.
+  useEffect(() => {
+    if (!ttsOn) return;
+    const idx = messages.length - 1;
+    const m = messages[idx];
+    if (m && m.role === 'assistant' && idx !== lastSpokeRef.current && m.content !== INITIAL_MESSAGE) {
+      lastSpokeRef.current = idx;
+      speak(m.content);
+    }
+  }, [messages, ttsOn]);
+
+  // Po zamknięciu panelu — zatrzymaj mowę i nasłuch.
+  useEffect(() => {
+    if (!open) {
+      try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+      try { recognitionRef.current?.stop(); } catch { /* ignore */ }
+    }
   }, [open]);
 
   const handlePhotoPick = async (file) => {
@@ -143,6 +170,56 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
     setImageData(null);
   };
 
+  // ===== GŁOS: mowa → tekst (pl-PL) =====
+  const startListening = () => {
+    if (listening) { try { recognitionRef.current?.stop(); } catch { /* ignore */ } return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setError('Ta przeglądarka nie obsługuje mowy. Użyj Chrome.'); return; }
+    const rec = new SR();
+    rec.lang = 'pl-PL';
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    let finalText = '';
+    rec.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const tr = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += tr; else interim += tr;
+      }
+      setInput((finalText + interim).replace(/\s+/g, ' ').trimStart());
+    };
+    rec.onerror = (e) => {
+      setListening(false);
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') setError('Brak zgody na mikrofon — włącz go w ustawieniach przeglądarki.');
+    };
+    rec.onend = () => {
+      setListening(false);
+      const t = finalText.trim();
+      if (t) send(t); // auto-wyślij po zakończeniu mówienia
+    };
+    recognitionRef.current = rec;
+    setError(null);
+    setListening(true);
+    try { rec.start(); } catch { setListening(false); }
+  };
+
+  // ===== GŁOS: czytanie odpowiedzi FLORY (pl-PL) =====
+  const speak = (text) => {
+    if (!ttsSupported) return;
+    try {
+      const clean = String(text).replace(/[🌿🦠🌡️🌸🎉→•·]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!clean) return;
+      const u = new SpeechSynthesisUtterance(clean);
+      u.lang = 'pl-PL';
+      const voices = window.speechSynthesis.getVoices();
+      const plVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('pl'));
+      if (plVoice) u.voice = plVoice;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch { /* ignore */ }
+  };
+
   // Format wyniku identyfikacji jako czytelny tekst dla bubble asystenta.
   // Bubble renderuje plain text z whiteSpace: pre-wrap — używamy linii break i emoji
   // zamiast markdown bold, żeby wynik wyglądał czytelnie bez parsera.
@@ -165,12 +242,13 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
     return txt;
   };
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (override) => {
+    const text = (typeof override === 'string' ? override : input).trim();
     if (loading) return;
     if (!text && !imageData) return;
 
     const sentImage = imageData;
+    const sentPreview = imagePreview; // pełny data URL — do zapisu w historii diagnoz
     const sentMediaType = 'image/jpeg';
     const wasImageRequest = !!sentImage;
     const isIdentifyMode = wasImageRequest && photoMode === 'identify';
@@ -214,6 +292,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
             if (wasImageRequest) setDiagnosisAtIdx(updated.length - 1);
             return updated;
           });
+          if (wasImageRequest) setPendingDiagnosisImage(sentPreview);
         } else {
           setError('FLORA milczy. Spróbuj jeszcze raz.');
         }
@@ -225,15 +304,22 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
     }
   };
 
-  const handleLogToDiary = (plantId, plantName) => {
+  const handleLogToDiary = async (plantId, plantName) => {
     if (diagnosisAtIdx == null) return;
     const text = messages[diagnosisAtIdx]?.content || '';
     // Skróć dla event note — pełna diagnoza może być długa.
     const short = text.length > 280 ? text.slice(0, 277) + '…' : text;
     addEvent(plantId, 'oprysknieto', `Diagnoza FLORA: ${short}`);
-    setLogToast(`Zapisano: ${plantName}`);
+    // Zapisz pełną diagnozę + zdjęcie do historii diagnoz (do śledzenia postępu).
+    let withPhoto = false;
+    if (pendingDiagnosisImage) {
+      try { await addDiagnosis(plantId, { dataUrl: pendingDiagnosisImage, text }); withPhoto = true; }
+      catch { /* ignore */ }
+    }
+    setLogToast(withPhoto ? `Zapisano w historii: ${plantName}` : `Zapisano: ${plantName}`);
     setShowPlantPicker(false);
     setDiagnosisAtIdx(null);
+    setPendingDiagnosisImage(null);
     setTimeout(() => setLogToast(null), 2500);
   };
 
@@ -331,16 +417,41 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Zamknij"
-            style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: 'rgba(123, 201, 123, 0.55)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M6 6l12 12M6 18L18 6" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            {ttsSupported && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTtsOn((v) => {
+                    const next = !v;
+                    if (!next) { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }
+                    else { lastSpokeRef.current = messages.length - 1; } // nie czytaj wstecz przy włączeniu
+                    return next;
+                  });
+                }}
+                aria-label={ttsOn ? 'Wyłącz czytanie na głos' : 'Czytaj odpowiedzi na głos'}
+                title={ttsOn ? 'Czytanie na głos: włączone' : 'Czytaj odpowiedzi na głos'}
+                style={{
+                  background: ttsOn ? 'rgba(123, 201, 123, 0.18)' : 'none',
+                  border: ttsOn ? '0.5px solid rgba(123, 201, 123, 0.5)' : '0.5px solid transparent',
+                  borderRadius: '50%', width: 34, height: 34, padding: 0, cursor: 'pointer',
+                  fontSize: 17, lineHeight: 1, display: 'grid', placeItems: 'center',
+                }}
+              >
+                <span aria-hidden="true">{ttsOn ? '🔊' : '🔇'}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Zamknij"
+              style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: 'rgba(123, 201, 123, 0.55)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M6 6l12 12M6 18L18 6" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div
@@ -589,6 +700,31 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
               <span aria-hidden="true" style={{ filter: imageData ? 'none' : 'none' }}>📷</span>
             </button>
 
+            {/* Mikrofon — mowa na tekst (pl-PL), auto-wysyłka po zakończeniu */}
+            {voiceInputSupported && (
+              <button
+                type="button"
+                onClick={startListening}
+                disabled={loading}
+                aria-label={listening ? 'Słucham — dotknij aby zakończyć' : 'Mów do FLORA'}
+                title={listening ? 'Słucham…' : 'Mów do FLORA'}
+                className={listening ? 'flora-mic-live' : ''}
+                style={{
+                  background: listening
+                    ? 'linear-gradient(135deg, rgba(239,68,68,0.85), rgba(220,38,38,0.7))'
+                    : 'linear-gradient(135deg, rgba(123, 201, 123, 0.30), rgba(123, 201, 123, 0.18))',
+                  border: listening ? '0.5px solid rgba(239,68,68,0.7)' : '0.5px solid rgba(123, 201, 123, 0.55)',
+                  width: 40, height: 40, minWidth: 40, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0,
+                  opacity: loading ? 0.4 : 1, touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent', flexShrink: 0,
+                }}
+              >
+                <span aria-hidden="true">🎤</span>
+              </button>
+            )}
+
             <input
               ref={inputRef}
               type="text" lang="pl" spellCheck={true} autoCorrect="on" autoCapitalize="sentences"
@@ -605,7 +741,7 @@ export default function Flora({ notes = [], weather, currentMonth, plants = [], 
 
             <button
               type="button"
-              onClick={send}
+              onClick={() => send()}
               disabled={(!input.trim() && !imageData) || loading}
               aria-label="Wyślij"
               style={{

@@ -284,6 +284,15 @@ select option {
   display: inline-block;
 }
 
+/* Mikrofon w trybie nasłuchu — pulsujące czerwone halo */
+@keyframes flora-mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+  50% { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+}
+.flora-mic-live {
+  animation: flora-mic-pulse 1.2s ease-out infinite;
+}
+
 /* ─── Stagger fade-in kart roślin / kategorii ─── */
 @keyframes cardFadeInUp {
   from { opacity: 0; transform: translateY(14px) scale(0.985); }

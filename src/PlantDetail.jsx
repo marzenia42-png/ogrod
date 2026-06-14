@@ -3,6 +3,7 @@ import {
   loadPhotos, addPhoto, deletePhoto, updatePhotoCaption, PHOTO_LIMIT,
   compressImage,
 } from './lib/plantStorage.js';
+import DiagnosisHistory from './DiagnosisHistory.jsx';
 import { CATEGORY_BY_ID, PLANT_CATEGORIES } from './data/plantCategories.js';
 import { SPECIES_BY_ID } from './data/plantSpecies.js';
 import { PLANTS } from './data/plants.js';
@@ -749,6 +750,8 @@ export default function PlantDetail({
             </div>
           )}
         </section>
+
+        <DiagnosisHistory plantId={plantId} />
       </div>
 
       {/* Fullscreen photo viewer */}

@@ -163,14 +163,15 @@ Deno.serve(async (req: Request) => {
       context?: Ctx;
       image_base64?: string;
       image_media_type?: string;
-      mode?: 'chat' | 'identify' | 'daily_tip' | 'spec';
+      mode?: 'chat' | 'identify' | 'daily_tip' | 'spec' | 'weekly_plan';
       plantName?: string;
       plantCategory?: string;
     } | null;
-    const mode: 'chat' | 'identify' | 'daily_tip' | 'spec' =
+    const mode: 'chat' | 'identify' | 'daily_tip' | 'spec' | 'weekly_plan' =
       body?.mode === 'identify' ? 'identify'
       : body?.mode === 'daily_tip' ? 'daily_tip'
       : body?.mode === 'spec' ? 'spec'
+      : body?.mode === 'weekly_plan' ? 'weekly_plan'
       : 'chat';
     const ctx: Ctx = body?.context ?? {};
 
@@ -190,6 +191,8 @@ Deno.serve(async (req: Request) => {
       messages = [{ role: 'user', content: 'Rozpoznaj roślinę na zdjęciu. Zwróć STRICT JSON zgodnie z formatem.' }];
     } else if (mode === 'daily_tip') {
       messages = [{ role: 'user', content: 'Napisz mi poradę ogrodniczą na dziś.' }];
+    } else if (mode === 'weekly_plan') {
+      messages = [{ role: 'user', content: 'Ułóż mi plan prac w ogrodzie na najbliższe 7 dni. Zwróć tylko JSON.' }];
     } else if (mode === 'spec') {
       const plantName = (body?.plantName || '').trim();
       if (!plantName) return json(origin, { error: 'plant_name_required' }, 400);
@@ -250,10 +253,28 @@ Zasady:
 - Wskaż KONKRETNĄ czynność do wykonania DZIŚ lub w tym tygodniu, dopasowaną do miesiąca i pogody.
 - Jeśli to oprysk — wymień polski preparat z dawką (np. "Topsin M 0,1%" = 1 g/L).
 - Bez owijania w bawełnę. Bez wstępu "dziś polecam".`;
+
+    const WEEKLY_PLAN_PERSONA = `Jesteś FLORA, asystentką ogrodniczą dla ogrodu w Bęczarce koło Myślenic (Małopolska, podgórze, strefa 6a/6b). Dostajesz miesiąc, datę, pogodę (live + prognoza) i listę roślin użytkownika z ostatnimi czynnościami. Ułóż konkretny plan prac w ogrodzie na NAJBLIŻSZE 7 DNI.
+
+Zwracasz STRICT JSON — bez markdownu, bez komentarzy, NIC POZA JSON. Format:
+{"week":[{"day":"Pon","plant":"Jabłonie","action":"Oprysk Topsin M 0,1%","note":"przed deszczem w śr"}]}
+
+Reguły:
+- 4-7 pozycji, posortowane od najpilniejszych.
+- "day": skrót dnia po polsku (Pon, Wt, Śr, Czw, Pt, Sob, Niedz) — realne dni licząc od dziś.
+- "plant": konkretna roślina użytkownika z listy; jeśli zadanie ogólne — "Ogród" lub nazwa kategorii.
+- "action": konkretna czynność, krótko (oprysk + preparat z dawką / cięcie / nawożenie / podlewanie / sadzenie / okrycie).
+- "note": krótkie uzasadnienie lub warunek ("przed deszczem", "rano, nie w upał", "po kwitnieniu"). Może być "".
+- Dopasuj do miesiąca, fazy fenologicznej i pogody. W upał/południe nie planuj oprysków. Jeśli prognoza deszcz — przesuń oprysk lub odpuść.
+- Preparaty PL: Topsin M, Miedzian, Score, Switch, Signum, Polyversum, Karate Zeon, Mospilan, mocznik, gnojówka pokrzywy, skrzyp polny.
+- Jeśli użytkownik nie ma roślin — zaproponuj ogólne prace sezonowe na ten tydzień.
+- ZAWSZE prawidłowy JSON, NIC POZA NIM.`;
+
     const systemPersona =
       mode === 'identify' ? IDENTIFY_PERSONA
       : mode === 'daily_tip' ? DAILY_TIP_PERSONA
       : mode === 'spec' ? SPEC_PERSONA
+      : mode === 'weekly_plan' ? WEEKLY_PLAN_PERSONA
       : PERSONA;
 
     // Build messages for Anthropic API. With image, the last user message
@@ -297,6 +318,7 @@ Zasady:
           mode === 'identify' ? 600
           : mode === 'daily_tip' ? 220
           : mode === 'spec' ? 800
+          : mode === 'weekly_plan' ? 700
           : (hasImage ? 800 : 512),
         system: [
           { type: 'text', text: systemPersona, cache_control: { type: 'ephemeral' } },
@@ -319,6 +341,24 @@ Zasady:
 
     if (mode === 'daily_tip') {
       return json(origin, { tip: reply });
+    }
+
+    if (mode === 'weekly_plan') {
+      const tryParse = (raw: string): unknown => {
+        try { return JSON.parse(raw); } catch { return null; }
+      };
+      let parsed = tryParse(reply);
+      if (!parsed) {
+        const match = reply.match(/\{[\s\S]*\}/);
+        if (match) parsed = tryParse(match[0]);
+      }
+      const arr = (parsed && typeof parsed === 'object' && 'week' in parsed)
+        ? (parsed as { week: unknown }).week
+        : null;
+      if (Array.isArray(arr)) {
+        return json(origin, { plan: arr.slice(0, 8) });
+      }
+      return json(origin, { plan: [], raw: reply.slice(0, 300) });
     }
 
     if (mode === 'spec') {

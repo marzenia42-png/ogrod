@@ -95,3 +95,24 @@ export async function getFloraDailyTip(context) {
   }
   return tip;
 }
+
+// Plan na tydzień — lista zadań dla roślin użytkownika. Cache per YYYY-MM-DD
+// (1 fetch dziennie, bo plan zależy od pogody). force=true wymusza odświeżenie.
+// Zwraca tablicę: [{ day, plant, action, note }]
+const PLAN_CACHE_PREFIX = 'garden-flora-plan-';
+export async function getFloraWeeklyPlan(context, force = false) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = PLAN_CACHE_PREFIX + today;
+  if (!force) {
+    try {
+      const cached = localStorage.getItem(key);
+      if (cached) return JSON.parse(cached);
+    } catch { /* ignore */ }
+  }
+  const res = await callFlora({ mode: 'weekly_plan', context });
+  const plan = Array.isArray(res?.plan) ? res.plan : [];
+  if (plan.length > 0) {
+    try { localStorage.setItem(key, JSON.stringify(plan)); } catch { /* ignore */ }
+  }
+  return plan;
+}
