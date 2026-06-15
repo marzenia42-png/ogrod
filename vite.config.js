@@ -32,8 +32,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // v8.1 — paleta Calm (teal/szałwia + gold); wymuś invalidację cache.
-        cacheId: 'ogrod-v8-1-calm',
+        // v8.2 — paleta zielona premium (szmaragd + gold); wymuś invalidację cache.
+        cacheId: 'ogrod-v8-2-green',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

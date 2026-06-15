@@ -227,7 +227,7 @@ export default function AuthScreen({ bg }) {
               </p>
             )}
             {info && (
-              <p style={{ fontSize: 13, color: '#9BE0C8', marginTop: 14, padding: '8px 12px', borderRadius: 8, background: 'rgba(95,174,154,0.15)', border: '1px solid rgba(95,174,154,0.35)' }}>
+              <p style={{ fontSize: 13, color: '#A6E6A8', marginTop: 14, padding: '8px 12px', borderRadius: 8, background: 'rgba(108,184,118,0.15)', border: '1px solid rgba(108,184,118,0.35)' }}>
                 {info}
               </p>
             )}

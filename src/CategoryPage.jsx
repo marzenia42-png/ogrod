@@ -212,7 +212,7 @@ export default function CategoryPage({
                 style={{
                   padding: '7px 13px', borderRadius: 999,
                   border: active ? `1px solid ${GOLD}` : '0.5px solid var(--border-soft)',
-                  background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(127,195,176,0.12))' : 'var(--surface-card-soft)',
+                  background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(130,198,138,0.12))' : 'var(--surface-card-soft)',
                   color: active ? GOLD : 'var(--text-muted)',
                   fontWeight: active ? 600 : 400,
                   fontSize: 13,

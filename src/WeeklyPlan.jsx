@@ -92,7 +92,7 @@ export default function WeeklyPlan({ plants = [], weather, currentMonth, profile
       <div
         className="rounded-2xl px-4 py-3"
         style={{
-          background: 'rgba(7, 18, 17, 0.55)',
+          background: 'rgba(8, 18, 12, 0.55)',
           backdropFilter: 'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
           border: '1px solid var(--border-leaf-soft)',
@@ -135,7 +135,7 @@ export default function WeeklyPlan({ plants = [], weather, currentMonth, profile
         {!collapsed && (
           <div style={{ marginTop: 8 }}>
             {loading && (
-              <p className="font-serif italic" style={{ fontSize: 13, color: 'rgba(127,195,176,0.7)' }}>
+              <p className="font-serif italic" style={{ fontSize: 13, color: 'rgba(130,198,138,0.7)' }}>
                 FLORA układa plan<span className="flora-dots">…</span>
               </p>
             )}

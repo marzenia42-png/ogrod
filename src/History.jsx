@@ -99,7 +99,7 @@ export default function History({ onBack }) {
               <button key={y} type="button" onClick={() => setYear(y)}
                 style={{
                   padding: '7px 14px', borderRadius: 999, fontSize: 14,
-                  background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(127,195,176,0.12))' : 'var(--surface-card-soft)',
+                  background: active ? 'linear-gradient(135deg, rgba(201,169,110,0.22), rgba(130,198,138,0.12))' : 'var(--surface-card-soft)',
                   border: active ? '1px solid var(--gold)' : '0.5px solid var(--border-soft)',
                   color: active ? 'var(--gold)' : 'var(--text-muted)',
                   fontWeight: active ? 600 : 400, fontVariantNumeric: 'tabular-nums', cursor: 'pointer', whiteSpace: 'nowrap',
