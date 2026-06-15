@@ -32,8 +32,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // v8.3 — czyste premium tło-gradient (zielona poświata); wymuś invalidację cache.
-        cacheId: 'ogrod-v8-3-bg',
+        // v8.4 — jaśniejsze zielone tło + kryte karty w trybie jasnym; wymuś invalidację cache.
+        cacheId: 'ogrod-v8-4-light',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

@@ -57,7 +57,7 @@
   --body-bg: #0C1410;
   --body-color: #E8F0E6;
   /* Tło aplikacji — czysty premium gradient (zielona poświata u góry + głęboki las) */
-  --app-bg: radial-gradient(130% 80% at 50% 0%, rgba(101, 189, 122, 0.16) 0%, rgba(101, 189, 122, 0) 55%), linear-gradient(168deg, #0E1C13 0%, #0C1410 48%, #0A120D 100%);
+  --app-bg: radial-gradient(135% 90% at 50% -5%, rgba(110, 200, 132, 0.22) 0%, rgba(110, 200, 132, 0) 60%), linear-gradient(168deg, #1B3A24 0%, #163019 50%, #11240F 100%);
 
   /* v6: kategoria karta, drawer, banner */
   --cat-card-bg: rgba(14, 26, 17, 0.58);
@@ -85,10 +85,10 @@ html[data-theme="light"] {
   --bg-image-overlay: rgba(247, 241, 226, 0.62);
   --surface-modal: #fbf6ea;
   --surface-flora: #f5f7ee;
-  --surface-card: rgba(255, 255, 255, 0.78);
-  --surface-card-soft: rgba(255, 255, 255, 0.62);
-  --surface-elevated: rgba(255, 255, 255, 0.55);
-  --surface-deep: rgba(255, 255, 255, 0.45);
+  --surface-card: #FFFFFF;
+  --surface-card-soft: rgba(255, 255, 255, 0.96);
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --surface-deep: rgba(255, 255, 255, 0.88);
   --surface-faint: rgba(80, 60, 30, 0.05);
   --surface-tint: rgba(201, 169, 110, 0.12);
 
