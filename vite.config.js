@@ -32,8 +32,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // v8.4 — jaśniejsze zielone tło + kryte karty w trybie jasnym; wymuś invalidację cache.
-        cacheId: 'ogrod-v8-4-light',
+        // v8.5 — strona startowa (AuthScreen) na zmiennych motywu = spójność całej apki.
+        cacheId: 'ogrod-v8-5-auth',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

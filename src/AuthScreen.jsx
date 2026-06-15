@@ -96,9 +96,9 @@ export default function AuthScreen({ bg }) {
         style={{ zIndex: 1, paddingTop: 'calc(env(safe-area-inset-top) + 40px)' }}
       >
         <div className="text-center mb-8">
-          <p className="font-serif italic" style={{ fontSize: 28, color: '#F0E8D8', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>🌿</p>
+          <p className="font-serif italic" style={{ fontSize: 28, color: 'var(--text-primary)', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>🌿</p>
           <h1 className="font-serif italic" style={{ fontSize: 36, color: 'var(--gold)', letterSpacing: 1, textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>Ogród Marzeń</h1>
-          <p style={{ fontSize: 14, color: 'rgba(240,232,216,0.85)', marginTop: 6, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 6, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
             Twój ogrodniczy asystent
           </p>
         </div>
@@ -107,7 +107,7 @@ export default function AuthScreen({ bg }) {
           className="rounded-3xl p-6 mx-auto w-full"
           style={{
             maxWidth: 380,
-            background: 'rgba(13,12,10,0.65)',
+            background: 'var(--surface-card)',
             backdropFilter: 'blur(18px)',
             WebkitBackdropFilter: 'blur(18px)',
             border: '1px solid var(--border-medium)',
@@ -115,7 +115,7 @@ export default function AuthScreen({ bg }) {
           }}
         >
           {mode !== 'reset' && (
-            <div className="flex gap-1.5 mb-5 rounded-full p-1" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-soft)' }}>
+            <div className="flex gap-1.5 mb-5 rounded-full p-1" style={{ background: 'var(--surface-faint)', border: '1px solid var(--border-soft)' }}>
               {[
                 { id: 'login',  label: 'Zaloguj się' },
                 { id: 'signup', label: 'Zarejestruj się' },
@@ -130,7 +130,7 @@ export default function AuthScreen({ bg }) {
                     style={{
                       padding: '8px 10px', borderRadius: 999, fontSize: 14, fontWeight: 600,
                       background: active ? 'linear-gradient(135deg, #C9A96E, #b89556)' : 'transparent',
-                      color: active ? '#1A1208' : 'rgba(240,232,216,0.85)',
+                      color: active ? '#1A1208' : 'var(--text-secondary)',
                       border: 'none',
                     }}
                   >{m.label}</button>
@@ -144,7 +144,7 @@ export default function AuthScreen({ bg }) {
           )}
 
           <form onSubmit={mode === 'login' ? handleLogin : mode === 'signup' ? handleSignup : handleReset}>
-            <label style={{ fontSize: 13, color: 'rgba(240,232,216,0.75)' }}>
+            <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
               Email
               <input
                 type="email"
@@ -156,17 +156,17 @@ export default function AuthScreen({ bg }) {
                 className="mt-1 w-full px-3.5 py-2.5 rounded-lg"
                 style={{
                   fontSize: 15,
-                  background: 'rgba(255,255,255,0.08)',
+                  background: 'var(--surface-faint)',
                   border: '1.5px solid var(--border-medium)',
-                  color: '#F0E8D8',
+                  color: 'var(--text-primary)',
                   outline: 'none',
                 }}
               />
             </label>
 
             {mode !== 'reset' && (
-              <label style={{ fontSize: 13, color: 'rgba(240,232,216,0.75)', display: 'block', marginTop: 12 }}>
-                Hasło {mode === 'signup' && <span style={{ color: 'rgba(240,232,216,0.55)' }}>(min. {MIN_PASSWORD} znaków)</span>}
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'block', marginTop: 12 }}>
+                Hasło {mode === 'signup' && <span style={{ color: 'var(--text-faint)' }}>(min. {MIN_PASSWORD} znaków)</span>}
                 <input
                   type="password"
                   value={password}
@@ -175,9 +175,9 @@ export default function AuthScreen({ bg }) {
                   className="mt-1 w-full px-3.5 py-2.5 rounded-lg"
                   style={{
                     fontSize: 15,
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'var(--surface-faint)',
                     border: '1.5px solid var(--border-medium)',
-                    color: '#F0E8D8',
+                    color: 'var(--text-primary)',
                     outline: 'none',
                   }}
                 />
@@ -185,7 +185,7 @@ export default function AuthScreen({ bg }) {
             )}
 
             {mode === 'signup' && (
-              <label style={{ fontSize: 13, color: 'rgba(240,232,216,0.75)', display: 'block', marginTop: 12 }}>
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'block', marginTop: 12 }}>
                 Imię (opcjonalne)
                 <input
                   type="text"
@@ -199,9 +199,9 @@ export default function AuthScreen({ bg }) {
                   className="mt-1 w-full px-3.5 py-2.5 rounded-lg"
                   style={{
                     fontSize: 15,
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'var(--surface-faint)',
                     border: '1.5px solid var(--border-medium)',
-                    color: '#F0E8D8',
+                    color: 'var(--text-primary)',
                     outline: 'none',
                   }}
                 />
@@ -244,20 +244,20 @@ export default function AuthScreen({ bg }) {
               <button
                 type="button"
                 onClick={() => { setMode('reset'); reset(); }}
-                style={{ background: 'none', border: 'none', color: 'rgba(240,232,216,0.7)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer' }}
               >Nie pamiętam hasła</button>
             )}
             {mode === 'reset' && (
               <button
                 type="button"
                 onClick={() => { setMode('login'); reset(); }}
-                style={{ background: 'none', border: 'none', color: 'rgba(240,232,216,0.7)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer' }}
               >← Wróć do logowania</button>
             )}
           </div>
         </div>
 
-        <p className="text-center mt-6" style={{ fontSize: 12, color: 'rgba(240,232,216,0.55)', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+        <p className="text-center mt-6" style={{ fontSize: 12, color: 'var(--text-faint)', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
           Twoje dane są bezpieczne. Dostęp z każdego urządzenia.
         </p>
       </div>
