@@ -703,24 +703,30 @@ export default function App() {
 
   return (
     <div className="relative min-h-svh flex flex-col">
-      {/* Background image + dark overlay */}
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url(${bg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundColor: 'var(--bg-image-overlay)',
-          backdropFilter: 'blur(1px)',
-          WebkitBackdropFilter: 'blur(1px)',
-        }}
-      />
+      {/* Tło aplikacji — domyślnie czysty premium gradient, lub własne zdjęcie użytkownika */}
+      {bg === DEFAULT_BG ? (
+        <div className="fixed inset-0 z-0" style={{ background: 'var(--app-bg)' }} />
+      ) : (
+        <>
+          <div
+            className="fixed inset-0 z-0"
+            style={{
+              backgroundImage: `url(${bg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+          <div
+            className="fixed inset-0 z-0"
+            style={{
+              backgroundColor: 'var(--bg-image-overlay)',
+              backdropFilter: 'blur(1px)',
+              WebkitBackdropFilter: 'blur(1px)',
+            }}
+          />
+        </>
+      )}
 
       <div className="relative z-10 flex flex-col flex-1 max-w-lg mx-auto w-full pb-8">
         <header className="px-5 pt-9 pb-3">
@@ -1532,11 +1538,15 @@ export default function App() {
             </p>
 
             <div className="relative mb-3 rounded-[14px] overflow-hidden" style={{ border: '0.5px solid var(--border-medium)' }}>
-              <img
-                src={bg}
-                alt="Aktualne tło"
-                style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }}
-              />
+              {bg === DEFAULT_BG ? (
+                <div style={{ width: '100%', height: '130px', background: 'var(--app-bg)' }} />
+              ) : (
+                <img
+                  src={bg}
+                  alt="Aktualne tło"
+                  style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }}
+                />
+              )}
               <div
                 className="absolute bottom-0 left-0 right-0 px-3 py-1.5 text-[10px] tracking-[2px] uppercase"
                 style={{
@@ -1544,7 +1554,7 @@ export default function App() {
                   color: '#F0E8D8',
                 }}
               >
-                {bg === DEFAULT_BG ? 'Domyślne — Pergola' : 'Twoje zdjęcie'}
+                {bg === DEFAULT_BG ? 'Domyślne — Zieleń' : 'Twoje zdjęcie'}
               </div>
             </div>
 

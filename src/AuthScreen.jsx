@@ -85,25 +85,12 @@ export default function AuthScreen({ bg }) {
         zIndex: 2000,
       }}
     >
-      {bg && (
-        <>
-          <div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 0,
-              backgroundImage: `url(${bg})`,
-              backgroundSize: 'cover', backgroundPosition: 'center',
-            }}
-          />
-          <div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 0,
-              backgroundColor: 'rgba(13,12,10,0.55)',
-              backdropFilter: 'blur(2px)',
-              WebkitBackdropFilter: 'blur(2px)',
-            }}
-          />
-        </>
-      )}
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 0,
+          background: 'var(--app-bg)',
+        }}
+      />
       <div
         className="relative max-w-md mx-auto px-5 py-8 flex flex-col min-h-svh"
         style={{ zIndex: 1, paddingTop: 'calc(env(safe-area-inset-top) + 40px)' }}

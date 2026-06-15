@@ -56,6 +56,8 @@
   /* Body */
   --body-bg: #0C1410;
   --body-color: #E8F0E6;
+  /* Tło aplikacji — czysty premium gradient (zielona poświata u góry + głęboki las) */
+  --app-bg: radial-gradient(130% 80% at 50% 0%, rgba(101, 189, 122, 0.16) 0%, rgba(101, 189, 122, 0) 55%), linear-gradient(168deg, #0E1C13 0%, #0C1410 48%, #0A120D 100%);
 
   /* v6: kategoria karta, drawer, banner */
   --cat-card-bg: rgba(14, 26, 17, 0.58);
@@ -111,6 +113,7 @@ html[data-theme="light"] {
   --color-bg: #F5F4F1;
   --body-bg: #F5F4F1;
   --body-color: #1A1A1A;
+  --app-bg: radial-gradient(130% 80% at 50% 0%, rgba(61, 140, 79, 0.12) 0%, rgba(61, 140, 79, 0) 55%), linear-gradient(168deg, #F1F6EE 0%, #EAF0E6 55%, #E2EADD 100%);
 
   /* Zielone akcenty w light mode (ciemniejsze dla kontrastu na jasnym tle) */
   --leaf: #3D8C4F;
