@@ -1,0 +1,63 @@
+/* ============================================================
+   MOTYWY  (theme = zestaw zmiennych: tło, akcent, tekst, fonty)
+   Zmieniasz motyw per marka LUB per post (pole "theme" w treści).
+   Każdą zmienną można nadpisać w treści (blok "vars").
+   ============================================================ */
+
+:root {
+  /* Domyślne (fallback) */
+  --bg:        #0b0b0d;
+  --bg-2:      #141417;
+  --accent:    #ff8a1e;
+  --accent-2:  #ffb44d;
+  --text:      #ffffff;
+  --muted:     #b9b9c2;
+  --line:      var(--accent);
+  --font-head: "Montserrat", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --head-weight: 800;
+  --glow:      0 0 60px rgba(255,138,30,.35);
+  --img-tint:  rgba(255,138,30,.28);   /* nakładka na wstawiane zdjęcie */
+  --img-mix:   soft-light;             /* tryb mieszania nakładki */
+  --radius:    28px;
+}
+
+/* --- Vadym / KIERUNEK.AI: czerń + neon pomarańcz --------------- */
+[data-theme="vadym"] {
+  --bg: #08080a; --bg-2: #16110a;
+  --accent: #ff8a1e; --accent-2: #ffc061;
+  --text: #ffffff; --muted: #c3c3cc;
+  --glow: 0 0 70px rgba(255,138,30,.40);
+  --img-tint: rgba(255,138,30,.30); --img-mix: soft-light;
+}
+
+/* --- DB Meble: ciepły orzech + mosiądz (premium, meblarski) ---- */
+[data-theme="dbmeble"] {
+  --bg: #1c1712; --bg-2: #2a2119;
+  --accent: #c9a15a; --accent-2: #e6c98a;
+  --text: #f5efe4; --muted: #c3b6a0;
+  --line: #c9a15a;
+  --glow: 0 0 60px rgba(201,161,90,.32);
+  --img-tint: rgba(201,161,90,.22); --img-mix: multiply;
+  --head-weight: 800;
+}
+
+/* --- DB Meble jasny: len + grafit (alternatywa premium light) -- */
+[data-theme="dbmeble-light"] {
+  --bg: #efe9df; --bg-2: #ffffff;
+  --accent: #9a6a3a; --accent-2: #c58f56;
+  --text: #241d16; --muted: #6b5f50;
+  --line: #9a6a3a;
+  --glow: 0 0 50px rgba(154,106,58,.18);
+  --img-tint: rgba(154,106,58,.10); --img-mix: multiply;
+}
+
+/* --- Twój social (przykład): grafit + mięta ------------------- */
+[data-theme="mint"] {
+  --bg: #0c1210; --bg-2: #12201b;
+  --accent: #34e0a1; --accent-2: #7ff0c6;
+  --text: #f2fbf7; --muted: #a9c4bb;
+  --line: #34e0a1;
+  --glow: 0 0 60px rgba(52,224,161,.32);
+  --img-tint: rgba(52,224,161,.22); --img-mix: soft-light;
+}

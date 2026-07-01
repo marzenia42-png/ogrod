@@ -1,0 +1,128 @@
+/* ============================================================
+   SILNIK UKŁADU — slajd 1080x1350 (format 4:5 pod karuzelę IG)
+   Wszystkie odległości skalują się wraz z canvasem.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.slide {
+  position: relative;
+  width: 1080px;
+  height: 1350px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Delikatna neonowa poświata w tle (buduje głębię jak u Vadyma) */
+.slide::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(120% 80% at 85% 8%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 55%),
+    radial-gradient(90% 60% at 50% 108%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 60%),
+    var(--bg);
+}
+/* Siatka kropek w rogu (detal jak na oryginale) */
+.slide::after {
+  content: "";
+  position: absolute; left: 44px; bottom: 150px; width: 220px; height: 220px; z-index: 0;
+  background-image: radial-gradient(color-mix(in srgb, var(--accent) 55%, transparent) 2px, transparent 2px);
+  background-size: 26px 26px;
+  opacity: .35; pointer-events: none;
+}
+
+.slide > * { position: relative; z-index: 1; }
+
+/* ---- Nagłówek slajdu: numer + licznik ---------------------- */
+.s-topbar { position: absolute; top: 60px; left: 72px; right: 72px;
+  display: flex; justify-content: space-between; align-items: center; }
+.s-num { font-family: var(--font-head); font-weight: 800; font-size: 46px;
+  color: var(--accent); letter-spacing: .02em; display: flex; align-items: center; gap: 18px; }
+.s-num::after { content: ""; width: 56px; height: 4px; background: var(--accent); border-radius: 2px; }
+.s-count { font-family: var(--font-head); font-weight: 700; font-size: 30px; color: var(--muted); }
+
+/* ---- Blok tekstowy (lewa kolumna) ------------------------- */
+.s-body-wrap { position: absolute; top: 250px; left: 72px; bottom: 120px; display: flex; flex-direction: column; }
+
+.s-kicker { font-family: var(--font-head); font-weight: 700; font-size: 26px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+
+.headline { font-family: var(--font-head); font-weight: var(--head-weight); line-height: .98;
+  letter-spacing: -.015em; overflow: hidden; }
+.headline .hl { color: var(--accent); }
+
+/* Krótka kreska-akcent pod nagłówkiem */
+.accent-bar { width: 96px; height: 8px; background: var(--line); border-radius: 4px; margin: 34px 0 30px; }
+
+.s-text { color: var(--muted); overflow: hidden; }
+.s-text p { margin-bottom: 24px; }
+.s-text b, .s-text strong { color: var(--text); font-weight: 600; }
+.s-text .em { color: var(--accent); font-weight: 600; }
+
+/* ---- Prawa strona: obszar wizualny (zdjęcie / ilustracja) -- */
+.s-visual { position: absolute; top: 0; right: 0; height: 100%; overflow: hidden; }
+.s-visual .photo { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.s-visual .photo::after { content: ""; position: absolute; inset: 0;
+  background: var(--img-tint); mix-blend-mode: var(--img-mix); }
+/* wtapianie zdjęcia w tło slajdu od strony tekstu */
+.s-visual .fade { position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--bg) 0%, transparent 32%, transparent 100%); }
+.s-visual .glow-frame { position: absolute; inset: 40px 60px 40px 40px; border-radius: var(--radius);
+  box-shadow: var(--glow), inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); pointer-events: none; }
+
+/* Dekoracyjny chip "AI"/logo w rogu ilustracji */
+.chip { position: absolute; top: 90px; right: 90px; width: 150px; height: 150px; border-radius: 34px;
+  display: grid; place-items: center; font-family: var(--font-head); font-weight: 900; font-size: 64px;
+  color: var(--accent); background: color-mix(in srgb, var(--bg-2) 70%, transparent);
+  box-shadow: var(--glow), inset 0 0 0 3px var(--accent); }
+
+/* ================= UKŁADY / LAYOUTY ======================== */
+
+/* 1) OKŁADKA — duży tytuł + duża ilustracja po prawej */
+.slide[data-layout="cover"] .s-visual { width: 620px; }
+.slide[data-layout="cover"] .s-body-wrap { right: 560px; }
+.slide[data-layout="cover"] .headline { font-size: 108px; }
+.slide[data-layout="cover"] .s-text { font-size: 40px; line-height: 1.25; }
+
+/* 2) TEKST + WIZUAL — klasyczny koń roboczy */
+.slide[data-layout="text-visual"] .s-visual { width: 560px; }
+.slide[data-layout="text-visual"] .s-body-wrap { right: 540px; }
+.slide[data-layout="text-visual"] .headline { font-size: 92px; }
+.slide[data-layout="text-visual"] .s-text { font-size: 38px; line-height: 1.32; }
+
+/* 3) LISTA / 3 PUNKTY — nagłówek + karty po prawej */
+.slide[data-layout="list"] .s-body-wrap { right: 560px; }
+.slide[data-layout="list"] .headline { font-size: 88px; }
+.slide[data-layout="list"] .s-text { font-size: 34px; line-height: 1.3; }
+.s-cards { position: absolute; top: 250px; right: 72px; width: 470px; bottom: 120px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 26px; }
+.card { flex: 1; border-radius: 26px; padding: 34px 38px;
+  background: color-mix(in srgb, var(--bg-2) 65%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent),
+              0 0 40px color-mix(in srgb, var(--accent) 12%, transparent);
+  display: flex; flex-direction: column; justify-content: center; }
+.card .c-top { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
+.card .c-icon { width: 66px; height: 66px; flex: none; color: var(--accent); }
+.card .c-icon svg { width: 100%; height: 100%; }
+.card .c-head { font-family: var(--font-head); font-weight: 800; font-size: 34px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .04em; }
+.card .c-desc { font-size: 30px; line-height: 1.25; color: var(--text); }
+
+/* 4) CTA / SLAJD KOŃCOWY */
+.slide[data-layout="cta"] .s-visual { width: 620px; }
+.slide[data-layout="cta"] .s-body-wrap { right: 520px; }
+.slide[data-layout="cta"] .headline { font-size: 100px; }
+.slide[data-layout="cta"] .s-text { font-size: 40px; line-height: 1.28; }
+.s-cta { margin-top: auto; display: flex; align-items: flex-start; gap: 24px; padding-top: 40px; }
+.s-cta .bm { width: 64px; height: 64px; flex: none; color: var(--accent); }
+.s-cta .bm svg { width: 100%; height: 100%; }
+.s-cta .cta-txt { font-size: 38px; line-height: 1.2; }
+.s-cta .cta-txt b { display: block; font-family: var(--font-head); font-weight: 800; color: var(--accent);
+  font-size: 42px; margin-bottom: 6px; }
+.s-cta .cta-txt span { color: var(--muted); }
+
+/* Gdy brak zdjęcia — obszar wizualny pokazuje samą poświatę + chip */
+.s-visual.empty .glow-frame { inset: 60px; }

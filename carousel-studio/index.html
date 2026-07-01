@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carousel Studio — generator karuzel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/engine.css">
+  <style>
+    body { margin:0; font-family:"Inter",system-ui,sans-serif; background:#0f0f12; color:#e8e8ee; }
+    .app { display:grid; grid-template-columns: 380px 1fr; height:100vh; }
+    .panel { background:#17171c; border-right:1px solid #26262e; padding:20px; overflow:auto; }
+    .panel h1 { font-family:"Montserrat"; font-size:20px; margin:0 0 4px; }
+    .panel .sub { color:#8a8a97; font-size:13px; margin-bottom:18px; }
+    .grp { margin-bottom:18px; }
+    .grp label { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8a8a97; margin-bottom:6px; }
+    select, button, input[type=color] { font:inherit; }
+    select { width:100%; padding:9px 10px; background:#101014; color:#e8e8ee; border:1px solid #33333d; border-radius:8px; }
+    input[type=color] { width:100%; height:40px; background:#101014; border:1px solid #33333d; border-radius:8px; padding:3px; }
+    button { cursor:pointer; border:1px solid #3a3a45; background:#22222b; color:#e8e8ee; padding:9px 12px; border-radius:8px; }
+    button:hover { background:#2c2c37; }
+    button.primary { background:var(--accent,#ff8a1e); border-color:transparent; color:#111; font-weight:600; }
+    .row { display:flex; gap:8px; }
+    .row > * { flex:1; }
+    textarea#editor { width:100%; height:280px; resize:vertical; background:#101014; color:#cfe; border:1px solid #33333d; border-radius:8px; padding:10px; font-family:ui-monospace,Menlo,monospace; font-size:12px; line-height:1.45; }
+    #err { color:#ff6b6b; font-size:12px; min-height:16px; margin-top:6px; }
+    .stage-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; overflow:auto; }
+    #viewport { width:min(560px,86%); overflow:hidden; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+    #stage { transform-origin:top left; }
+    .navbar { display:flex; align-items:center; gap:16px; margin-top:18px; }
+    .navbar button { width:46px; height:46px; border-radius:50%; font-size:18px; }
+    #dots { display:flex; gap:7px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#3a3a45; cursor:pointer; }
+    .dot.on { background:var(--accent,#ff8a1e); }
+    #pos { font-size:13px; color:#8a8a97; min-width:56px; text-align:center; }
+    .hint { font-size:11px; color:#6c6c78; margin-top:8px; line-height:1.5; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <h1>Carousel Studio</h1>
+      <div class="sub">Podkładasz treść — silnik sam składa i dopasowuje slajdy.</div>
+
+      <div class="grp">
+        <label>Zestaw startowy</label>
+        <select id="preset">
+          <option value="dbmeble">DB Meble (dbmeble.pl)</option>
+          <option value="vadym">KIERUNEK.AI (styl Vadyma)</option>
+        </select>
+      </div>
+
+      <div class="grp row">
+        <div>
+          <label>Motyw</label>
+          <select id="theme">
+            <option value="vadym">Vadym / neon pomarańcz</option>
+            <option value="dbmeble" selected>DB Meble / mosiądz</option>
+            <option value="dbmeble-light">DB Meble / jasny</option>
+            <option value="mint">Social / mięta</option>
+          </select>
+        </div>
+        <div>
+          <label>Kolor akcentu</label>
+          <input type="color" id="accent" value="#c9a15a">
+        </div>
+      </div>
+
+      <div class="grp">
+        <label>Treść (JSON — edytuj i zastosuj)</label>
+        <textarea id="editor" spellcheck="false"></textarea>
+        <div id="err"></div>
+        <button id="apply" class="primary" style="width:100%;margin-top:8px">Zastosuj treść</button>
+      </div>
+
+      <div class="grp">
+        <label>Eksport</label>
+        <div class="row">
+          <button id="pngOne">PNG (ten)</button>
+          <button id="pngAll">PNG (wszystkie)</button>
+        </div>
+        <button id="htmlOne" style="width:100%;margin-top:8px">HTML slajdu → Adobe Express</button>
+        <div class="hint">Wstawianie zdjęcia: w treści slajdu ustaw pole <b>"image"</b> na adres URL lub ścieżkę (np. <b>assets/kuchnia.jpg</b>).</div>
+      </div>
+    </aside>
+
+    <main class="stage-wrap">
+      <div id="viewport"><div id="stage"></div></div>
+      <div class="navbar">
+        <button id="prev">‹</button>
+        <div id="dots"></div>
+        <span id="pos"></span>
+        <button id="next">›</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/engine.js"></script>
+</body>
+</html>
