@@ -88,4 +88,19 @@ const PRESET_DBMEBLE = {
   ],
 };
 
-const PRESETS = { vadym: PRESET_VADYM, dbmeble: PRESET_DBMEBLE };
+/* ==== PRESET 3: WOW 3D (dwa kolory — granat i zieleń) ========= */
+const PRESET_WOW = {
+  meta: { theme: "navy", handle: "twoja.marka", total: 2, chip: "AI" },
+  slides: [
+    { layout: "cover", num: "01", theme: "navy",
+      title: [{t:"AI, które robi "},{t:"efekt WOW",hl:true}],
+      text: "Szklany render 3D w kolorze Twojej marki.",
+      visual: { motif: "hero3d", label: "AI", icons: ["gear","chat","data","target","check","bulb","mail","doc"] } },
+    { layout: "cover", num: "02", theme: "emerald",
+      title: [{t:"Ten sam system. "},{t:"Inny kolor.",hl:true}],
+      text: "Granat czy zieleń — zmieniasz jednym kliknięciem.",
+      visual: { motif: "hero3d", label: "AI", icons: ["shield","gear","check","data","chat","target","bulb","mail"] } },
+  ],
+};
+
+const PRESETS = { vadym: PRESET_VADYM, dbmeble: PRESET_DBMEBLE, wow: PRESET_WOW };

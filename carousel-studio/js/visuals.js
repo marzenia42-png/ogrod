@@ -124,16 +124,75 @@ function motifCards(r, o) {
   return card(70, 210, 470, 220, 1) + card(120, 500, 470, 220, 2) + card(70, 790, 470, 220, 3);
 }
 
-const MOTIFS = { flow: motifFlow, chip: motifChip, orbit: motifOrbit, grid: motifGrid, cards: motifCards };
+/* ---- MOTYW: hero 3D (szklane kafle z głębią — efekt "wow") --
+   Faux-3D w SVG: bazowy kolor = currentColor (--accent), a objętość
+   budują nakładki: połysk (biały gradient u góry) + cień (czarny na
+   dole) + faza (jasny obrys) + miękki cień pod kaflem. Zmiana motywu
+   marki przemalowuje całość (granat/zieleń/pomarańcz...).            */
+function motifHero3d(r, o) {
+  const seed = o.seed;
+  const glyphW = (key, x, y, size) => {
+    const g = ICONS[key] || ICONS.gear;
+    return `<g transform="translate(${x} ${y}) scale(${(size/24).toFixed(3)})" fill="none"
+      stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+      opacity="0.95">${inner(g)}</g>`;
+  };
+  const tile = (cx, cy, h, op, key, hero) => {
+    const x = cx - h, y = cy - h, s = h * 2, rx = Math.max(14, s * 0.17);
+    const face = `<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${rx}"`;
+    let t = `<ellipse cx="${cx}" cy="${(cy + h * 0.98)|0}" rx="${(h*1.05)|0}" ry="${(h*0.3)|0}"
+        fill="#000" opacity="0.4" filter="url(#soft${seed})"/>`;
+    t += `${face} fill="currentColor" opacity="${op}"/>`;
+    t += `${face} fill="url(#gloss${seed})"/>`;
+    t += `${face} fill="url(#shade${seed})"/>`;
+    t += `<rect x="${x+2}" y="${y+2}" width="${s-4}" height="${s-4}" rx="${rx-2}"
+        fill="none" stroke="#fff" stroke-width="${hero?3:2}" opacity="0.4"/>`;
+    if (hero) t += `<text x="${cx}" y="${(cy + s*0.15)|0}" text-anchor="middle"
+        font-family="var(--font-head)" font-weight="900" font-size="${(s*0.36)|0}"
+        fill="#fff">${o.label || 'AI'}</text>`;
+    else { const is = s * 0.5; t += glyphW(key, cx - is/2, cy - is/2, is); }
+    return t;
+  };
+  let s = `<defs>
+    <linearGradient id="gloss${seed}" x1="0" y1="0" x2="0.15" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.6"/>
+      <stop offset="0.45" stop-color="#fff" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="shade${seed}" x1="0" y1="0.35" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.5"/></linearGradient>
+    <radialGradient id="floor${seed}" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="currentColor" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+    <filter id="soft${seed}" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="9"/></filter></defs>`;
+  s += `<ellipse cx="300" cy="720" rx="300" ry="140" fill="url(#floor${seed})"/>`;
+  // dalekie kafle (mniejsze, przygaszone = głębia)
+  [[130,300,34],[470,338,32],[110,560,30],[486,596,34],[300,210,29]]
+    .forEach(([x,y,h],i) => s += tile(x, y, h, 0.5, o.icons[i % o.icons.length], false));
+  // średni plan
+  [[178,470,50],[432,500,52]].forEach(([x,y,h],i) => s += tile(x, y, h, 0.82, o.icons[(i+2)%o.icons.length], false));
+  // bohater (środek)
+  s += tile(300, 468, 118, 1, null, true);
+  // bliskie kafle (na wierzchu)
+  [[150,772,58],[452,788,56]].forEach(([x,y,h],i) => s += tile(x, y, h, 0.96, o.icons[(i+4)%o.icons.length], false));
+  // iskry / bokeh
+  for (let i = 0; i < 26; i++)
+    s += `<circle cx="${(80+r()*440)|0}" cy="${(150+r()*780)|0}" r="${(1+r()*3).toFixed(1)}" fill="#fff" opacity="${(0.15+r()*0.5).toFixed(2)}"/>`;
+  return s;
+}
+
+const MOTIFS = { flow: motifFlow, chip: motifChip, orbit: motifOrbit, grid: motifGrid, cards: motifCards, hero3d: motifHero3d };
 
 /* Składa gotowe <svg> motywu (z poświatą). id filtra = seed (unikat). */
 function renderMotif(cfg, seed) {
   const r = rng(seed);
   const icons = cfg.icons || MOTIF_ICONS;
   const fn = MOTIFS[cfg.motif] || motifChip;
-  const body = fn(r, { icons, label: cfg.label });
+  const body = fn(r, { icons, label: cfg.label, seed });
+  const glow = cfg.motif === 'hero3d' ? '' : `filter="url(#glow${seed})"`;  // 3D ma własne cienie
   return `<svg class="motif" viewBox="0 0 600 1350" preserveAspectRatio="xMidYMid slice">
     <defs><filter id="glow${seed}" x="-40%" y="-40%" width="180%" height="180%">
       <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="currentColor" flood-opacity="0.65"/></filter></defs>
-    <g filter="url(#glow${seed})" color="inherit">${body}</g></svg>`;
+    <g ${glow} color="inherit">${body}</g></svg>`;
 }

@@ -96,6 +96,7 @@ function buildVisual(s, idx) {
 function buildSlide(s, idx) {
   const slide = el('div', 'slide');
   slide.dataset.layout = s.layout || 'text-visual';
+  if (s.theme) slide.dataset.theme = s.theme;   // motyw per slajd (nadpisuje deck)
 
   // pasek górny: numer + licznik
   const top = el('div', 's-topbar');

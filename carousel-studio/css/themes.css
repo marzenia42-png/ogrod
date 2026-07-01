@@ -52,6 +52,26 @@
   --img-tint: rgba(154,106,58,.10); --img-mix: multiply;
 }
 
+/* --- Granat (3D wow): głęboki navy + świetlisty błękit -------- */
+[data-theme="navy"] {
+  --bg: #080f24; --bg-2: #14204a;
+  --accent: #5b8cff; --accent-2: #9db8ff;
+  --text: #eef3ff; --muted: #a7b6d8;
+  --line: #5b8cff;
+  --glow: 0 0 70px rgba(91,140,255,.45);
+  --img-tint: rgba(91,140,255,.28); --img-mix: screen;
+}
+
+/* --- Zieleń (3D wow): głęboki las + szmaragdowy neon --------- */
+[data-theme="emerald"] {
+  --bg: #04160f; --bg-2: #0b2a1d;
+  --accent: #18d67f; --accent-2: #64ffb0;
+  --text: #eafff5; --muted: #9fc9b6;
+  --line: #18d67f;
+  --glow: 0 0 70px rgba(24,214,127,.42);
+  --img-tint: rgba(24,214,127,.26); --img-mix: screen;
+}
+
 /* --- Twój social (przykład): grafit + mięta ------------------- */
 [data-theme="mint"] {
   --bg: #0c1210; --bg-2: #12201b;
