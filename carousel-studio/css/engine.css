@@ -64,6 +64,7 @@
 
 /* ---- Prawa strona: obszar wizualny (zdjęcie / ilustracja) -- */
 .s-visual { position: absolute; top: 0; right: 0; height: 100%; overflow: hidden; }
+.s-visual .motif { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--accent); }
 .s-visual .photo { position: absolute; inset: 0; background-size: cover; background-position: center; }
 .s-visual .photo::after { content: ""; position: absolute; inset: 0;
   background: var(--img-tint); mix-blend-mode: var(--img-mix); }

@@ -68,18 +68,27 @@ function autofitSlide(sl) {
   fitToBudget(text, 20, textBudget);
 }
 
-/* ---- obszar wizualny (zdjęcie / poświata / chip) ----------- */
-function buildVisual(s) {
-  const v = el('div', 's-visual' + (s.image ? '' : ' empty'));
-  if (s.image) {
+/* ---- obszar wizualny (zdjęcie > motyw SVG > sama poświata) -- */
+function buildVisual(s, idx) {
+  const v = el('div', 's-visual');
+  if (s.image) {                                  // 1) zdjęcie użytkownika / stock
     const photo = el('div', 'photo');
     photo.style.backgroundImage = `url("${s.image}")`;
     v.appendChild(photo);
     v.appendChild(el('div', 'fade'));
+    v.appendChild(el('div', 'glow-frame'));
+    const chipVal = s.chip || (DECK.meta && DECK.meta.chip);
+    if (chipVal) v.appendChild(el('div', 'chip', chipVal));
+  } else if (s.visual && s.visual.motif) {         // 2) grafika generowana (SVG)
+    const cfg = Object.assign({ label: (DECK.meta && DECK.meta.chip) || 'AI' }, s.visual);
+    const seed = (s.visual.seed != null) ? s.visual.seed : (idx + 1) * 97 + cfg.motif.length;
+    v.innerHTML = renderMotif(cfg, seed);
+  } else {                                         // 3) pusto — sama poświata
+    v.classList.add('empty');
+    v.appendChild(el('div', 'glow-frame'));
+    const chipVal = s.chip || (DECK.meta && DECK.meta.chip);
+    if (chipVal) v.appendChild(el('div', 'chip', chipVal));
   }
-  v.appendChild(el('div', 'glow-frame'));
-  const chipVal = s.chip || (DECK.meta && DECK.meta.chip);   // chip tylko gdy zdefiniowany
-  if (chipVal) v.appendChild(el('div', 'chip', chipVal));
   return v;
 }
 
@@ -96,7 +105,7 @@ function buildSlide(s, idx) {
   slide.appendChild(top);
 
   // strona wizualna (nie dla listy — tam są karty)
-  if (s.layout !== 'list') slide.appendChild(buildVisual(s));
+  if (s.layout !== 'list') slide.appendChild(buildVisual(s, idx));
 
   // kolumna tekstowa
   const wrap = el('div', 's-body-wrap');
